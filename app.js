@@ -39,5 +39,3 @@ app.use((err, req, res, next) => {
 app.listen(PORT, () => {
   console.log(`🚀 Server đang chạy tại http://localhost:${PORT}`);
 });
-const statisticApi = require("./src/routers/statisticApi");
-app.use("/", statisticApi);
