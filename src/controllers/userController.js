@@ -64,7 +64,7 @@ exports.createUser = async (req, res) => {
   }
 };
 
-// Cập nhật user
+// Cập nhật usern
 exports.updateUser = async (req, res) => {
   try {
     const { password, ...updateData } = req.body;
