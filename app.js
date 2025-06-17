@@ -1,6 +1,9 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
+const orderRoutes = require('./src/routers/orderRoutes');
+
+const methodRouter = require('./src/routers/methodRouter');
 const userRouter = require('./src/routers/userRouter');
 require('dotenv').config();
 
@@ -19,6 +22,9 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 app.use(express.json());
+app.use('/api/orders', orderRoutes);
+// Routes
+app.use('/api/methods', methodRouter);
 
 // Kết nối MongoDB Atlas
 mongoose.connect(process.env.MONGODB_URI)
