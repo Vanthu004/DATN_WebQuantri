@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const userRouter = require('./src/routers/userRouter');
 const productRouter = require('./src/routers/productRouter'); 
+const categoryRouter = require('./src/routers/categoryRouter'); 
 require('dotenv').config();
 
 if (!process.env.JWT_SECRET) {
@@ -29,7 +30,7 @@ mongoose.connect(process.env.MONGODB_URI)
 // Routes
 app.use("/api/users", userRouter);
 app.use("/api/products", productRouter); // ✅ Sử dụng router sản phẩm
-
+app.use("/api/category", categoryRouter);
 // Middleware xử lý lỗi
 app.use((err, req, res, next) => {
   console.error(err.stack);
