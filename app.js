@@ -2,6 +2,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const userRouter = require('./src/routers/userRouter');
+const statisticApi = require("./src/routers/statisticApi");
 require('dotenv').config();
 
 if (!process.env.JWT_SECRET) {
@@ -28,6 +29,9 @@ mongoose.connect(process.env.MONGODB_URI)
 // Routes
 app.use("/api/users", userRouter);
 
+
+app.use("/", statisticApi);
+
 // Middleware xử lý lỗi
 app.use((err, req, res, next) => {
   console.error(err.stack);
@@ -38,3 +42,6 @@ app.use((err, req, res, next) => {
 app.listen(PORT, () => {
   console.log(`🚀 Server đang chạy tại http://localhost:${PORT}`);
 });
+
+
+
