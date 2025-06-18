@@ -1,54 +1,57 @@
-const PaymentMethod = require('../models/PaymentMethod');
+const PaymentMethod = require("../models/paymentMethod");
 
-// Tạo mới phương thức thanh toán
+/* Tạo phương thức thanh toán */
 exports.createPaymentMethod = async (req, res) => {
   try {
-    const newPayment = new PaymentMethod(req.body);
-    await newPayment.save();
-    res.status(201).json({ message: 'Thêm phương thức thanh toán thành công', data: newPayment });
+    const method = await PaymentMethod.create(req.body);
+    res.status(201).json(method);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(400).json({ error: err.message });
   }
 };
 
-// Lấy tất cả phương thức thanh toán
-exports.getAllPaymentMethods = async (req, res) => {
+/* Lấy tất cả phương thức thanh toán */
+exports.getAllPaymentMethods = async (_req, res) => {
   try {
-    const methods = await PaymentMethod.find();
-    res.json(methods); // Xem được trong trình duyệt
+    const list = await PaymentMethod.find();
+    res.json(list);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
 
-// Lấy 1 phương thức theo ID
+/* Lấy phương thức theo ID */
 exports.getPaymentMethodById = async (req, res) => {
   try {
     const method = await PaymentMethod.findById(req.params.id);
-    if (!method) return res.status(404).json({ message: 'Không tìm thấy phương thức' });
+    if (!method) return res.status(404).json({ msg: "Không tìm thấy phương thức" });
     res.json(method);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
 
-// Cập nhật
+/* Cập nhật phương thức */
 exports.updatePaymentMethod = async (req, res) => {
   try {
-    const updated = await PaymentMethod.findByIdAndUpdate(req.params.id, req.body, { new: true });
-    if (!updated) return res.status(404).json({ message: 'Không tìm thấy phương thức' });
-    res.json({ message: 'Cập nhật thành công', data: updated });
+    const updated = await PaymentMethod.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      { new: true }
+    );
+    if (!updated) return res.status(404).json({ msg: "Không tìm thấy phương thức" });
+    res.json(updated);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(400).json({ error: err.message });
   }
 };
 
-// Xóa
+/* Xoá phương thức */
 exports.deletePaymentMethod = async (req, res) => {
   try {
     const deleted = await PaymentMethod.findByIdAndDelete(req.params.id);
-    if (!deleted) return res.status(404).json({ message: 'Không tìm thấy phương thức' });
-    res.json({ message: 'Xóa thành công' });
+    if (!deleted) return res.status(404).json({ msg: "Không tìm thấy phương thức" });
+    res.json({ msg: "Đã xoá phương thức thanh toán" });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
