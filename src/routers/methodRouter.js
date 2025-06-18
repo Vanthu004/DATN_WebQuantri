@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 
 const shippingController = require('../controllers/shippingController');
-const paymentController = require('../controllers/paymentController');
+const paymentController = require('../controllers/paymentMethodController');
 
 // ===== SHIPPING METHODS =====
 router.post('/shipping', shippingController.createShippingMethod);
