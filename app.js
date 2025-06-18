@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const userRouter = require('./src/routers/userRouter');
 const statisticApi = require("./src/routers/statisticApi");
+const favoriteRouter = require("./src/routers/favoriteProductRouter");
 require('dotenv').config();
 
 if (!process.env.JWT_SECRET) {
@@ -31,6 +32,8 @@ app.use("/api/users", userRouter);
 
 
 app.use("/", statisticApi);
+
+app.use(favoriteRouter);
 
 // Middleware xử lý lỗi
 app.use((err, req, res, next) => {
