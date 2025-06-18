@@ -1,60 +1,72 @@
-const mongoose = require('mongoose');
-const Order = require('../models/Order');
-const OrderDetail = require('../models/OrderDetail');
+const Order = require("../models/order");
 
-// Tạo đơn hàng
+/* Tạo đơn hàng mới */
 exports.createOrder = async (req, res) => {
   try {
-    const {
-      user_id,
-      total_price,
-      shipping_method,
-      payment_method,
-      shipping_address,
-      orderDetails
-    } = req.body;
-
-    // Ép kiểu user_id
-    const order = await Order.create({
-      user_id: new mongoose.Types.ObjectId(user_id),
-      total_price,
-      shipping_method,
-      payment_method,
-      shipping_address
-    });
-
-    // Ép kiểu product_id trong từng chi tiết đơn hàng
-    const details = orderDetails.map(item => ({
-      order_id: order._id,
-      product_id: new mongoose.Types.ObjectId(item.product_id),
-      quantity: item.quantity,
-      price_each: item.price_each
-    }));
-
-    await OrderDetail.insertMany(details);
-
-    res.status(201).json({ message: 'Order created', order });
+    const order = await Order.create(req.body);
+    res.status(201).json(order);
   } catch (err) {
-    console.error(err); // Log chi tiết lỗi
+    res.status(400).json({ error: err.message });
+  }
+};
+
+/* Lấy tất cả đơn hàng */
+exports.getAllOrders = async (_req, res) => {
+  try {
+    const list = await Order.find()
+      .populate("user_id", "name email")
+      .populate("shipmethod_id", "name")
+      .populate("paymethod_id", "name");
+    res.json(list);
+  } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
 
-// Lấy toàn bộ đơn hàng + chi tiết
-exports.getOrders = async (req, res) => {
+/* Lấy đơn hàng theo ID */
+exports.getOrderById = async (req, res) => {
   try {
-    const orders = await Order.find().lean();
-
-    const results = await Promise.all(
-      orders.map(async (order) => {
-        const details = await OrderDetail.find({ order_id: order._id }).lean();
-        return { ...order, details };
-      })
-    );
-
-    res.json(results);
+    const order = await Order.findById(req.params.id)
+      .populate("user_id", "name email")
+      .populate("shipmethod_id", "name")
+      .populate("paymethod_id", "name");
+    if (!order) return res.status(404).json({ msg: "Không tìm thấy đơn hàng" });
+    res.json(order);
   } catch (err) {
-    console.error(err); // Log lỗi nếu có
+    res.status(500).json({ error: err.message });
+  }
+};
+
+/* Lấy đơn hàng của 1 user */
+exports.getOrdersByUser = async (req, res) => {
+  try {
+    const list = await Order.find({ user_id: req.params.userId });
+    res.json(list);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+/* Cập nhật đơn hàng */
+exports.updateOrder = async (req, res) => {
+  try {
+    const updated = await Order.findByIdAndUpdate(req.params.id, req.body, {
+      new: true,
+    });
+    if (!updated) return res.status(404).json({ msg: "Không tìm thấy đơn" });
+    res.json(updated);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+};
+
+/* Xoá đơn hàng */
+exports.deleteOrder = async (req, res) => {
+  try {
+    const deleted = await Order.findByIdAndDelete(req.params.id);
+    if (!deleted) return res.status(404).json({ msg: "Không tìm thấy đơn" });
+    res.json({ msg: "Đã xoá đơn hàng" });
+  } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };

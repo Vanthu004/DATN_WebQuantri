@@ -1,18 +1,21 @@
-require('dotenv').config();
-
+require('dotenv').config()
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
-
 // Routers
-const orderRoutes = require('./src/routers/orderRoutes');
-const methodRouter = require('./src/routers/methodRouter');
+const orderApi = require("./src/routers/orderRoutes");
 const userRouter = require('./src/routers/userRouter');
 const productRouter = require('./src/routers/productRouter');
 const categoryRouter = require('./src/routers/categoryRouter');
-const orderSHRouter = require('./src/routers/orderSHRouter');
 const reviewRoutes = require('./src/routers/reviewRoutes');
 const paymentRoutes = require('./src/routers/paymentRoutes');
+const productVariantApi = require("./src/routers/productVariantApi");
+const cartApi = require("./src/routers/cartApi");
+const cartItemApi = require("./src/routers/cartItemApi");
+const orderDetailRouter = require("./src/routers/orderDetailRouter");
+const orderStatusRouter = require("./src/routers/orderStatusHistoryRouter");
+const shippingRouter = require("./src/routers/shippingMethodRouter");
+const paymentRouter = require("./src/routers/paymentMethodRouter");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -33,19 +36,19 @@ app.use(express.json());
 
 // Routes
 app.use('/api/users', userRouter);
-app.use('/api/products', productRouter);
-app.use('/api/categories', categoryRouter);
-app.use('/api/orders', orderRoutes);
-app.use('/api/orderSH', orderSHRouter);
-app.use('/api/methods', methodRouter);
+app.use('/', productRouter);  
+app.use('/', categoryRouter);
+app.use("/api/orders", orderApi);
 app.use('/api/reviews', reviewRoutes);
 app.use('/api/payments', paymentRoutes);
-
-// Middleware xử lý lỗi
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({ message: 'Lỗi server', error: err.message });
-});
+app.use("/", productVariantApi);
+app.use("/", cartApi);
+app.use("/", cartItemApi);
+app.use("/api/order-details", orderDetailRouter);
+app.use("/",orderStatusRouter);
+app.use("/",shippingRouter);
+app.use(paymentRouter);
+// Route gốc hiển thị toàn bộ giỏ hàng + sản phẩm
 
 // Kết nối MongoDB Atlas
 mongoose.connect(process.env.MONGODB_URI)

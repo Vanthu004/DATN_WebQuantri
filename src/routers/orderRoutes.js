@@ -1,8 +1,23 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const orderController = require('../controllers/orderController');
+const orderCtrl = require("../controllers/orderController");
 
-router.post('/', orderController.createOrder);
-router.get('/', orderController.getOrders);
+// Tạo đơn
+router.post("/", orderCtrl.createOrder);
+
+// Lấy tất cả
+router.get("/", orderCtrl.getAllOrders);
+
+// Chi tiết
+router.get("/:id", orderCtrl.getOrderById);
+
+// Đơn của user
+router.get("/user/:userId", orderCtrl.getOrdersByUser);
+
+// Cập nhật
+router.put("/:id", orderCtrl.updateOrder);
+
+// Xoá
+router.delete("/:id", orderCtrl.deleteOrder);
 
 module.exports = router;
