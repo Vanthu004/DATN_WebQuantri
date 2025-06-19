@@ -30,7 +30,7 @@ mongoose.connect(process.env.MONGODB_URI)
 
 // Routes
 app.use("/api/users", userRouter);
-app.use("/api/products", productRouter); // ✅ Sử dụng router sản phẩm
+app.use("/api/products", productRouter); 
 app.use("/api/category", categoryRouter);
 app.use("/api/orderSH", orderSHRouter);
 // Middleware xử lý lỗi
