@@ -10,28 +10,35 @@ import { ToastContainer } from "react-toastify";
 import UpdateCategory from "./pages/categories/UpdateCategory";
 import AddProduct from "./pages/products/AddProduct";
 import UpdateProduct from "./pages/products/UpdateProduct";
+import RegisterPage from "./pages/auths/register";
+import Login from "./pages/auths/login";
+import PrivateRouter from "./hooks/PrivateRouter";
 
 function App() {
   return (
     <>
       <Routes>
-        <Route element={<LayoutAdmin />}>
-          <Route path="/" index element={<Dashboard />} />
+        {/* Private routes */}
+        <Route element={<PrivateRouter />}>
+          <Route element={<LayoutAdmin />}>
+            <Route path="/" index element={<Dashboard />} />
 
-          {/* Product Path*/}
-          <Route path="/products" element={<ListProduct />} />
-          <Route path="/products/add" element={<AddProduct />} />
-          <Route path="/products/update/:id" element={<UpdateProduct />} />
+            {/* Product Path*/}
+            <Route path="/products" element={<ListProduct />} />
+            <Route path="/products/add" element={<AddProduct />} />
+            <Route path="/products/update/:id" element={<UpdateProduct />} />
 
-          {/* Category Path */}
-          <Route path="/categories" element={<ListCategory />} />
-          <Route path="/categories/add" element={<AddCategory />} />
-          <Route path="/categories/update/:id" element={<UpdateCategory />} />
+            {/* Category Path */}
+            <Route path="/categories" element={<ListCategory />} />
+            <Route path="/categories/add" element={<AddCategory />} />
+            <Route path="/categories/update/:id" element={<UpdateCategory />} />
 
-          <Route path="" element />
-          <Route path="" element />
-          <Route path="" element />
+            {/* Các route khác cần đăng nhập có thể thêm ở đây */}
+          </Route>
         </Route>
+        {/* Public routes */}
+        <Route path="/register" element={<RegisterPage />} />
+        <Route path="/login" element={<Login />} />
         <Route path="*" element={<PageNotFound />} />
       </Routes>
       <ToastContainer position="top-right" autoClose={3000} />
