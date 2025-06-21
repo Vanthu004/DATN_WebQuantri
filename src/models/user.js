@@ -17,7 +17,7 @@ const userSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    enum: ['admin', 'user'], // bạn có thể điều chỉnh vai trò khác nếu cần
+    enum: ['admin','customer', 'user',], // bạn có thể điều chỉnh vai trò khác nếu cần
     default: 'user'
   },
   phone_number: {
@@ -42,4 +42,4 @@ const userSchema = new mongoose.Schema({
   } 
 });
 
-module.exports = mongoose.model("User", userSchema);
+module.exports = mongoose.models.User || mongoose.model("User", userSchema);

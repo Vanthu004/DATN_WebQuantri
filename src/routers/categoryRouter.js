@@ -1,20 +1,16 @@
-const express = require("express");
+const express = require('express');
 const router = express.Router();
-const catCtrl = require("../controllers/categoryController");
+const categoryCtrl = require('../controllers/categoryController');
 
-// Tạo danh mục
-router.post("/api/categories", catCtrl.createCategory);
+router
+  .route('/')
+  .post(categoryCtrl.createCategory)
+  .get(categoryCtrl.getCategories);
 
-// Lấy tất cả
-router.get("/api/categories", catCtrl.getAllCategories);
-
-// Theo ID
-router.get("/api/categories/:id", catCtrl.getCategoryById);
-
-// Cập nhật
-router.put("/api/categories/:id", catCtrl.updateCategory);
-
-// Xoá
-router.delete("/api/categories/:id", catCtrl.deleteCategory);
+router
+  .route('/:id')
+  .get(categoryCtrl.getCategoryById)
+  .put(categoryCtrl.updateCategory)
+  .delete(categoryCtrl.deleteCategory);
 
 module.exports = router;

@@ -6,7 +6,6 @@ import LayoutAdmin from "./components/layouts/LayoutAdmin";
 import ListProduct from "./pages/products/ListProduct";
 import ListCategory from "./pages/categories/ListCategory";
 import AddCategory from "./pages/categories/AddCategory";
-import { ToastContainer } from "react-toastify";
 import UpdateCategory from "./pages/categories/UpdateCategory";
 import AddProduct from "./pages/products/AddProduct";
 import UpdateProduct from "./pages/products/UpdateProduct";

@@ -19,6 +19,11 @@ const orderDetailSchema = new mongoose.Schema({
     type: Number,
     required: true,
   },
+   product_name: {
+    type: String,
+    required: true,
+    trim: true
+  },
 });
 
 module.exports = mongoose.model("OrderDetail", orderDetailSchema);
