@@ -11,10 +11,21 @@ const categorySchema = new mongoose.Schema({
     enum: ['active', 'inactive'],
     default: 'active'
   },
-  created_date: {
-    type: Date,
-    default: Date.now
-  }
-});
+ image_url: String,
+    sort_order: {
+      type: Number,
+      default: 0,
+    },
+    is_deleted: {
+      type: Boolean,
+      default: false,
+    },
+    created_date: {
+      type: Date,
+      default: Date.now,
+    },
+  },
+  { versionKey: false }
+);
 
-module.exports = mongoose.model("Category", categorySchema);
+module.exports = mongoose.model('Category', categorySchema);
