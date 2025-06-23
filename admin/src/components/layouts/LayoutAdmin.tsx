@@ -1,4 +1,4 @@
-import { Link, Outlet } from "react-router-dom";
+import { Link, Outlet, useNavigate, useLocation } from "react-router-dom";
 import {
   FaTachometerAlt,
   FaUser,
@@ -72,6 +72,14 @@ const menuItems = [
 ];
 
 const LayoutAdmin = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    navigate("/login");
+  };
+
   return (
     <div className="min-h-screen bg-[#f5f6fa]">
       {/* Header */}
@@ -88,7 +96,10 @@ const LayoutAdmin = () => {
         </div>
         <div className="flex items-center space-x-6">
           <span className="text-gray-600">admin1</span>
-          <button className="px-4 py-2 bg-[#ff5b2e] text-white rounded-lg hover:bg-[#e04a1e] transition-colors duration-200 text-sm font-medium">
+          <button
+            className="px-4 py-2 bg-[#ff5b2e] text-white rounded-lg hover:bg-[#e04a1e] transition-colors duration-200 text-sm font-medium"
+            onClick={handleLogout}
+          >
             Đăng xuất
           </button>
         </div>
