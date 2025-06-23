@@ -4,17 +4,28 @@ const Product = require("../models/product");
 /* Tạo sản phẩm mới */
 exports.createProduct = async (req, res) => {
   try {
-    const product = await Product.create(req.body);
+    // Tìm product_id lớn nhất hiện tại
+    const lastProduct = await Product.findOne({}).sort({ product_id: -1 });
+    let nextId = 1;
+    if (lastProduct && lastProduct.product_id) {
+      const match = lastProduct.product_id.match(/P(\d{3})/);
+      if (match) {
+        nextId = parseInt(match[1], 10) + 1;
+      }
+    }
+    const product_id = `P${nextId.toString().padStart(3, "0")}`;
+    const product = await Product.create({ ...req.body, product_id });
     res.status(201).json(product);
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
 };
 
-/* Lấy tất cả sản phẩm */
-exports.getAllProducts = async (_req, res) => {
+/* Lấy tất cả sản phẩm (chỉ lấy chưa bị xóa) */
+exports.getAllProducts = async (req, res) => {
+  const filter = req.query.showDeleted === "true" ? {} : { is_deleted: false };
   try {
-    const list = await Product.find().populate("category_id", "name");
+    const list = await Product.find(filter).populate("category_id");
     res.json(list);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -25,20 +36,23 @@ exports.getAllProducts = async (_req, res) => {
 exports.getProductById = async (req, res) => {
   try {
     const product = await Product.findById(req.params.id).populate(
-      "category_id",
-      "name"
+      "category_id"
     );
-    if (!product) return res.status(404).json({ msg: "Không tìm thấy sản phẩm" });
+    if (!product || product.is_deleted)
+      return res.status(404).json({ msg: "Không tìm thấy sản phẩm" });
     res.json(product);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
 
-/* Lấy sản phẩm theo danh mục */
+/* Lấy sản phẩm theo danh mục (chỉ lấy chưa bị xóa) */
 exports.getProductsByCategory = async (req, res) => {
   try {
-    const list = await Product.find({ category_id: req.params.categoryId });
+    const list = await Product.find({
+      category_id: req.params.categoryId,
+      is_deleted: false,
+    }).populate("category_id");
     res.json(list);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -48,24 +62,28 @@ exports.getProductsByCategory = async (req, res) => {
 /* Cập nhật sản phẩm */
 exports.updateProduct = async (req, res) => {
   try {
-    const updated = await Product.findByIdAndUpdate(
-      req.params.id,
-      req.body,
-      { new: true }
-    );
-    if (!updated) return res.status(404).json({ msg: "Không tìm thấy sản phẩm" });
+    const updated = await Product.findByIdAndUpdate(req.params.id, req.body, {
+      new: true,
+    });
+    if (!updated || updated.is_deleted)
+      return res.status(404).json({ msg: "Không tìm thấy sản phẩm" });
     res.json(updated);
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
 };
 
-/* Xoá sản phẩm */
+/* Xoá mềm sản phẩm */
 exports.deleteProduct = async (req, res) => {
   try {
-    const deleted = await Product.findByIdAndDelete(req.params.id);
-    if (!deleted) return res.status(404).json({ msg: "Không tìm thấy sản phẩm" });
-    res.json({ msg: "Đã xoá sản phẩm" });
+    const deleted = await Product.findByIdAndUpdate(
+      req.params.id,
+      { is_deleted: true },
+      { new: true }
+    );
+    if (!deleted)
+      return res.status(404).json({ msg: "Không tìm thấy sản phẩm" });
+    res.json({ msg: "Đã xoá (soft delete)", deleted });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

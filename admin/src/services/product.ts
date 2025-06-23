@@ -1,9 +1,11 @@
 import api from "../configs/api";
 import Product from "../interfaces/product";
 
-export const getAllProducts = async () => {
+export const getAllProducts = async (showDeleted = false) => {
   try {
-    const response = await api.get("/products");
+    const response = await api.get(
+      `/products${showDeleted ? "?showDeleted=true" : ""}`
+    );
     return response.data;
   } catch (error) {
     console.log(error);
@@ -29,12 +31,11 @@ export const getProductsByCategory = async (categoryId: string) => {
 };
 
 export const createProduct = async (product: {
-  product_id: string;
   name: string;
   description?: string;
   price: number;
   stock_quantity: number;
-  status?: string;
+  status?: "active" | "inactive" | "out_of_stock";
   image_url?: string;
   category_id: string;
 }) => {
@@ -46,7 +47,10 @@ export const createProduct = async (product: {
   }
 };
 
-export const updateProduct = async (id: string, product: Product) => {
+export const updateProduct = async (
+  id: string,
+  product: Partial<Omit<Product, "_id" | "createdAt" | "updatedAt">>
+) => {
   try {
     const response = await api.put(`/products/${id}`, product);
     return response.data;

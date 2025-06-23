@@ -18,12 +18,15 @@
   font-weight: bold;
 }
 
-.add-category-container input[type="text"] {
+.add-category-container input[type="text"],
+.add-category-container input[type="number"],
+.add-category-container select {
   width: 100%;
   padding: 8px;
   margin-bottom: 16px;
   border: 1px solid #ccc;
   border-radius: 4px;
+  font-size: 15px;
 }
 
 .add-category-container button {
@@ -39,4 +42,8 @@
 
 .add-category-container button:hover {
   background: #0056b3;
+}
+
+.add-category-container form > div {
+  margin-bottom: 12px;
 }

@@ -8,12 +8,11 @@ import { toast } from "react-toastify";
 
 const AddProduct = () => {
   const [form, setForm] = useState({
-    product_id: "",
     name: "",
     description: "",
     price: 0,
     stock_quantity: 0,
-    status: "active",
+    status: "active" as "active" | "inactive" | "out_of_stock",
     image_url: "",
     category_id: "",
   });
@@ -52,7 +51,6 @@ const AddProduct = () => {
       await createProduct(form);
       setSuccess("Thêm sản phẩm thành công!");
       setForm({
-        product_id: "",
         name: "",
         description: "",
         price: 0,
@@ -74,16 +72,6 @@ const AddProduct = () => {
     <div className="max-w-xl mx-auto bg-white p-8 rounded-lg shadow-md mt-8">
       <h2 className="text-2xl font-bold mb-6 text-center">Thêm sản phẩm</h2>
       <form onSubmit={handleSubmit} className="space-y-5">
-        <div>
-          <label className="block mb-1 font-medium">Mã sản phẩm:</label>
-          <input
-            name="product_id"
-            value={form.product_id}
-            onChange={handleChange}
-            required
-            className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
-          />
-        </div>
         <div>
           <label className="block mb-1 font-medium">Tên sản phẩm:</label>
           <input
