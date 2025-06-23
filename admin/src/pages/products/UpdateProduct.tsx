@@ -5,17 +5,16 @@ import { getAllCategories } from "../../services/category";
 import Category from "../../interfaces/category";
 import Product from "../../interfaces/product";
 import { toast } from "react-toastify";
-import "../../css/products/addProduct.css";
+import "../../css/categoryCss/updateCategory.css";
 
 const UpdateProduct = () => {
   const { id } = useParams<{ id: string }>();
   const [form, setForm] = useState({
-    product_id: "",
     name: "",
     description: "",
     price: 0,
     stock_quantity: 0,
-    status: "active",
+    status: "active" as "active" | "inactive" | "out_of_stock",
     image_url: "",
     category_id: "",
   });
@@ -30,7 +29,6 @@ const UpdateProduct = () => {
       try {
         const data = (await getProductById(id)) as Product;
         setForm({
-          product_id: data.product_id || "",
           name: data.name || "",
           description: data.description || "",
           price: data.price || 0,
@@ -75,7 +73,7 @@ const UpdateProduct = () => {
     setLoading(true);
     setError("");
     try {
-      await updateProduct(id, form as Product);
+      await updateProduct(id, form);
       toast.success("Cập nhật sản phẩm thành công!");
       navigate("/products");
     } catch (err) {
@@ -86,40 +84,29 @@ const UpdateProduct = () => {
   };
 
   return (
-    <div className="max-w-xl mx-auto bg-white p-8 rounded-lg shadow-md mt-8">
-      <h2 className="text-2xl font-bold mb-6 text-center">Cập nhật sản phẩm</h2>
-      <form onSubmit={handleSubmit} className="space-y-5">
+    <div className="update-category-container">
+      <h3>Cập nhật sản phẩm</h3>
+      <form onSubmit={handleSubmit}>
         <div>
-          <label className="block mb-1 font-medium">Mã sản phẩm:</label>
-          <input
-            name="product_id"
-            value={form.product_id}
-            onChange={handleChange}
-            required
-            className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
-          />
-        </div>
-        <div>
-          <label className="block mb-1 font-medium">Tên sản phẩm:</label>
+          <label>Tên sản phẩm</label>
           <input
             name="name"
             value={form.name}
             onChange={handleChange}
             required
-            className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+            type="text"
           />
         </div>
         <div>
-          <label className="block mb-1 font-medium">Mô tả:</label>
+          <label>Mô tả</label>
           <textarea
             name="description"
             value={form.description}
             onChange={handleChange}
-            className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
           />
         </div>
         <div>
-          <label className="block mb-1 font-medium">Giá:</label>
+          <label>Giá</label>
           <input
             type="number"
             name="price"
@@ -127,11 +114,10 @@ const UpdateProduct = () => {
             onChange={handleChange}
             required
             min={0}
-            className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
           />
         </div>
         <div>
-          <label className="block mb-1 font-medium">Số lượng kho:</label>
+          <label>Số lượng kho</label>
           <input
             type="number"
             name="stock_quantity"
@@ -139,39 +125,32 @@ const UpdateProduct = () => {
             onChange={handleChange}
             required
             min={0}
-            className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
           />
         </div>
         <div>
-          <label className="block mb-1 font-medium">Trạng thái:</label>
-          <select
-            name="status"
-            value={form.status}
-            onChange={handleChange}
-            className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
-          >
+          <label>Trạng thái</label>
+          <select name="status" value={form.status} onChange={handleChange}>
             <option value="active">Đang bán</option>
             <option value="inactive">Ngừng bán</option>
             <option value="out_of_stock">Hết hàng</option>
           </select>
         </div>
         <div>
-          <label className="block mb-1 font-medium">Ảnh (URL):</label>
+          <label>Ảnh (URL)</label>
           <input
             name="image_url"
             value={form.image_url}
             onChange={handleChange}
-            className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+            type="text"
           />
         </div>
         <div>
-          <label className="block mb-1 font-medium">Danh mục:</label>
+          <label>Danh mục</label>
           <select
             name="category_id"
             value={form.category_id}
             onChange={handleChange}
             required
-            className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
           >
             <option value={form.category_id}>
               {categories.find((cat) => cat._id === form.category_id)?.name ||
@@ -186,13 +165,18 @@ const UpdateProduct = () => {
               ))}
           </select>
         </div>
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded transition duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
-        >
-          {loading ? "Đang cập nhật..." : "Cập nhật sản phẩm"}
-        </button>
+        <div className="update-category-btn-group">
+          <button type="submit" disabled={loading}>
+            {loading ? "Đang cập nhật..." : "Cập nhật sản phẩm"}
+          </button>
+          <button
+            type="button"
+            className="back-btn"
+            onClick={() => navigate("/products")}
+          >
+            Quay lại
+          </button>
+        </div>
         {error && (
           <div className="text-red-600 text-center font-medium mt-2">
             {error}

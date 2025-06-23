@@ -3,10 +3,14 @@ import { useNavigate, useParams } from "react-router-dom";
 import { getCategoryById, updateCategory } from "../../services/category";
 import { toast } from "react-toastify";
 import Category from "../../interfaces/category";
+import "../../css/categoryCss/updateCategory.css";
 
 const UpdateCategory = () => {
   const { id } = useParams<{ id: string }>();
   const [name, setName] = useState("");
+  const [status, setStatus] = useState<"active" | "inactive">("active");
+  const [image_url, setImageUrl] = useState("");
+  const [sort_order, setSortOrder] = useState(0);
   const navigate = useNavigate();
   useEffect(() => {
     if (!id) return;
@@ -14,6 +18,9 @@ const UpdateCategory = () => {
       try {
         const response = (await getCategoryById(id)) as Category;
         setName(response.name);
+        setStatus(response.status);
+        setImageUrl(response.image_url || "");
+        setSortOrder(response.sort_order);
       } catch (error) {
         console.log(error);
       }
@@ -25,7 +32,7 @@ const UpdateCategory = () => {
     e.preventDefault();
     if (!id) return;
     try {
-      await updateCategory(id, { name });
+      await updateCategory(id, { name, status, image_url, sort_order });
       toast.success("Cập nhật thành công!");
       navigate("/categories");
     } catch (error) {
@@ -33,7 +40,7 @@ const UpdateCategory = () => {
     }
   };
   return (
-    <div className="add-category-container">
+    <div className="update-category-container">
       <h3>Cập nhật danh mục</h3>
       <form onSubmit={handleSubmit}>
         <div>
@@ -42,9 +49,47 @@ const UpdateCategory = () => {
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
+            required
           />
         </div>
-        <button type="submit">Xác nhận</button>
+        <div>
+          <label>Trạng thái</label>
+          <select
+            value={status}
+            onChange={(e) => setStatus(e.target.value as "active" | "inactive")}
+          >
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+          </select>
+        </div>
+        <div>
+          <label>Ảnh (URL)</label>
+          <input
+            type="text"
+            value={image_url}
+            onChange={(e) => setImageUrl(e.target.value)}
+            placeholder="https://..."
+          />
+        </div>
+        <div>
+          <label>Thứ tự hiển thị (sort_order)</label>
+          <input
+            type="number"
+            value={sort_order}
+            onChange={(e) => setSortOrder(Number(e.target.value))}
+            min={0}
+          />
+        </div>
+        <div className="update-category-btn-group">
+          <button type="submit">Xác nhận</button>
+          <button
+            type="button"
+            className="back-btn"
+            onClick={() => navigate("/categories")}
+          >
+            Quay lại
+          </button>
+        </div>
       </form>
     </div>
   );
