@@ -18,6 +18,7 @@ const shippingRouter = require("./src/routers/shippingMethodRouter");
 const paymentRouter = require("./src/routers/paymentMethodRouter");
 const statisticApi = require("./src/routers/statisticApi");
 const favoriteRouter = require("./src/routers/favoriteProductRouter");
+const authController = require('./src/controllers/authController');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -32,6 +33,9 @@ if (!process.env.JWT_SECRET) {
 app.use(cors());
 
 app.use(express.json());
+
+// Static file serving cho uploads
+app.use('/uploads', express.static('uploads'));
 
 // Routes
 app.use("/api/users", userRouter);
@@ -48,15 +52,16 @@ app.use("/", orderStatusRouter);
 app.use("/", shippingRouter);
 app.use(paymentRouter);
 app.use(favoriteRouter);
-// Route gốc hiển thị toàn bộ giỏ hàng + sản phẩm
+
+// Auth routes (forgot password)
+app.post('/api/forgot-password', authController.forgotPassword);
+app.post('/api/reset-password', authController.resetPassword);
 
 // Kết nối MongoDB Atlas
 mongoose
   .connect(process.env.MONGODB_URI)
   .then(() => console.log("✅ Đã kết nối MongoDB Atlas"))
   .catch((err) => console.error("❌ Lỗi kết nối MongoDB:", err));
-// Routes
-app.use("/api/users", userRouter);
 
 app.use("/", statisticApi);
 
