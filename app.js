@@ -5,7 +5,7 @@ const cors = require("cors");
 // Routers
 const orderApi = require("./src/routers/orderRoutes");
 const userRouter = require("./src/routers/userRouter");
-const productRouter = require("./src/routers/productRouter");
+const productRouter = require('./src/routers/productRouter');
 const categoryRouter = require("./src/routers/categoryRouter");
 const reviewRoutes = require("./src/routers/reviewRoutes");
 const paymentRoutes = require("./src/routers/paymentRoutes");
@@ -39,12 +39,12 @@ app.use('/uploads', express.static('uploads'));
 
 // Routes
 app.use("/api/users", userRouter);
-app.use("/", productRouter);
+app.use('/api/products', productRouter);
 app.use('/api/categories', categoryRouter);
 app.use("/api/orders", orderApi);
 app.use("/api/reviews", reviewRoutes);
 app.use("/api/payments", paymentRoutes);
-app.use("/", productVariantApi);
+app.use('/api/product-variants', productVariantApi);
 app.use("/", cartApi);
 app.use("/", cartItemApi);
 app.use("/api/order-details", orderDetailRouter);
