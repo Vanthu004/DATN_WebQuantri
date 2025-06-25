@@ -5,6 +5,7 @@ import Category from "../../interfaces/category";
 import "../../css/products/addProduct.css";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
+import { uploadImage } from "../../services/upload";
 
 const AddProduct = () => {
   const [form, setForm] = useState({
@@ -19,8 +20,9 @@ const AddProduct = () => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
   const navigate = useNavigate();
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string>("");
 
   useEffect(() => {
     getAllCategories().then((data) => {
@@ -42,14 +44,40 @@ const AddProduct = () => {
     }));
   };
 
+  const handleImageFileChange = async (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = e.target.files && e.target.files[0];
+    if (file) {
+      setImageFile(file);
+      setImagePreview(URL.createObjectURL(file));
+      setForm((prev) => ({ ...prev, image_url: "" })); // reset link nếu chọn file
+    }
+  };
+
+  const handleImageUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setForm((prev) => ({ ...prev, image_url: e.target.value }));
+    setImageFile(null);
+    setImagePreview(e.target.value);
+  };
+
+  const handleRemoveImage = () => {
+    setImageFile(null);
+    setImagePreview("");
+    setForm((prev) => ({ ...prev, image_url: "" }));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError("");
-    setSuccess("");
     try {
-      await createProduct(form);
-      setSuccess("Thêm sản phẩm thành công!");
+      let imageUrl = form.image_url;
+      if (imageFile) {
+        const uploadRes = (await uploadImage(imageFile)) as { url: string };
+        imageUrl = uploadRes.url;
+      }
+      await createProduct({ ...form, image_url: imageUrl });
       setForm({
         name: "",
         description: "",
@@ -59,6 +87,8 @@ const AddProduct = () => {
         image_url: "",
         category_id: "",
       });
+      setImageFile(null);
+      setImagePreview("");
       toast.success("Thêm sản phẩm thành công!");
       navigate("/products");
     } catch (err) {
@@ -69,30 +99,29 @@ const AddProduct = () => {
   };
 
   return (
-    <div className="max-w-xl mx-auto bg-white p-8 rounded-lg shadow-md mt-8">
-      <h2 className="text-2xl font-bold mb-6 text-center">Thêm sản phẩm</h2>
-      <form onSubmit={handleSubmit} className="space-y-5">
+    <div className="form-container">
+      <h2>Thêm sản phẩm</h2>
+      <form onSubmit={handleSubmit} className="add-product-form">
         <div>
-          <label className="block mb-1 font-medium">Tên sản phẩm:</label>
+          <label>Tên sản phẩm:</label>
           <input
+            type="text"
             name="name"
             value={form.name}
             onChange={handleChange}
             required
-            className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
           />
         </div>
         <div>
-          <label className="block mb-1 font-medium">Mô tả:</label>
+          <label>Mô tả:</label>
           <textarea
             name="description"
             value={form.description}
             onChange={handleChange}
-            className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
           />
         </div>
         <div>
-          <label className="block mb-1 font-medium">Giá:</label>
+          <label>Giá:</label>
           <input
             type="number"
             name="price"
@@ -100,11 +129,10 @@ const AddProduct = () => {
             onChange={handleChange}
             required
             min={0}
-            className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
           />
         </div>
         <div>
-          <label className="block mb-1 font-medium">Số lượng kho:</label>
+          <label>Số lượng kho:</label>
           <input
             type="number"
             name="stock_quantity"
@@ -112,39 +140,52 @@ const AddProduct = () => {
             onChange={handleChange}
             required
             min={0}
-            className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
           />
         </div>
         <div>
-          <label className="block mb-1 font-medium">Trạng thái:</label>
-          <select
-            name="status"
-            value={form.status}
-            onChange={handleChange}
-            className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
-          >
+          <label>Trạng thái:</label>
+          <select name="status" value={form.status} onChange={handleChange}>
             <option value="active">Đang bán</option>
             <option value="inactive">Ngừng bán</option>
             <option value="out_of_stock">Hết hàng</option>
           </select>
         </div>
-        <div>
-          <label className="block mb-1 font-medium">Ảnh (URL):</label>
+        <div className="image-upload-section">
+          <label>Ảnh sản phẩm:</label>
+          <input
+            type="file"
+            accept="image/*"
+            onChange={handleImageFileChange}
+          />
+          <span>Hoặc nhập link ảnh:</span>
           <input
             name="image_url"
+            type="text"
             value={form.image_url}
-            onChange={handleChange}
-            className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+            onChange={handleImageUrlChange}
+            placeholder="Dán link ảnh nếu có"
+            disabled={!!imageFile}
           />
+          {imagePreview && (
+            <div className="image-preview-container">
+              <img src={imagePreview} alt="Preview" />
+              <button
+                type="button"
+                onClick={handleRemoveImage}
+                className="delete-image-btn"
+              >
+                Xóa ảnh
+              </button>
+            </div>
+          )}
         </div>
         <div>
-          <label className="block mb-1 font-medium">Danh mục:</label>
+          <label>Danh mục:</label>
           <select
             name="category_id"
             value={form.category_id}
             onChange={handleChange}
             required
-            className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
           >
             <option value="">-- Chọn danh mục --</option>
             {categories.map((cat) => (
@@ -154,23 +195,10 @@ const AddProduct = () => {
             ))}
           </select>
         </div>
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded transition duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
-        >
+        <button type="submit" disabled={loading} className="submit-btn">
           {loading ? "Đang thêm..." : "Thêm sản phẩm"}
         </button>
-        {error && (
-          <div className="text-red-600 text-center font-medium mt-2">
-            {error}
-          </div>
-        )}
-        {success && (
-          <div className="text-green-600 text-center font-medium mt-2">
-            {success}
-          </div>
-        )}
+        {error && <div className="error-message">{error}</div>}
       </form>
     </div>
   );
