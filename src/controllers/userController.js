@@ -5,7 +5,7 @@ const jwt = require("jsonwebtoken");
 // Lấy tất cả users (không lấy user đã xóa nếu có is_deleted)
 exports.getAllUsers = async (req, res) => {
   try {
-    const users = await User.find().select("-password");
+    const users = await User.find().select("-password").populate("avatar");
     res.status(200).json(users);
   } catch (error) {
     res.status(500).json({ message: "Lỗi server", error: error.message });
@@ -15,7 +15,9 @@ exports.getAllUsers = async (req, res) => {
 // Lấy user theo ID
 exports.getUserById = async (req, res) => {
   try {
-    const user = await User.findById(req.params.id).select("-password");
+    const user = await User.findById(req.params.id)
+      .select("-password")
+      .populate("avatar");
     if (!user) {
       return res.status(404).json({ message: "Không tìm thấy user" });
     }
@@ -36,6 +38,8 @@ exports.createUser = async (req, res) => {
       role,
       phone_number,
       address,
+      avatar,
+      avata_url,
     } = req.body;
     // Kiểm tra password_confirm
     if (password !== password_confirm) {
@@ -55,6 +59,8 @@ exports.createUser = async (req, res) => {
       role,
       phone_number,
       address,
+      avatar: avatar || null,
+      avata_url: avata_url || "",
     });
     await user.save();
     // Tạo token
@@ -65,9 +71,12 @@ exports.createUser = async (req, res) => {
         expiresIn: "1d",
       }
     );
+    const populated = await User.findById(user._id)
+      .select("-password")
+      .populate("avatar");
     res.status(201).json({
       message: "Tạo user thành công",
-      user: { ...user._doc, password: undefined },
+      user: populated,
       token,
     });
   } catch (error) {
@@ -78,7 +87,7 @@ exports.createUser = async (req, res) => {
 // Cập nhật user
 exports.updateUser = async (req, res) => {
   try {
-    const { password, ...updateData } = req.body;
+    const { password, avatar, avata_url, ...updateData } = req.body;
 
     // Nếu có password thì mã hóa
     if (password) {
@@ -87,9 +96,17 @@ exports.updateUser = async (req, res) => {
 
     const user = await User.findByIdAndUpdate(
       req.params.id,
-      { $set: updateData },
+      {
+        $set: {
+          ...updateData,
+          avatar: avatar || null,
+          avata_url: avata_url || "",
+        },
+      },
       { new: true, runValidators: true }
-    ).select("-password");
+    )
+      .select("-password")
+      .populate("avatar");
 
     if (!user) {
       return res.status(404).json({ message: "Không tìm thấy user" });
@@ -109,7 +126,9 @@ exports.blockUser = async (req, res) => {
       req.params.id,
       { is_blocked: block },
       { new: true }
-    ).select("-password");
+    )
+      .select("-password")
+      .populate("avatar");
     if (!user) {
       return res.status(404).json({ message: "Không tìm thấy user" });
     }
@@ -139,7 +158,7 @@ exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email }).populate("avatar");
     if (!user) {
       return res
         .status(401)

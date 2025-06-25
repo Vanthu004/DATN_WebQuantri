@@ -18,6 +18,7 @@ const shippingRouter = require("./src/routers/shippingMethodRouter");
 const paymentRouter = require("./src/routers/paymentMethodRouter");
 const statisticApi = require("./src/routers/statisticApi");
 const favoriteRouter = require("./src/routers/favoriteProductRouter");
+const uploadRouter = require("./src/routers/uploadRouter");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -36,7 +37,7 @@ app.use(express.json());
 // Routes
 app.use("/api/users", userRouter);
 app.use("/", productRouter);
-app.use('/api/categories', categoryRouter);
+app.use("/api/categories", categoryRouter);
 app.use("/api/orders", orderApi);
 app.use("/api/reviews", reviewRoutes);
 app.use("/api/payments", paymentRoutes);
@@ -48,6 +49,7 @@ app.use("/", orderStatusRouter);
 app.use("/", shippingRouter);
 app.use(paymentRouter);
 app.use(favoriteRouter);
+app.use("/api", uploadRouter);
 // Route gốc hiển thị toàn bộ giỏ hàng + sản phẩm
 
 // Kết nối MongoDB Atlas
