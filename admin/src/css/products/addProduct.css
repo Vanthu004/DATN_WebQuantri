@@ -1,0 +1,14 @@
+/* Custom bổ sung cho AddProduct nếu muốn ghi đè tailwind */
+.add-product-form input:focus,
+.add-product-form select:focus,
+.add-product-form textarea:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px #2563eb33;
+  border-color: #2563eb;
+}
+
+@media (max-width: 500px) {
+  .add-product-form {
+    padding: 1rem !important;
+  }
+}
