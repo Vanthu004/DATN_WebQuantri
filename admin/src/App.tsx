@@ -14,6 +14,7 @@ import { ToastContainer } from "react-toastify";
 import RegisterPage from "./pages/auths/Register";
 import Login from "./pages/auths/Login";
 import ListUser from "./pages/users/ListUser";
+import Setting from "./pages/settings/Setting";
 
 function App() {
   return (
@@ -36,6 +37,8 @@ function App() {
 
             {/* User Path */}
             <Route path="/users" element={<ListUser />} />
+
+            <Route path="/setting" element={<Setting />} />
           </Route>
         </Route>
         {/* Public path */}
