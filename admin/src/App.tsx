@@ -9,9 +9,10 @@ import AddCategory from "./pages/categories/AddCategory";
 import UpdateCategory from "./pages/categories/UpdateCategory";
 import AddProduct from "./pages/products/AddProduct";
 import UpdateProduct from "./pages/products/UpdateProduct";
-import RegisterPage from "./pages/auths/register";
-import Login from "./pages/auths/login";
 import PrivateRouter from "./hooks/PrivateRouter";
+import { ToastContainer } from "react-toastify";
+import RegisterPage from "./pages/auths/Register";
+import Login from "./pages/auths/Login";
 
 function App() {
   return (
