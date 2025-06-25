@@ -1,0 +1,42 @@
+.add-category-container {
+  max-width: 400px;
+  margin: 40px auto;
+  padding: 24px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.add-category-container h3 {
+  margin-bottom: 16px;
+  text-align: center;
+}
+
+.add-category-container label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: bold;
+}
+
+.add-category-container input[type="text"] {
+  width: 100%;
+  padding: 8px;
+  margin-bottom: 16px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.add-category-container button {
+  width: 100%;
+  padding: 10px;
+  background: #007bff;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.add-category-container button:hover {
+  background: #0056b3;
+}

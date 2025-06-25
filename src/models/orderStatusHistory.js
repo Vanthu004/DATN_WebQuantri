@@ -3,21 +3,20 @@ const mongoose = require("mongoose");
 const orderStatusHistorySchema = new mongoose.Schema({
   order_id: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Order', 
+    ref: "Order",
     required: true
   },
   status: {
     type: String,
-    enum: ['pending', 'processing', 'shipped', 'delivered', 'cancelled'],
     required: true
   },
-  updated_at: {
+  update_at: {
     type: Date,
     default: Date.now
   },
-  updated_by: {
+  update_by: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
+    ref: "User", // nếu bạn lưu theo người dùng cập nhật trạng thái
     required: true
   }
 });
