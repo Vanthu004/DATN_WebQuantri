@@ -3,58 +3,67 @@ const EmailVerificationToken = require("../models/EmailVerificationToken");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const nodemailer = require("nodemailer");
-const multer = require("multer");
-const path = require("path");
+
 // Hàm tạo transporter email
 const createEmailTransporter = () => {
+  // Kiểm tra các biến môi trường cần thiết
+  if (!process.env.EMAIL_USERNAME || !process.env.EMAIL_PASSWORD) {
+    throw new Error("EMAIL_USERNAME và EMAIL_PASSWORD phải được cấu hình trong file .env");
+  }
+
   return nodemailer.createTransport({
-    host: "smtp.gmail.com",
-    port: 465,
-    secure: true,
+    service: "gmail", // Sử dụng service thay vì host/port
     auth: {
       user: process.env.EMAIL_USERNAME,
-      pass: process.env.EMAIL_PASSWORD,
+      pass: process.env.EMAIL_PASSWORD, // Phải là App Password, không phải password thường
     },
   });
 };
-// Cấu hình multer cho upload file
-const storage = multer.memoryStorage(); // Lưu ảnh vào memory buffer
 
-const upload = multer({
-  storage: storage,
-  limits: {
-    fileSize: 5 * 1024 * 1024, // 5MB
-  },
-  fileFilter: function (req, file, cb) {
-    if (file.mimetype.startsWith("image/")) {
-      cb(null, true);
-    } else {
-      cb(new Error("Chỉ cho phép upload file ảnh!"), false);
-    }
-  },
-});
 // Hàm gửi email xác nhận OTP
 const sendVerificationEmail = async (email, otp) => {
-  const transporter = createEmailTransporter();
+  try {
+    const transporter = createEmailTransporter();
 
-  await transporter.sendMail({
-    from: `"Swear Support" <${process.env.EMAIL_USERNAME}>`,
-    to: email,
-    subject: "Mã xác nhận đăng ký tài khoản",
-    html: `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2 style="color: #333;">Xác nhận đăng ký tài khoản</h2>
-        <p>Xin chào,</p>
-        <p>Cảm ơn bạn đã đăng ký tài khoản. Vui lòng nhập mã OTP bên dưới để xác nhận email của bạn:</p>
-        <div style="background-color: #f4f4f4; padding: 20px; text-align: center; margin: 20px 0;">
-          <h1 style="color: #007bff; font-size: 32px; margin: 0;">${otp}</h1>
+    const mailOptions = {
+      from: `"Swear Support" <${process.env.EMAIL_USERNAME}>`,
+      to: email,
+      subject: "Mã xác nhận đăng ký tài khoản",
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #333;">Xác nhận đăng ký tài khoản</h2>
+          <p>Xin chào,</p>
+          <p>Cảm ơn bạn đã đăng ký tài khoản. Vui lòng nhập mã OTP bên dưới để xác nhận email của bạn:</p>
+          <div style="background-color: #f4f4f4; padding: 20px; text-align: center; margin: 20px 0;">
+            <h1 style="color: #007bff; font-size: 32px; margin: 0;">${otp}</h1>
+          </div>
+          <p><strong>Lưu ý:</strong> Mã OTP này sẽ hết hạn sau 10 phút.</p>
+          <p>Nếu bạn không đăng ký tài khoản này, vui lòng bỏ qua email này.</p>
+          <p>Trân trọng,<br>Đội ngũ Swear</p>
         </div>
-        <p><strong>Lưu ý:</strong> Mã OTP này sẽ hết hạn sau 10 phút.</p>
-        <p>Nếu bạn không đăng ký tài khoản này, vui lòng bỏ qua email này.</p>
-        <p>Trân trọng,<br>Đội ngũ Swear</p>
-      </div>
-    `,
-  });
+      `,
+    };
+
+    const info = await transporter.sendMail(mailOptions);
+    console.log("✅ Email sent successfully:", info.messageId);
+    return true;
+  } catch (error) {
+    console.error("❌ Lỗi gửi email:", error.message);
+    
+    // Xử lý các lỗi cụ thể
+    if (error.code === 'EAUTH') {
+      console.error("🔐 Lỗi xác thực email. Vui lòng kiểm tra:");
+      console.error("   - EMAIL_USERNAME trong file .env");
+      console.error("   - EMAIL_PASSWORD phải là App Password (không phải password thường)");
+      console.error("   - Bật 2FA cho Gmail và tạo App Password");
+    } else if (error.code === 'ECONNECTION') {
+      console.error("🌐 Lỗi kết nối email server");
+    } else {
+      console.error("📧 Lỗi gửi email khác:", error);
+    }
+    
+    return false;
+  }
 };
 
 // Lấy tất cả users (không lấy user đã xóa nếu có is_deleted)
@@ -88,7 +97,8 @@ exports.createUser = async (req, res) => {
     const {
       email,
       password,
-      password_confirm,
+      confirmPassword,
+      name,
       role,
       phone_number,
       address,
@@ -96,7 +106,7 @@ exports.createUser = async (req, res) => {
       avata_url,
     } = req.body;
     // Kiểm tra password_confirm
-    if (password !== password_confirm) {
+    if (password !== confirmPassword) {
       return res.status(400).json({ message: "Mật khẩu xác nhận không khớp" });
     }
     // Kiểm tra email đã tồn tại
@@ -134,15 +144,13 @@ exports.createUser = async (req, res) => {
     });
 
     // Gửi email xác nhận
-    try {
-      await sendVerificationEmail(email, verificationOtp);
-    } catch (emailError) {
-      console.error("❌ Lỗi gửi email xác nhận:", emailError);
-      // Vẫn tạo user thành công nhưng thông báo lỗi email
+    const emailSent = await sendVerificationEmail(email, verificationOtp);
+    
+    if (!emailSent) {
+      console.warn("⚠️ Không thể gửi email xác nhận, nhưng user vẫn được tạo thành công");
     }
 
     // Tạo token
-
     const token = jwt.sign(
       { userId: user._id, role: user.role },
       process.env.JWT_SECRET,
@@ -153,10 +161,16 @@ exports.createUser = async (req, res) => {
     const populated = await User.findById(user._id)
       .select("-password")
       .populate("avatar");
+    
+    const responseMessage = emailSent 
+      ? "Tạo user thành công và đã gửi email xác nhận"
+      : "Tạo user thành công nhưng không thể gửi email xác nhận. Vui lòng kiểm tra cấu hình email.";
+    
     res.status(201).json({
-      message: "Tạo user thành công",
+      message: responseMessage,
       user: populated,
       token,
+      emailSent: emailSent
     });
   } catch (error) {
     res.status(500).json({ message: "Lỗi server", error: error.message });
@@ -166,7 +180,7 @@ exports.createUser = async (req, res) => {
 exports.updateProfile = async (req, res) => {
   try {
     const userId = req.user.userId;
-    const { name, phone_number, email, gender, address } = req.body;
+    const { name, phone_number, email, gender, address, avatar_url } = req.body;
 
     // Validation cơ bản
     if (!name || !email) {
@@ -239,33 +253,9 @@ exports.updateProfile = async (req, res) => {
       updateData.gender = gender;
     }
 
-    // Xử lý upload ảnh
-    if (req.file) {
-      // Kiểm tra kích thước file (5MB)
-      if (req.file.size > 5 * 1024 * 1024) {
-        return res.status(400).json({
-          message: "File ảnh không được lớn hơn 5MB",
-        });
-      }
-
-      // Kiểm tra định dạng file
-      const allowedMimeTypes = [
-        "image/jpeg",
-        "image/jpg",
-        "image/png",
-        "image/gif",
-      ];
-      if (!allowedMimeTypes.includes(req.file.mimetype)) {
-        return res.status(400).json({
-          message: "Chỉ cho phép upload file ảnh (JPEG, JPG, PNG, GIF)",
-        });
-      }
-
-      // Chuyển đổi ảnh thành Base64
-      const base64Image = `data:${
-        req.file.mimetype
-      };base64,${req.file.buffer.toString("base64")}`;
-      updateData.avata_url = base64Image;
+    // Cập nhật avatar_url nếu có
+    if (avatar_url) {
+      updateData.avata_url = avatar_url;
     }
 
     // Cập nhật user
@@ -485,5 +475,49 @@ exports.getAvatar = async (req, res) => {
   }
 };
 
-// Middleware để xử lý upload file
-exports.uploadAvatar = upload.single("avata_url");
+// Cập nhật avatar cho user
+exports.updateAvatar = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const { avatarId } = req.body;
+
+    if (!avatarId) {
+      return res.status(400).json({
+        message: "Vui lòng cung cấp ID của avatar",
+      });
+    }
+
+    // Kiểm tra xem upload có tồn tại không
+    const Upload = require("../models/uploadModel");
+    const upload = await Upload.findById(avatarId);
+    if (!upload) {
+      return res.status(404).json({
+        message: "Không tìm thấy avatar",
+      });
+    }
+
+    // Cập nhật user với avatar mới
+    const user = await User.findByIdAndUpdate(
+      userId,
+      { 
+        avatar: avatarId,
+        avata_url: upload.url 
+      },
+      { new: true, runValidators: true }
+    )
+      .select("-password")
+      .populate("avatar");
+
+    if (!user) {
+      return res.status(404).json({ message: "Không tìm thấy user" });
+    }
+
+    res.status(200).json({
+      message: "Cập nhật avatar thành công",
+      user,
+    });
+  } catch (error) {
+    console.error("Update avatar error:", error);
+    res.status(500).json({ message: "Lỗi server", error: error.message });
+  }
+};

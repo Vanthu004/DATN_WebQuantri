@@ -53,6 +53,14 @@ const productSchema = new mongoose.Schema({
     type: Boolean,
     default: false,
   },
+    created_date: {
+    type: Date,
+    default: Date.now
+  },
+  views: {
+    type: Number,
+    default: 0
+  },
 });
 
 module.exports = mongoose.model("Product", productSchema);
