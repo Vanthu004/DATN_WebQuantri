@@ -25,6 +25,10 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: false,
     },
+    avatar: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Upload",
+    },
     avata_url: {
       type: String,
       default: "",
