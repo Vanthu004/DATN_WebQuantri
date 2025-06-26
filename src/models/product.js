@@ -35,6 +35,13 @@ const productSchema = new mongoose.Schema(
       ref: "Category",
       required: true,
     },
+    images: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Upload",
+      },
+    ],
+    default: [],
     image_url: {
       type: String,
       default: "",

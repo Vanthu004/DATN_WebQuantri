@@ -99,10 +99,14 @@ const ListCategory = () => {
                   )}
                 </td>
                 <td className="px-4 py-2 border-b">
-                  {new Date(category.createdAt).toLocaleString()}
+                  {category.createdAt
+                    ? new Date(category.createdAt).toLocaleString()
+                    : ""}
                 </td>
                 <td className="px-4 py-2 border-b">
-                  {new Date(category.updatedAt).toLocaleString()}
+                  {category.updatedAt
+                    ? new Date(category.updatedAt).toLocaleString()
+                    : ""}
                 </td>
                 <td className="px-4 py-2 border-b">
                   <button
