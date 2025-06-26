@@ -1,6 +1,40 @@
 // src/controllers/productController.js
 const Product = require("../models/product");
 
+// Escape regex function
+function escapeRegex(text) {
+  return text.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&');
+}
+
+exports.searchProducts = async (req, res) => {
+  try {
+    let { keyword = '', page = 1, limit = 10 } = req.query;
+    page = parseInt(page);
+    limit = parseInt(limit);
+
+    if (!keyword.trim()) {
+      return res.status(400).json({ error: "Vui lòng nhập từ khóa tìm kiếm" });
+    }
+
+    const regex = new RegExp(escapeRegex(keyword), "i");
+    const filter = { name: { $regex: regex }, is_deleted: false };
+
+    const total = await Product.countDocuments(filter);
+    const products = await Product.find(filter)
+      .skip((page - 1) * limit)
+      .limit(limit);
+
+    res.json({
+      total,
+      page,
+      limit,
+      products
+    });
+  } catch (err) {
+    res.status(500).json({ error: "Lỗi khi tìm kiếm sản phẩm" });
+  }
+};
+
 /* Tạo sản phẩm mới */
 exports.createProduct = async (req, res) => {
   try {
@@ -105,5 +139,229 @@ exports.deleteProduct = async (req, res) => {
     res.json({ msg: "Đã xoá (soft delete)", deleted });
   } catch (err) {
     res.status(500).json({ error: err.message });
+  }
+};
+
+/* 🔥 Bán chạy nhất (Best Sellers) */
+exports.getBestSellers = async (req, res) => {
+  try {
+    const limit = parseInt(req.query.limit) || 10;
+    const bestSellers = await Product.find({ status: 'active' })
+      .sort({ sold_quantity: -1 })
+      .limit(limit)
+      .select("name price image_url sold_quantity category_id")
+      .populate("category_id", "name");
+    
+    res.json({
+      success: true,
+      data: bestSellers,
+      message: "Lấy danh sách sản phẩm bán chạy thành công"
+    });
+  } catch (err) {
+    res.status(500).json({ 
+      success: false,
+      error: err.message,
+      message: "Lỗi khi lấy danh sách sản phẩm bán chạy"
+    });
+  }
+};
+
+/* 🆕 Mới nhất (Newest Products) */
+exports.getNewestProducts = async (req, res) => {
+  try {
+    const limit = parseInt(req.query.limit) || 10;
+    const newestProducts = await Product.find({ status: 'active' })
+      .sort({ created_date: -1 })
+      .limit(limit)
+      .select("name price image_url created_date category_id")
+      .populate("category_id", "name");
+    
+    res.json({
+      success: true,
+      data: newestProducts,
+      message: "Lấy danh sách sản phẩm mới nhất thành công"
+    });
+  } catch (err) {
+    res.status(500).json({ 
+      success: false,
+      error: err.message,
+      message: "Lỗi khi lấy danh sách sản phẩm mới nhất"
+    });
+  }
+};
+
+/* ⭐ Phổ biến nhất (Most Popular) */
+exports.getPopularProducts = async (req, res) => {
+  try {
+    const limit = parseInt(req.query.limit) || 10;
+    
+    // Sử dụng aggregation để tính popularity_score
+    const popularProducts = await Product.aggregate([
+      {
+        $addFields: {
+          popularity_score: {
+            $add: [
+              { $multiply: ['$sold_quantity', 3] }, // Trọng số cao hơn cho số lượng bán
+              { $multiply: ['$views', 1] }, // Trọng số thấp hơn cho lượt xem
+            ]
+          }
+        }
+      },
+      { $match: { status: 'active' } },
+      { $sort: { popularity_score: -1 } },
+      { $limit: limit },
+      {
+        $lookup: {
+          from: 'categories',
+          localField: 'category_id',
+          foreignField: '_id',
+          as: 'category'
+        }
+      },
+      {
+        $unwind: '$category'
+      },
+      {
+        $project: {
+          name: 1,
+          price: 1,
+          image_url: 1,
+          sold_quantity: 1,
+          views: 1,
+          popularity_score: 1,
+          'category_id': '$category._id',
+          'category_name': '$category.name'
+        }
+      }
+    ]);
+    
+    res.json({
+      success: true,
+      data: popularProducts,
+      message: "Lấy danh sách sản phẩm phổ biến thành công"
+    });
+  } catch (err) {
+    res.status(500).json({ 
+      success: false,
+      error: err.message,
+      message: "Lỗi khi lấy danh sách sản phẩm phổ biến"
+    });
+  }
+};
+
+/* Tăng lượt xem sản phẩm */
+exports.incrementViews = async (req, res) => {
+  try {
+    const productId = req.params.id;
+    const updated = await Product.findByIdAndUpdate(
+      productId,
+      { $inc: { views: 1 } },
+      { new: true }
+    );
+    
+    if (!updated) {
+      return res.status(404).json({ 
+        success: false,
+        message: "Không tìm thấy sản phẩm" 
+      });
+    }
+    
+    res.json({
+      success: true,
+      data: { views: updated.views },
+      message: "Đã tăng lượt xem sản phẩm"
+    });
+  } catch (err) {
+    res.status(500).json({ 
+      success: false,
+      error: err.message,
+      message: "Lỗi khi tăng lượt xem sản phẩm"
+    });
+  }
+};
+
+/* 🏠 Dữ liệu tổng hợp cho màn hình Home */
+exports.getHomeData = async (req, res) => {
+  try {
+    const limit = parseInt(req.query.limit) || 10;
+    
+    // Lấy sản phẩm bán chạy nhất
+    const bestSellers = await Product.find({ status: 'active' })
+      .sort({ sold_quantity: -1 })
+      .limit(limit)
+      .select("name price image_url sold_quantity category_id")
+      .populate("category_id", "name");
+    
+    // Lấy sản phẩm mới nhất
+    const newestProducts = await Product.find({ status: 'active' })
+      .sort({ created_date: -1 })
+      .limit(limit)
+      .select("name price image_url created_date category_id")
+      .populate("category_id", "name");
+    
+    // Lấy sản phẩm phổ biến nhất
+    const popularProducts = await Product.aggregate([
+      {
+        $addFields: {
+          popularity_score: {
+            $add: [
+              { $multiply: ['$sold_quantity', 3] },
+              { $multiply: ['$views', 1] },
+            ]
+          }
+        }
+      },
+      { $match: { status: 'active' } },
+      { $sort: { popularity_score: -1 } },
+      { $limit: limit },
+      {
+        $lookup: {
+          from: 'categories',
+          localField: 'category_id',
+          foreignField: '_id',
+          as: 'category'
+        }
+      },
+      {
+        $unwind: '$category'
+      },
+      {
+        $project: {
+          name: 1,
+          price: 1,
+          image_url: 1,
+          sold_quantity: 1,
+          views: 1,
+          popularity_score: 1,
+          'category_id': '$category._id',
+          'category_name': '$category.name'
+        }
+      }
+    ]);
+    
+    res.json({
+      success: true,
+      data: {
+        bestSellers: {
+          title: "🔥 Bán chạy nhất",
+          products: bestSellers
+        },
+        newestProducts: {
+          title: "🆕 Mới nhất",
+          products: newestProducts
+        },
+        popularProducts: {
+          title: "⭐ Phổ biến nhất",
+          products: popularProducts
+        }
+      },
+      message: "Lấy dữ liệu màn hình home thành công"
+    });
+  } catch (err) {
+    res.status(500).json({ 
+      success: false,
+      error: err.message,
+      message: "Lỗi khi lấy dữ liệu màn hình home"
+    });
   }
 };
