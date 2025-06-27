@@ -13,7 +13,12 @@ router.post("/reset-password", authController.resetPassword);
 router.post("/send-verification-email", authController.sendVerificationEmail);
 router.post("/verify-email", authController.verifyEmail);
 
-// Protected routes (yêu cầu xác thực)
+// Protected routes với tên cụ thể (phải đặt trước routes có parameter)
+router.put("/update-profile", authMiddleware, userController.updateProfile);
+router.put("/update-avatar", authMiddleware, userController.updateAvatar);
+router.put("/change-password", authMiddleware, userController.changePassword);
+
+// Protected routes (yêu cầu xác thực) - routes có parameter
 router.get("/", authMiddleware, userController.getAllUsers);
 router.get("/avatar/:id", userController.getAvatar);
 
@@ -35,6 +40,7 @@ router.put(
 );
 
 router.put("/change-password", authMiddleware, userController.changePassword);
+
 router.get("/:id", authMiddleware, userController.getUserById);
 router.put("/:id", authMiddleware, userController.updateUser);
 router.delete("/:id", authMiddleware, userController.deleteUser);
