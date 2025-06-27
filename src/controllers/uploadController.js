@@ -3,6 +3,7 @@ const { S3Client, PutObjectCommand } = require("@aws-sdk/client-s3");
 const multer = require("multer");
 const crypto = require("crypto");
 const path = require("path");
+
 const Upload = require("../models/uploadModel");
 require("dotenv").config();
 
@@ -38,13 +39,13 @@ exports.uploadImage = [
       if (!req.file) {
         return res.status(400).json({ message: "No file uploaded" });
       }
-
       // Tạo tên file ngẫu nhiên
       const fileExt = path.extname(req.file.originalname);
       const fileName = crypto.randomBytes(16).toString("hex") + fileExt;
 
       // Upload lên S3
       const command = new PutObjectCommand({
+
         Bucket: process.env.AWS_BUCKET_NAME || "datn2",
         Key: fileName,
         Body: req.file.buffer,
