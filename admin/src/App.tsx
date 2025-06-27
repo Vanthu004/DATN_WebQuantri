@@ -15,6 +15,7 @@ import RegisterPage from "./pages/auths/Register";
 import Login from "./pages/auths/Login";
 import ListUser from "./pages/users/ListUser";
 import Setting from "./pages/settings/Setting";
+import OrderPage from "./pages/orders/Order";
 
 function App() {
   return (
@@ -38,6 +39,8 @@ function App() {
             {/* User Path */}
             <Route path="/users" element={<ListUser />} />
 
+            {/* Order Path */}
+            <Route path="/orders" element={<OrderPage />} />
             <Route path="/setting" element={<Setting />} />
           </Route>
         </Route>
