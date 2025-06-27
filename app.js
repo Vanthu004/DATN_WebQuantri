@@ -38,7 +38,7 @@ const authController = require('./src/controllers/authController');
 // ========== ROUTE ĐIỂM VÀO ==========
 app.use("/api/users", userRouter);
 app.use("/api/products", productRouter);
-app.use("/api/categories", categoryRouter); // hợp nhất singular/plural
+app.use("/api/categories", categoryRouter); 
 app.use("/api/orders", orderApi);
 app.use("/api/order-details", orderDetailRouter);
 app.use("/api/order-status-history", orderSHRouter);
