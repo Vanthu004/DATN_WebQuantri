@@ -1,55 +1,70 @@
 import api from "../configs/api";
 import Product from "../interfaces/product";
 
-export const getAllProducts = async () => {
+export const getAllProducts = async (
+  showDeleted = false
+): Promise<Product[]> => {
   try {
-    const response = await api.get("/products");
-    return response.data;
+    const response = await api.get(
+      `/products${showDeleted ? "?showDeleted=true" : ""}`
+    );
+    return response.data as Product[];
   } catch (error) {
     console.log(error);
+    return [];
   }
 };
 
-export const getProductById = async (id: string) => {
+export const getProductById = async (
+  id: string
+): Promise<Product | undefined> => {
   try {
     const response = await api.get(`/products/${id}`);
-    return response.data;
+    return response.data as Product;
   } catch (error) {
     console.log(error);
   }
 };
 
-export const getProductsByCategory = async (categoryId: string) => {
+export const getProductsByCategory = async (
+  categoryId: string
+): Promise<Product[]> => {
   try {
     const response = await api.get(`/products/category/${categoryId}`);
-    return response.data;
+    return response.data as Product[];
   } catch (error) {
     console.log(error);
+    return [];
   }
 };
 
 export const createProduct = async (product: {
-  product_id: string;
   name: string;
   description?: string;
   price: number;
   stock_quantity: number;
-  status?: string;
+  status?: "active" | "inactive" | "out_of_stock";
   image_url?: string;
+  images?: string[];
   category_id: string;
-}) => {
+}): Promise<Product | undefined> => {
   try {
     const response = await api.post("/products", product);
-    return response.data;
+    return response.data as Product;
   } catch (error) {
     console.log(error);
   }
 };
 
-export const updateProduct = async (id: string, product: Product) => {
+export const updateProduct = async (
+  id: string,
+  product: Partial<Omit<Product, "_id" | "createdAt" | "updatedAt">> & {
+    images?: string[];
+  }
+): Promise<Product | undefined> => {
   try {
     const response = await api.put(`/products/${id}`, product);
-    return response.data;
+    return response.data as Product;
   } catch (error) {
     console.log(error);
   }

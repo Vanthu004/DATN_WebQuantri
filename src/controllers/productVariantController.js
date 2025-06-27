@@ -1,73 +1,53 @@
-// src/controllers/productVariantController.js
-const ProductVariant = require("../models/productVariant");
+const ProductVariant = require('../models/productVariant');
 
-/* Tạo mới biến thể */
+// Tạo 1 hoặc nhiều biến thể
 exports.createVariant = async (req, res) => {
   try {
-    const variant = await ProductVariant.create(req.body);
-    res.status(201).json(variant);
+    const data = Array.isArray(req.body) ? req.body : [req.body];
+
+    // Lọc các bản ghi hợp lệ
+    const filtered = data.filter(item =>
+      item.product_id && item.sku && item.price && item.attributes
+    );
+
+    if (filtered.length === 0) {
+      return res.status(400).json({ error: "No valid variant provided" });
+    }
+
+    const inserted = await ProductVariant.insertMany(filtered, { ordered: false });
+    res.status(201).json(inserted);
   } catch (err) {
+    console.error("Insert error:", err);
     res.status(400).json({ error: err.message });
   }
 };
 
-/* Lấy tất cả biến thể */
-exports.getAllVariants = async (_req, res) => {
-  try {
-    const list = await ProductVariant.find().populate("product_id", "name");
-    res.json(list);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-};
-
-/* Lấy biến thể theo ID */
-exports.getVariantById = async (req, res) => {
-  try {
-    const variant = await ProductVariant.findById(req.params.id).populate(
-      "product_id",
-      "name"
-    );
-    if (!variant) return res.status(404).json({ msg: "Không tìm thấy biến thể" });
-    res.json(variant);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-};
-
-/* Lấy tất cả biến thể của 1 sản phẩm */
+// Lấy tất cả biến thể của 1 sản phẩm
 exports.getVariantsByProduct = async (req, res) => {
   try {
-    const list = await ProductVariant.find({ product_id: req.params.productId });
-    res.json(list);
+    const variants = await ProductVariant.find({ product_id: req.params.productId });
+    res.json(variants);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
 
-/* Cập nhật biến thể */
+// Cập nhật biến thể
 exports.updateVariant = async (req, res) => {
   try {
-    const updated = await ProductVariant.findByIdAndUpdate(
-      req.params.id,
-      req.body,
-      { new: true }
-    );
-    if (!updated) return res.status(404).json({ msg: "Không tìm thấy biến thể" });
+    const updated = await ProductVariant.findByIdAndUpdate(req.params.id, req.body, { new: true });
     res.json(updated);
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
 };
 
-/* Xoá biến thể */
+// Xoá biến thể
 exports.deleteVariant = async (req, res) => {
   try {
-    const deleted = await ProductVariant.findByIdAndDelete(req.params.id);
-    if (!deleted) return res.status(404).json({ msg: "Không tìm thấy biến thể" });
-    res.json({ msg: "Đã xoá biến thể" });
+    await ProductVariant.findByIdAndDelete(req.params.id);
+    res.json({ message: 'Deleted successfully' });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
-    

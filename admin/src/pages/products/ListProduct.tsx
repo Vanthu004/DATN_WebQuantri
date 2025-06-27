@@ -5,22 +5,26 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { getAllCategories } from "../../services/category";
 import Category from "../../interfaces/category";
+import "../../css/products/listProduct.css";
 
 const ListProduct = () => {
   const navigate = useNavigate();
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [showDeleted, setShowDeleted] = useState(false);
+
   useEffect(() => {
     fetchAllProducts();
     getAllCategories().then((data) => {
       if (Array.isArray(data)) setCategories(data);
       else setCategories([]);
     });
-  }, []);
+    // eslint-disable-next-line
+  }, [showDeleted]);
 
   const fetchAllProducts = async () => {
     try {
-      const data = await getAllProducts();
+      const data = await getAllProducts(showDeleted);
       setProducts(Array.isArray(data) ? data : []);
     } catch (error) {
       console.log(error);
@@ -40,13 +44,27 @@ const ListProduct = () => {
 
   return (
     <div className="w-full">
-      <div className="overflow-x-auto">
+      <div className="flex items-center mb-4 gap-2">
         <button
-          className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition duration-300"
+          className={`option-btn ${!showDeleted ? "active" : ""}`}
+          onClick={() => setShowDeleted(false)}
+        >
+          Sản phẩm chưa bị xóa
+        </button>
+        <button
+          className={`option-btn ${showDeleted ? "active" : ""}`}
+          onClick={() => setShowDeleted(true)}
+        >
+          Sản phẩm đã xóa
+        </button>
+        <button
+          className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition duration-300 ml-auto"
           onClick={() => navigate("/products/add")}
         >
           Thêm sản phẩm
         </button>
+      </div>
+      <div className="overflow-x-auto">
         <table className="min-w-max w-full bg-white rounded-lg shadow border border-gray-200">
           <thead>
             <tr className="bg-gray-100">
@@ -60,7 +78,9 @@ const ListProduct = () => {
               <th className="px-4 py-2 border-b">Category</th>
               <th className="px-4 py-2 border-b">Image</th>
               <th className="px-4 py-2 border-b">Sold Quantity</th>
+              <th className="px-4 py-2 border-b">Đã xóa?</th>
               <th className="px-4 py-2 border-b">Created At</th>
+              <th className="px-4 py-2 border-b">Updated At</th>
               <th className="px-4 py-2 border-b">Actions</th>
             </tr>
           </thead>
@@ -73,31 +93,65 @@ const ListProduct = () => {
                 <td className="px-4 py-2 border-b">{product.description}</td>
                 <td className="px-4 py-2 border-b">{product.price}</td>
                 <td className="px-4 py-2 border-b">{product.stock_quantity}</td>
-                <td className="px-4 py-2 border-b">{product.status}</td>
+                <td className="px-4 py-2 border-b">
+                  <span className={`status-badge ${product.status}`}>
+                    {product.status}
+                  </span>
+                </td>
                 <td className="px-4 py-2 border-b">
                   {typeof product.category_id === "object"
                     ? product.category_id?.name
                     : categories.find((cat) => cat._id === product.category_id)
-                        ?.name ||
-                      product.category ||
-                      "--"}
+                        ?.name || "--"}
                 </td>
-                <td className="px-4 py-2 border-b">{product.image_url}</td>
+                <td className="px-4 py-2 border-b">
+                  {product.image_url ? (
+                    <img
+                      src={product.image_url}
+                      alt={product.name}
+                      className="w-12 h-12 object-cover rounded"
+                    />
+                  ) : (
+                    <span className="text-gray-400 italic">No image</span>
+                  )}
+                </td>
                 <td className="px-4 py-2 border-b">{product.sold_quantity}</td>
-                <td className="px-4 py-2 border-b">{product.created_date}</td>
+                <td className="px-4 py-2 border-b">
+                  {product.is_deleted ? (
+                    <span className="deleted-badge">Đã xóa</span>
+                  ) : (
+                    <span className="not-deleted-badge">Chưa xóa</span>
+                  )}
+                </td>
+                <td className="px-4 py-2 border-b">
+                  {product.createdAt && !isNaN(Date.parse(product.createdAt))
+                    ? new Date(product.createdAt).toLocaleString()
+                    : ""}
+                </td>
+                <td className="px-4 py-2 border-b">
+                  {product.updatedAt && !isNaN(Date.parse(product.updatedAt))
+                    ? new Date(product.updatedAt).toLocaleString()
+                    : ""}
+                </td>
                 <td className="px-4 py-2 border-b">
                   <button
-                    className="bg-yellow-400 hover:bg-yellow-500 text-white font-semibold py-1 px-3 rounded mr-2 transition duration-200"
+                    className="action-btn edit"
                     onClick={() => navigate(`/products/update/${product._id}`)}
+                    disabled={product.is_deleted}
                   >
                     Sửa
                   </button>
-                  <button
-                    className="bg-red-500 hover:bg-red-600 text-white font-semibold py-1 px-3 rounded transition duration-200"
-                    onClick={() => handleDeleteProduct(product._id)}
-                  >
-                    Xóa
-                  </button>
+                  {!product.is_deleted && (
+                    <>
+                      {" | "}
+                      <button
+                        className="action-btn delete"
+                        onClick={() => handleDeleteProduct(product._id)}
+                      >
+                        Xóa
+                      </button>
+                    </>
+                  )}
                 </td>
               </tr>
             ))}
