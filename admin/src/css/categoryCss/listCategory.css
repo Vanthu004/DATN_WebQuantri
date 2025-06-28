@@ -1,0 +1,33 @@
+.option-btn {
+  @apply px-4 py-2 rounded font-semibold border border-gray-300 bg-white text-gray-700 transition duration-200 shadow-sm hover:bg-gray-100;
+}
+.option-btn.active {
+  @apply bg-blue-600 text-white border-blue-600 shadow;
+}
+.status-badge {
+  @apply px-2 py-1 rounded text-xs font-bold;
+}
+.status-badge.active {
+  @apply bg-green-100 text-green-700 border border-green-300;
+}
+.status-badge.inactive {
+  @apply bg-gray-200 text-gray-500 border border-gray-300;
+}
+.deleted-badge {
+  @apply bg-red-100 text-red-700 px-2 py-1 rounded text-xs font-bold border border-red-300;
+}
+.not-deleted-badge {
+  @apply bg-green-100 text-green-700 px-2 py-1 rounded text-xs font-bold border border-green-300;
+}
+.action-btn {
+  @apply px-2 py-1 rounded text-xs font-semibold transition duration-200;
+}
+.action-btn.edit {
+  @apply bg-yellow-100 text-yellow-800 hover:bg-yellow-200;
+}
+.action-btn.delete {
+  @apply bg-red-100 text-red-700 hover:bg-red-200;
+}
+.action-btn:disabled {
+  @apply opacity-50 cursor-not-allowed;
+}
