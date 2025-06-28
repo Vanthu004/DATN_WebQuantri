@@ -1,5 +1,4 @@
 const mongoose = require("mongoose");
-
 const productSchema = new mongoose.Schema(
   {
     product_id: {
@@ -35,6 +34,13 @@ const productSchema = new mongoose.Schema(
       ref: "Category",
       required: true,
     },
+    images: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Upload",
+      },
+    ],
+    default: [],
     image_url: {
       type: String,
       default: "",
@@ -47,8 +53,12 @@ const productSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+      views: {
+    type: Number,
+    default: 0
   },
-  { versionKey: false, timestamps: true }
+},
+  { timestamps: true }
 );
 
 module.exports = mongoose.model("Product", productSchema);
