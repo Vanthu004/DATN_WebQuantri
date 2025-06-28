@@ -27,7 +27,9 @@ export const getCategoryById = async (
 };
 
 export const createCategory = async (
-  category: Omit<Category, "_id" | "createdAt" | "updatedAt">
+  category: Omit<Category, "_id" | "createdAt" | "updatedAt"> & {
+    image?: string;
+  }
 ): Promise<Category | undefined> => {
   try {
     const response = await api.post("/categories", category);
@@ -39,7 +41,9 @@ export const createCategory = async (
 
 export const updateCategory = async (
   id: string,
-  category: Partial<Omit<Category, "_id" | "createdAt" | "updatedAt">>
+  category: Partial<Omit<Category, "_id" | "createdAt" | "updatedAt">> & {
+    image?: string;
+  }
 ): Promise<Category | undefined> => {
   try {
     const response = await api.put(`/categories/${id}`, category);

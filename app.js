@@ -19,6 +19,7 @@ const paymentRouter = require("./src/routers/paymentMethodRouter");
 const statisticApi = require("./src/routers/statisticApi");
 const favoriteRouter = require("./src/routers/favoriteProductRouter");
 const authController = require('./src/controllers/authController');
+const uploadRouter = require("./src/routers/uploadRouter");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -41,6 +42,10 @@ app.use('/uploads', express.static('uploads'));
 app.use("/api/users", userRouter);
 app.use('/api/products', productRouter);
 app.use('/api/categories', categoryRouter);
+// =======
+// app.use("/", productRouter);
+// app.use("/api/categories", categoryRouter);
+// >>>>>>> 954a0f8b22b0dcf43e86c521e52465ee4686f224
 app.use("/api/orders", orderApi);
 app.use("/api/reviews", reviewRoutes);
 app.use("/api/payments", paymentRoutes);
@@ -53,9 +58,12 @@ app.use("/", shippingRouter);
 app.use(paymentRouter);
 app.use(favoriteRouter);
 
-// Auth routes (forgot password)
+// uth routes (forgot password)
 app.post('/api/forgot-password', authController.forgotPassword);
 app.post('/api/reset-password', authController.resetPassword);
+
+app.use("/api", uploadRouter);
+// Route gốc hiển thị toàn bộ giỏ hàng + sản phẩm
 
 // Kết nối MongoDB Atlas
 mongoose

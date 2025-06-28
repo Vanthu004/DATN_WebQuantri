@@ -13,6 +13,9 @@ import PrivateRouter from "./hooks/PrivateRouter";
 import { ToastContainer } from "react-toastify";
 import RegisterPage from "./pages/auths/Register";
 import Login from "./pages/auths/Login";
+import ListUser from "./pages/users/ListUser";
+import Setting from "./pages/settings/Setting";
+import OrderPage from "./pages/orders/Order";
 
 function App() {
   return (
@@ -33,10 +36,15 @@ function App() {
             <Route path="/categories/add" element={<AddCategory />} />
             <Route path="/categories/update/:id" element={<UpdateCategory />} />
 
-            {/* Các route khác cần đăng nhập có thể thêm ở đây */}
+            {/* User Path */}
+            <Route path="/users" element={<ListUser />} />
+
+            {/* Order Path */}
+            <Route path="/orders" element={<OrderPage />} />
+            <Route path="/setting" element={<Setting />} />
           </Route>
         </Route>
-        {/* Public routes */}
+        {/* Public path */}
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/login" element={<Login />} />
         <Route path="*" element={<PageNotFound />} />

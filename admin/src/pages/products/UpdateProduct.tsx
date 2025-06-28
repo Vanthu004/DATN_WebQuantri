@@ -2,10 +2,11 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { getProductById, updateProduct } from "../../services/product";
 import { getAllCategories } from "../../services/category";
+import { uploadImage } from "../../services/upload";
 import Category from "../../interfaces/category";
 import Product from "../../interfaces/product";
 import { toast } from "react-toastify";
-import "../../css/categoryCss/updateCategory.css";
+import "../../css/products/updateProduct.css";
 
 const UpdateProduct = () => {
   const { id } = useParams<{ id: string }>();
@@ -22,6 +23,8 @@ const UpdateProduct = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const navigate = useNavigate();
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string>("");
 
   useEffect(() => {
     if (!id) return;
@@ -40,6 +43,7 @@ const UpdateProduct = () => {
               ? data.category_id._id
               : data.category_id || "",
         });
+        setImagePreview(data.image_url || "");
       } catch (err) {
         setError("Không tìm thấy sản phẩm");
       }
@@ -67,6 +71,34 @@ const UpdateProduct = () => {
     }));
   };
 
+  const handleImageFileChange = async (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = e.target.files && e.target.files[0];
+    if (file) {
+      setImageFile(file);
+      setImagePreview(URL.createObjectURL(file));
+      try {
+        const res = (await uploadImage(file)) as { url: string };
+        setForm((prev) => ({ ...prev, image_url: res.url }));
+      } catch (err) {
+        toast.error("Upload ảnh thất bại!");
+      }
+    }
+  };
+
+  const handleImageUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setForm((prev) => ({ ...prev, image_url: e.target.value }));
+    setImageFile(null);
+    setImagePreview(e.target.value);
+  };
+
+  const handleRemoveImage = () => {
+    setImageFile(null);
+    setImagePreview("");
+    setForm((prev) => ({ ...prev, image_url: "" }));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!id) return;
@@ -84,7 +116,7 @@ const UpdateProduct = () => {
   };
 
   return (
-    <div className="update-category-container">
+    <div className="form-container">
       <h3>Cập nhật sản phẩm</h3>
       <form onSubmit={handleSubmit}>
         <div>
@@ -135,14 +167,34 @@ const UpdateProduct = () => {
             <option value="out_of_stock">Hết hàng</option>
           </select>
         </div>
-        <div>
-          <label>Ảnh (URL)</label>
+        <div className="image-upload-section">
+          <label>Ảnh sản phẩm:</label>
+          <input
+            type="file"
+            accept="image/*"
+            onChange={handleImageFileChange}
+          />
+          <span>Hoặc nhập link ảnh:</span>
           <input
             name="image_url"
-            value={form.image_url}
-            onChange={handleChange}
             type="text"
+            value={form.image_url}
+            onChange={handleImageUrlChange}
+            placeholder="Dán link ảnh nếu có"
+            disabled={!!imageFile}
           />
+          {imagePreview && (
+            <div className="image-preview-container">
+              <img src={imagePreview} alt="Preview" />
+              <button
+                type="button"
+                onClick={handleRemoveImage}
+                className="delete-image-btn"
+              >
+                Xóa ảnh
+              </button>
+            </div>
+          )}
         </div>
         <div>
           <label>Danh mục</label>
@@ -165,8 +217,8 @@ const UpdateProduct = () => {
               ))}
           </select>
         </div>
-        <div className="update-category-btn-group">
-          <button type="submit" disabled={loading}>
+        <div className="form-btn-group">
+          <button type="submit" disabled={loading} className="submit-btn">
             {loading ? "Đang cập nhật..." : "Cập nhật sản phẩm"}
           </button>
           <button
@@ -177,11 +229,7 @@ const UpdateProduct = () => {
             Quay lại
           </button>
         </div>
-        {error && (
-          <div className="text-red-600 text-center font-medium mt-2">
-            {error}
-          </div>
-        )}
+        {error && <div className="error-message">{error}</div>}
       </form>
     </div>
   );

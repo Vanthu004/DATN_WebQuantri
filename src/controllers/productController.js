@@ -48,8 +48,19 @@ exports.createProduct = async (req, res) => {
       }
     }
     const product_id = `P${nextId.toString().padStart(3, "0")}`;
-    const product = await Product.create({ ...req.body, product_id });
-    res.status(201).json(product);
+    // Lưu ý: images là mảng ObjectId Upload, image_url là url cũ
+    const { images, image_url, ...rest } = req.body;
+    const product = await Product.create({
+      ...rest,
+      product_id,
+      images: images || [],
+      image_url: image_url || "",
+    });
+    const populated = await Product.findById(product._id).populate([
+      "category_id",
+      "images",
+    ]);
+    res.status(201).json(populated);
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
@@ -59,7 +70,7 @@ exports.createProduct = async (req, res) => {
 exports.getAllProducts = async (req, res) => {
   const filter = req.query.showDeleted === "true" ? {} : { is_deleted: false };
   try {
-    const list = await Product.find(filter).populate("category_id");
+    const list = await Product.find(filter).populate(["category_id", "images"]);
     res.json(list);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -69,9 +80,10 @@ exports.getAllProducts = async (req, res) => {
 /* Lấy sản phẩm theo ID */
 exports.getProductById = async (req, res) => {
   try {
-    const product = await Product.findById(req.params.id).populate(
-      "category_id"
-    );
+    const product = await Product.findById(req.params.id).populate([
+      "category_id",
+      "images",
+    ]);
     if (!product || product.is_deleted)
       return res.status(404).json({ msg: "Không tìm thấy sản phẩm" });
     res.json(product);
@@ -86,7 +98,7 @@ exports.getProductsByCategory = async (req, res) => {
     const list = await Product.find({
       category_id: req.params.categoryId,
       is_deleted: false,
-    }).populate("category_id");
+    }).populate(["category_id", "images"]);
     res.json(list);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -96,9 +108,16 @@ exports.getProductsByCategory = async (req, res) => {
 /* Cập nhật sản phẩm */
 exports.updateProduct = async (req, res) => {
   try {
-    const updated = await Product.findByIdAndUpdate(req.params.id, req.body, {
-      new: true,
-    });
+    const { images, image_url, ...rest } = req.body;
+    const updated = await Product.findByIdAndUpdate(
+      req.params.id,
+      {
+        ...rest,
+        images: images || [],
+        image_url: image_url || "",
+      },
+      { new: true }
+    ).populate(["category_id", "images"]);
     if (!updated || updated.is_deleted)
       return res.status(404).json({ msg: "Không tìm thấy sản phẩm" });
     res.json(updated);
