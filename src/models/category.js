@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+require("./uploadModel");
 
 const categorySchema = new mongoose.Schema(
   {
@@ -11,6 +12,10 @@ const categorySchema = new mongoose.Schema(
       type: String,
       enum: ["active", "inactive"],
       default: "active",
+    },
+    image: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Upload",
     },
     image_url: String,
     sort_order: {
