@@ -18,6 +18,7 @@ const shippingRouter = require("./src/routers/shippingMethodRouter");
 const paymentRouter = require("./src/routers/paymentMethodRouter");
 const statisticApi = require("./src/routers/statisticApi");
 const favoriteRouter = require("./src/routers/favoriteProductRouter");
+const addressRouter = require("./src/routers/addressRouter");
 
 const authController = require("./src/controllers/authController");
 const uploadRouter = require("./src/routers/uploadRouter");
@@ -54,7 +55,7 @@ app.use("/", orderStatusRouter);
 app.use("/", shippingRouter);
 app.use(paymentRouter);
 app.use(favoriteRouter);
-
+app.use("/api/addresses", addressRouter);
 
 // Auth routes (forgot password)
 app.post("/api/forgot-password", authController.forgotPassword);
