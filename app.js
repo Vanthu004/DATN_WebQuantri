@@ -18,9 +18,9 @@ const shippingRouter = require("./src/routers/shippingMethodRouter");
 const paymentRouter = require("./src/routers/paymentMethodRouter");
 const statisticApi = require("./src/routers/statisticApi");
 const favoriteRouter = require("./src/routers/favoriteProductRouter");
+const authController = require('./src/controllers/authController');
 const addressRouter = require("./src/routers/addressRouter");
 
-const authController = require("./src/controllers/authController");
 const uploadRouter = require("./src/routers/uploadRouter");
 
 const app = express();
@@ -42,8 +42,12 @@ app.use("/uploads", express.static("uploads"));
 
 // Routes
 app.use("/api/users", userRouter);
-app.use("/api/products", productRouter);
-app.use("/api/categories", categoryRouter);
+app.use('/api/products', productRouter);
+app.use('/api/categories', categoryRouter);
+// =======
+// app.use("/", productRouter);
+// app.use("/api/categories", categoryRouter);
+// >>>>>>> 954a0f8b22b0dcf43e86c521e52465ee4686f224
 app.use("/api/orders", orderApi);
 app.use("/api/reviews", reviewRoutes);
 app.use("/api/payments", paymentRoutes);
@@ -57,9 +61,10 @@ app.use(paymentRouter);
 app.use(favoriteRouter);
 app.use("/api/addresses", addressRouter);
 
-// Auth routes (forgot password)
-app.post("/api/forgot-password", authController.forgotPassword);
-app.post("/api/reset-password", authController.resetPassword);
+// uth routes (forgot password)
+app.post('/api/forgot-password', authController.forgotPassword);
+app.post('/api/reset-password', authController.resetPassword);
+
 app.use("/api", uploadRouter);
 // Route gốc hiển thị toàn bộ giỏ hàng + sản phẩm
 
