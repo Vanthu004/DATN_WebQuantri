@@ -44,7 +44,7 @@ const menuItems = [
     label: "Vouchers",
   },
   {
-    path: "/order",
+    path: "/orders",
     icon: <FaShoppingCart />,
     label: "Đơn hàng",
   },
