@@ -19,7 +19,9 @@ const cartApi = require("./src/routers/cartApi");
 const cartItemApi = require("./src/routers/cartItemApi");
 const statisticApi = require("./src/routers/statisticApi");
 const favoriteRouter = require("./src/routers/favoriteProductRouter");
-const authController = require("./src/controllers/authController");
+const authController = require('./src/controllers/authController');
+const addressRouter = require("./src/routers/addressRouter");
+
 const uploadRouter = require("./src/routers/uploadRouter");
 
 const app = express();
@@ -39,8 +41,12 @@ app.use("/uploads", express.static("uploads")); // phục vụ ảnh static
 // ========== ROUTE ĐIỂM VÀO ==========
 
 app.use("/api/users", userRouter);
-app.use("/api/products", productRouter);
-app.use("/api/categories", categoryRouter);
+app.use('/api/products', productRouter);
+app.use('/api/categories', categoryRouter);
+// =======
+// app.use("/", productRouter);
+// app.use("/api/categories", categoryRouter);
+// >>>>>>> 954a0f8b22b0dcf43e86c521e52465ee4686f224
 app.use("/api/orders", orderApi);
 app.use("/api/order-details", orderDetailRouter);
 app.use("/api/order-status-history", orderStatusRouter);
@@ -54,10 +60,23 @@ app.use("/api/cart-items", cartItemApi);
 app.use("/api/statistics", statisticApi);
 app.use("/api/favorites", favoriteRouter);
 app.use("/api/uploads", uploadRouter);
+// =======
+// app.use("/", cartApi);
+// app.use("/", cartItemApi);
+// app.use("/api/order-details", orderDetailRouter);
+// app.use("/", orderStatusRouter);
+// app.use("/", shippingRouter);
+// app.use(paymentRouter);
+// app.use(favoriteRouter);
+// app.use("/api/addresses", addressRouter);
 
-// ========== ROUTE AUTH ==========
-app.post("/api/forgot-password", authController.forgotPassword);
-app.post("/api/reset-password", authController.resetPassword);
+// // uth routes (forgot password)
+// app.post('/api/forgot-password', authController.forgotPassword);
+// app.post('/api/reset-password', authController.resetPassword);
+
+// app.use("/api", uploadRouter);
+// // Route gốc hiển thị toàn bộ giỏ hàng + sản phẩm
+// >>>>>>> TestCode
 
 // ========== KẾT NỐI DATABASE ==========
 mongoose

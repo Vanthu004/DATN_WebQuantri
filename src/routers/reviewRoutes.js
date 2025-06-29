@@ -1,20 +1,21 @@
+// src/routers/reviewRoutes.js
 const express = require("express");
 const router = express.Router();
 const reviewController = require("../controllers/reviewController");
 
 // Tạo review mới
-router.post("/reviews", reviewController.createReview);
+router.post("/", reviewController.createReview);
 
 // Lấy tất cả review
-router.get("/reviews", reviewController.getReviews);
+router.get("/", reviewController.getReviews);
 
 // Lấy review theo ID
-router.get("/reviews/:id", reviewController.getReviewById);
+router.get("/:id", reviewController.getReviewById);
 
 // Cập nhật review
-router.put("/reviews/:id", reviewController.updateReview);
+router.put("/:id", reviewController.updateReview);
 
 // Xóa review
-router.delete("/reviews/:id", reviewController.deleteReview);
+router.delete("/:id", reviewController.deleteReview);
 
 module.exports = router;
