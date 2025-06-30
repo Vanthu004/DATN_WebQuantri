@@ -2,7 +2,22 @@ require("dotenv").config();
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
-// Routers
+
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+// Kiểm tra biến môi trường bắt buộc
+if (!process.env.JWT_SECRET) {
+  console.error("❌ Lỗi: JWT_SECRET không được định nghĩa trong file .env");
+  process.exit(1);
+}
+
+// Middleware
+app.use(cors());
+app.use(express.json());
+app.use("/uploads", express.static("uploads"));
+
+// 🛣️ Routers
 const orderApi = require("./src/routers/orderRoutes");
 const userRouter = require("./src/routers/userRouter");
 const productRouter = require("./src/routers/productRouter");
@@ -18,26 +33,13 @@ const shippingRouter = require("./src/routers/shippingMethodRouter");
 const paymentRouter = require("./src/routers/paymentMethodRouter");
 const statisticApi = require("./src/routers/statisticApi");
 const favoriteRouter = require("./src/routers/favoriteProductRouter");
-
-const authController = require("./src/controllers/authController");
 const uploadRouter = require("./src/routers/uploadRouter");
 
-const app = express();
-const PORT = process.env.PORT || 3000;
+// ✅ Thêm router mới cho Voucher & Notification
+const voucherRouter = require("./src/routers/voucherRoutes");
+const notificationRouter = require("./src/routers/notificationRoutes");
 
-// Kiểm tra biến môi trường bắt buộc
-if (!process.env.JWT_SECRET) {
-  console.error("❌ Lỗi: JWT_SECRET không được định nghĩa trong file .env");
-  process.exit(1);
-}
-
-// Middleware chung
-app.use(cors());
-
-app.use(express.json());
-
-// Static file serving cho uploads
-app.use("/uploads", express.static("uploads"));
+const authController = require("./src/controllers/authController");
 
 // Routes
 app.use("/api/users", userRouter);
@@ -54,21 +56,22 @@ app.use("/", orderStatusRouter);
 app.use("/", shippingRouter);
 app.use(paymentRouter);
 app.use(favoriteRouter);
+app.use("/api", uploadRouter);
+app.use("/", statisticApi);
 
+// 🆕 Đăng ký API voucher & notification
+app.use("/api/vouchers", voucherRouter);
+app.use("/api/notifications", notificationRouter);
 
-// Auth routes (forgot password)
+// Auth
 app.post("/api/forgot-password", authController.forgotPassword);
 app.post("/api/reset-password", authController.resetPassword);
-app.use("/api", uploadRouter);
-// Route gốc hiển thị toàn bộ giỏ hàng + sản phẩm
 
-// Kết nối MongoDB Atlas
+// Kết nối MongoDB
 mongoose
   .connect(process.env.MONGODB_URI)
   .then(() => console.log("✅ Đã kết nối MongoDB Atlas"))
   .catch((err) => console.error("❌ Lỗi kết nối MongoDB:", err));
-
-app.use("/", statisticApi);
 
 // Middleware xử lý lỗi
 app.use((err, req, res, next) => {
