@@ -30,7 +30,7 @@ const orderSchema = new mongoose.Schema(
     },
     paymentmethod_id: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "PaymentMethods",
+      ref: "PaymentMethod",
       required: true,
     },
     is_paid: {
