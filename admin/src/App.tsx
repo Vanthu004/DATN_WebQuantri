@@ -16,6 +16,7 @@ import Login from "./pages/auths/Login";
 import ListUser from "./pages/users/ListUser";
 import Setting from "./pages/settings/Setting";
 import OrderPage from "./pages/orders/Order";
+import OrderDetail from "./pages/orders/OrderDetail";
 
 function App() {
   return (
@@ -41,6 +42,7 @@ function App() {
 
             {/* Order Path */}
             <Route path="/orders" element={<OrderPage />} />
+            <Route path="/orders/:id" element={<OrderDetail />} />
             <Route path="/setting" element={<Setting />} />
           </Route>
         </Route>
