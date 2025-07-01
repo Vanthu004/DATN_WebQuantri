@@ -13,9 +13,7 @@ exports.createOrderDetail = async (req, res) => {
 /* Lấy tất cả chi tiết đơn hàng */
 exports.getAllOrderDetails = async (_req, res) => {
   try {
-    const list = await OrderDetail.find()
-      .populate("order_id", "order_id")
-      .populate("variant_id", "variant_name");
+    const list = await OrderDetail.find().populate("order_id", "order_id");
     res.json(list);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -26,7 +24,8 @@ exports.getAllOrderDetails = async (_req, res) => {
 exports.getOrderDetailById = async (req, res) => {
   try {
     const detail = await OrderDetail.findById(req.params.id);
-    if (!detail) return res.status(404).json({ msg: "Không tìm thấy chi tiết" });
+    if (!detail)
+      return res.status(404).json({ msg: "Không tìm thấy chi tiết" });
     res.json(detail);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -47,8 +46,23 @@ exports.getByOrderId = async (req, res) => {
 exports.deleteOrderDetail = async (req, res) => {
   try {
     const deleted = await OrderDetail.findByIdAndDelete(req.params.id);
-    if (!deleted) return res.status(404).json({ msg: "Không tìm thấy chi tiết" });
+    if (!deleted)
+      return res.status(404).json({ msg: "Không tìm thấy chi tiết" });
     res.json({ msg: "Đã xoá chi tiết đơn hàng" });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+/* Xem chi tiết order detail (kèm thông tin order và variant) */
+exports.getOrderDetailFullById = async (req, res) => {
+  try {
+    const detail = await OrderDetail.findById(req.params.id).populate(
+      "order_id"
+    );
+    if (!detail)
+      return res.status(404).json({ msg: "Không tìm thấy chi tiết" });
+    res.json(detail);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
