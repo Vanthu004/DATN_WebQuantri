@@ -4,11 +4,13 @@ const reviewSchema = new mongoose.Schema({
   user_id: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "User", // 🔗 Liên kết với bảng User
+
     required: true,
   },
   product_id: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Product", // 🔗 Liên kết với bảng Product
+
     required: true,
   },
   rating: {
