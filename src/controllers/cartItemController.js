@@ -24,7 +24,7 @@ exports.addItem = async (req, res) => {
 exports.getItemsByCart = async (req, res) => {
   try {
     const list = await CartItem.find({ cart_id: req.params.cartId })
-      .populate("product_id", "name price")
+      .populate("product_id", "name price image_url") // Thêm image_url vào đây
       .populate("cart_id");
     res.json(list);
   } catch (err) {

@@ -1,52 +1,44 @@
-// src/models/productVariant.js
-const mongoose = require("mongoose");
+const mongoose = require('mongoose');
 
-const productVariantSchema = new mongoose.Schema(
-  {
-    variant_id: {
-      type: String,
-      required: true,
-      unique: true,
-      trim: true,
-    },
-    product_id: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Product",
-      required: true,
-    },
-    variant_name: {
-      type: String,
-      required: true,
-      trim: true,
-    },
-    sku: {
-      type: String,
-      required: true,
-      unique: true,
-      trim: true,
-    },
-    price: {
-      type: Number,
-      required: true,
-      min: 0,
-    },
-    stock_quantity: {
-      type: Number,
-      default: 0,
-      min: 0,
-    },
-    variant_type: {
-      type: String, // ví dụ: 'size', 'color', 'material'
-      trim: true,
-    },
-    variant_value: {
-      type: String, // ví dụ: 'XL', 'Red'
-      trim: true,
-    },
-    size: String,  // tùy chọn
-    color: String, // tùy chọn
+const productVariantSchema = new mongoose.Schema({
+  product_id: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Product',
+    required: true
   },
-  { timestamps: true }
+  sku: {
+    type: String,
+    required: true,
+    unique: true,
+    trim: true
+  },
+  price: {
+    type: Number,
+    required: true
+  },
+  stock_quantity: {
+    type: Number,
+    default: 0
+  },
+  attributes: {
+    size: { type: String, required: true },
+    color: { type: String, required: true }
+  },
+  image_url: {
+
+    type: String,
+    default: ''
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now
+  }
+});
+
+// Đảm bảo không trùng size + color cho 1 product
+productVariantSchema.index(
+  { product_id: 1, 'attributes.size': 1, 'attributes.color': 1 },
+  { unique: true }
 );
 
-module.exports = mongoose.model("ProductVariant", productVariantSchema);
+module.exports = mongoose.model('ProductVariant', productVariantSchema);

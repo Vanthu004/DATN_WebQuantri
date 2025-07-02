@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { getCategoryById, updateCategory } from "../../services/category";
+import { getAllCategoryTypes } from "../../services/categoryType";
 import { uploadImage } from "../../services/upload";
 import { toast } from "react-toastify";
 import Category from "../../interfaces/category";
+import CategoryType from "../../interfaces/categoryType";
 import "../../css/categoryCss/updateCategory.css";
 
 const UpdateCategory = () => {
@@ -12,11 +14,25 @@ const UpdateCategory = () => {
   const [status, setStatus] = useState<"active" | "inactive">("active");
   const [image_url, setImageUrl] = useState("");
   const [sort_order, setSortOrder] = useState(0);
+  const [type, setType] = useState<string>("");
+  const [categoryTypes, setCategoryTypes] = useState<CategoryType[]>([]);
 
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>("");
 
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchCategoryTypes = async () => {
+      try {
+        const types = await getAllCategoryTypes();
+        setCategoryTypes(types);
+      } catch (error) {
+        console.log(error);
+      }
+    };
+    fetchCategoryTypes();
+  }, []);
 
   useEffect(() => {
     if (!id) return;
@@ -27,6 +43,7 @@ const UpdateCategory = () => {
         setStatus(response.status);
         setImageUrl(response.image_url || "");
         setSortOrder(response.sort_order);
+        setType(response.type || "");
         setImagePreview(response.image_url || "");
       } catch (error) {
         console.log(error);
@@ -54,8 +71,16 @@ const UpdateCategory = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!id) return;
+    if (!name.trim()) {
+      toast.error("Tên danh mục không được để trống!");
+      return;
+    }
+    if (!type) {
+      toast.error("Vui lòng chọn loại danh mục!");
+      return;
+    }
     try {
-      await updateCategory(id, { name, status, image_url, sort_order });
+      await updateCategory(id, { name, status, image_url, sort_order, type });
       toast.success("Cập nhật thành công!");
       navigate("/categories");
     } catch (error) {
@@ -119,6 +144,21 @@ const UpdateCategory = () => {
               </button>
             </div>
           )}
+        </div>
+        <div>
+          <label>Loại danh mục</label>
+          <select
+            value={type}
+            onChange={(e) => setType(e.target.value)}
+            required
+          >
+            <option value="">-- Chọn loại danh mục --</option>
+            {categoryTypes.map((catType) => (
+              <option key={catType._id} value={catType.code}>
+                {catType.name}
+              </option>
+            ))}
+          </select>
         </div>
         <div>
           <label>Thứ tự hiển thị (sort_order)</label>

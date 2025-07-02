@@ -18,6 +18,10 @@ import Setting from "./pages/settings/Setting";
 import OrderPage from "./pages/orders/Order";
 import OrderDetail from "./pages/orders/OrderDetail";
 
+import ManageCategoryType from "./pages/categoryTypes/ManageCategoryType";
+import ProductsByCategoryType from "./pages/products/ProductsByCategoryType";
+
+
 function App() {
   return (
     <>
@@ -33,9 +37,13 @@ function App() {
             <Route path="/products/update/:id" element={<UpdateProduct />} />
 
             {/* Category Path */}
+            <Route path="/categories/types" element={<ManageCategoryType />} />
             <Route path="/categories" element={<ListCategory />} />
             <Route path="/categories/add" element={<AddCategory />} />
             <Route path="/categories/update/:id" element={<UpdateCategory />} />
+
+            {/* Products by Category Type */}
+            <Route path="/products/category-type/:type" element={<ProductsByCategoryType />} />
 
             {/* User Path */}
             <Route path="/users" element={<ListUser />} />

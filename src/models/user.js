@@ -45,7 +45,29 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+     gender: {
+    type: String,
+    enum: ['male', 'female', 'other'],
+    default: 'other'
   },
+  birthdate: {
+    type: Date
+  },
+  // Thêm trường cho xác nhận email
+  email_verified: {
+    type: Boolean,
+    default: false
+  },
+  email_verification_otp: {
+    type: String,
+    default: null
+  },
+  email_verification_expires: {
+    type: Date,
+    default: null
+  }
+  },
+
   { timestamps: true }
 );
 
