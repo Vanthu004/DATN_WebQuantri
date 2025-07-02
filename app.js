@@ -21,6 +21,7 @@ const statisticApi = require("./src/routers/statisticApi");
 const favoriteRouter = require("./src/routers/favoriteProductRouter");
 const authController = require('./src/controllers/authController');
 const addressRouter = require("./src/routers/addressRouter");
+const categoryTypeRouter = require("./src/routers/categoryTypeRouter");
 
 const uploadRouter = require("./src/routers/uploadRouter");
 
@@ -56,6 +57,7 @@ app.use("/api/cart-items", cartItemApi);
 app.use("/api/statistics", statisticApi);
 app.use("/api/favorites", favoriteRouter);
 app.use("/api", uploadRouter);
+app.use('/api/category-types', categoryTypeRouter);
 
 // app.use("/", cartApi);
 // app.use("/", cartItemApi);

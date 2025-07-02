@@ -63,3 +63,14 @@ export const deleteCategory = async (
     console.log(error);
   }
 };
+
+export const updateSortOrders = async (
+  orders: { _id: string; sort_order: number }[]
+): Promise<{ message: string } | undefined> => {
+  try {
+    const response = await api.put('/categories/sort-orders', { orders });
+    return response.data as { message: string };
+  } catch (error) {
+    console.log(error);
+  }
+};
