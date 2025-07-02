@@ -42,3 +42,7 @@ h2 {
 td:last-child {
   text-align: center;
 }
+
+.option-disabled {
+  opacity: 0.5;
+}

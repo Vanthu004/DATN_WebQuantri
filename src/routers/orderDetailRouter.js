@@ -17,4 +17,7 @@ router.get("/order/:orderId", controller.getByOrderId);
 // Xoá
 router.delete("/:id", controller.deleteOrderDetail);
 
+// Xem chi tiết order detail (full)
+router.get("/:id/full", controller.getOrderDetailFullById);
+
 module.exports = router;
