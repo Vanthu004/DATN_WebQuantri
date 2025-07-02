@@ -3,7 +3,7 @@ const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
 
-// ======== IMPORT ROUTERS =========
+
 const userRouter = require("./src/routers/userRouter");
 const productRouter = require("./src/routers/productRouter");
 const categoryRouter = require("./src/routers/categoryRouter");
@@ -21,11 +21,15 @@ const statisticApi = require("./src/routers/statisticApi");
 const favoriteRouter = require("./src/routers/favoriteProductRouter");
 const authController = require('./src/controllers/authController');
 const addressRouter = require("./src/routers/addressRouter");
+const categoryTypeRouter = require("./src/routers/categoryTypeRouter");
+
 
 const uploadRouter = require("./src/routers/uploadRouter");
 
-const app = express();
-const PORT = process.env.PORT || 3000;
+// ✅ Thêm router mới cho Voucher & Notification
+const voucherRouter = require("./src/routers/voucherRoutes");
+const notificationRouter = require("./src/routers/notificationRoutes");
+
 
 // Kiểm tra biến môi trường bắt buộc
 if (!process.env.JWT_SECRET) {
@@ -56,6 +60,7 @@ app.use("/api/cart-items", cartItemApi);
 app.use("/api/statistics", statisticApi);
 app.use("/api/favorites", favoriteRouter);
 app.use("/api", uploadRouter);
+app.use('/api/category-types', categoryTypeRouter);
 
 // app.use("/", cartApi);
 // app.use("/", cartItemApi);
@@ -77,7 +82,9 @@ mongoose
   .then(() => console.log("✅ Đã kết nối MongoDB Atlas"))
   .catch((err) => console.error("❌ Lỗi kết nối MongoDB:", err));
 
+
 // ========== MIDDLEWARE LỖI ==========
+
 app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).json({ message: "Lỗi server", error: err.message });

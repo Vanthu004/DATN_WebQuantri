@@ -1,4 +1,4 @@
-const Category = require("../models/Category");
+const Category = require("../models/category");
 
 /* Tạo danh mục */
 exports.createCategory = async (req, res) => {
@@ -73,6 +73,26 @@ exports.deleteCategory = async (req, res) => {
     );
     if (!cat) return res.status(404).json({ message: "Not found" });
     res.json({ message: "Đã xoá (soft delete)", cat });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+};
+
+/* API cập nhật thứ tự sắp xếp nhiều danh mục */
+exports.updateSortOrders = async (req, res) => {
+  try {
+    const { orders } = req.body; // [{ _id, sort_order }]
+    if (!Array.isArray(orders)) {
+      return res.status(400).json({ error: 'orders must be an array' });
+    }
+    const bulkOps = orders.map(item => ({
+      updateOne: {
+        filter: { _id: item._id },
+        update: { sort_order: item.sort_order }
+      }
+    }));
+    await Category.bulkWrite(bulkOps);
+    res.json({ message: 'Cập nhật thứ tự thành công' });
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
