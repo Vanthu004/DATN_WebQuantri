@@ -2,7 +2,8 @@ const Review = require("../models/review");
 const mongoose = require("mongoose");
 const { ObjectId } = mongoose.Types;
 
-// ✅ Hàm tạo review mới
+// ✅ Tạo review mới
+
 exports.createReview = async (req, res) => {
   try {
     const { user_id, product_id, rating, comment } = req.body;
@@ -21,14 +22,21 @@ exports.createReview = async (req, res) => {
     });
 
     const savedReview = await review.save();
-    res.status(201).json(savedReview);
+
+    // Trả lại bản ghi sau khi populate để client nhận đủ thông tin
+    const populatedReview = await Review.findById(savedReview._id)
+      .populate("user_id", "name avata_url")
+      .populate("product_id", "name");
+
+    res.status(201).json(populatedReview);
   } catch (error) {
     console.error("Lỗi khi tạo review:", error);
     res.status(400).json({ message: error.message });
   }
 };
 
-// ✅ Hàm lấy danh sách review (có populate tên và avatar user)
+// ✅ Lấy danh sách review (theo product_id nếu có)
+
 exports.getReviews = async (req, res) => {
   try {
     const filter = {};
@@ -44,9 +52,9 @@ exports.getReviews = async (req, res) => {
     }
 
     const reviews = await Review.find(filter)
-      .sort({ create_date: -1 }) // Sắp xếp mới nhất lên đầu
-      .populate("user_id", "name avata_url") // 👈 CHỈ lấy name và avatar (không lấy password)
-      .populate("product_id", "name"); // Nếu cần tên sản phẩm
+      .sort({ create_date: -1 }) // Sắp xếp mới nhất trước
+      .populate("user_id", "name avata_url")
+      .populate("product_id", "name");
 
     res.status(200).json(reviews);
   } catch (error) {
@@ -54,16 +62,23 @@ exports.getReviews = async (req, res) => {
     res.status(500).json({ message: "Lỗi server khi lấy đánh giá" });
   }
 };
-
-
 // ✅ Lấy review theo ID
 exports.getReviewById = async (req, res) => {
   try {
-    const review = await Review.findById(req.params.id)
-      .populate("user_id")
-      .populate("product_id");
+    const { id } = req.params;
 
-    if (!review) return res.status(404).json({ message: "Review không tồn tại" });
+    if (!ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "ID không hợp lệ" });
+    }
+
+    const review = await Review.findById(id)
+      .populate("user_id", "name avata_url")
+      .populate("product_id", "name");
+
+    if (!review) {
+      return res.status(404).json({ message: "Review không tồn tại" });
+    }
+
 
     res.status(200).json(review);
   } catch (error) {
@@ -74,10 +89,14 @@ exports.getReviewById = async (req, res) => {
 // ✅ Cập nhật review
 exports.updateReview = async (req, res) => {
   try {
+    const { id } = req.params;
     const { rating, comment } = req.body;
+    if (!ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "ID không hợp lệ" });
+    }
 
-    const review = await Review.findByIdAndUpdate(
-      req.params.id,
+    const updated = await Review.findByIdAndUpdate(
+      id,
       {
         rating,
         comment,
@@ -97,9 +116,18 @@ exports.updateReview = async (req, res) => {
 // ✅ Xoá review
 exports.deleteReview = async (req, res) => {
   try {
-    const review = await Review.findByIdAndDelete(req.params.id);
+    const { id } = req.params;
 
-    if (!review) return res.status(404).json({ message: "Review không tồn tại" });
+    if (!ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "ID không hợp lệ" });
+    }
+
+    const deleted = await Review.findByIdAndDelete(id);
+
+    if (!deleted) {
+      return res.status(404).json({ message: "Review không tồn tại" });
+    }
+
 
     res.status(200).json({ message: "Xoá review thành công" });
   } catch (error) {
