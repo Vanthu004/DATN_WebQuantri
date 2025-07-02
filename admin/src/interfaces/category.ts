@@ -10,4 +10,5 @@ export default interface Category {
   is_deleted: boolean;
   createdAt: string;
   updatedAt: string;
+  type: string;
 }

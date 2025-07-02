@@ -1,15 +1,16 @@
-// models/review.js
 const mongoose = require("mongoose");
 
 const reviewSchema = new mongoose.Schema({
   user_id: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "User",
+    ref: "User", // 🔗 Liên kết với bảng User
+
     required: true,
   },
   product_id: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "Product",
+    ref: "Product", // 🔗 Liên kết với bảng Product
+
     required: true,
   },
   rating: {
@@ -21,6 +22,7 @@ const reviewSchema = new mongoose.Schema({
   comment: {
     type: String,
     default: "",
+    trim: true,
   },
   create_date: {
     type: Date,

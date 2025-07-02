@@ -31,7 +31,7 @@ exports.uploadImage = [
 
       // Upload lên S3
       const command = new PutObjectCommand({
-        Bucket: "datn2", // Thay bằng tên bucket của bạn
+        Bucket: process.env.AWS_BUCKET_NAME || "datn2",
         Key: fileName,
         Body: req.file.buffer,
         ContentType: req.file.mimetype,
@@ -39,10 +39,28 @@ exports.uploadImage = [
 
       await s3.send(command);
 
-      const imageUrl = `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${fileName}`;
-      res.json({ url: imageUrl });
+      const imageUrl = `https://${process.env.AWS_BUCKET_NAME || "datn2"}.s3.${process.env.AWS_REGION}.amazonaws.com/${fileName}`;
+      
+      // Lưu thông tin upload vào database
+      const Upload = require("../models/uploadModel");
+      const upload = new Upload({
+        fileName: fileName,
+        originalName: req.file.originalname,
+        mimeType: req.file.mimetype,
+        size: req.file.size,
+        url: imageUrl,
+        uploadedBy: req.user?.userId || null, // Nếu có user đăng nhập
+      });
+      
+      const savedUpload = await upload.save();
+      
+      res.json({ 
+        url: imageUrl,
+        uploadId: savedUpload._id,
+        upload: savedUpload
+      });
     } catch (err) {
-      console.error("UPLOAD ERROR:", err); // 👈 log full error ra console
+      console.error("UPLOAD ERROR:", err);
       res.status(500).json({ message: "Upload failed", error: err.message });
     }
   },
