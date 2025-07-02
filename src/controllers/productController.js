@@ -1,5 +1,8 @@
 // src/controllers/productController.js
 const Product = require("../models/product");
+const Category = require("../models/category");
+const CategoryType = require("../models/categoryType");
+const mongoose = require('mongoose');
 
 // Escape regex function
 function escapeRegex(text) {
@@ -102,6 +105,106 @@ exports.getProductsByCategory = async (req, res) => {
     res.json(list);
   } catch (err) {
     res.status(500).json({ error: err.message });
+  }
+};
+
+/* Lấy sản phẩm theo loại danh mục */
+exports.getProductsByCategoryType = async (req, res) => {
+  try {
+    const { type } = req.params;
+    const limit = parseInt(req.query.limit) || 20;
+    const page = parseInt(req.query.page) || 1;
+    const skip = (page - 1) * limit;
+
+    const products = await Product.aggregate([
+      {
+        $lookup: {
+          from: 'categories',
+          localField: 'category_id',
+          foreignField: '_id',
+          as: 'category'
+        }
+      },
+      {
+        $unwind: '$category'
+      },
+      {
+        $match: {
+          'category.type': type,
+          'category.is_deleted': false,
+          is_deleted: false,
+          status: 'active'
+        }
+      },
+      {
+        $sort: { created_date: -1 }
+      },
+      {
+        $skip: skip
+      },
+      {
+        $limit: limit
+      },
+      {
+        $project: {
+          name: 1,
+          price: 1,
+          image_url: 1,
+          sold_quantity: 1,
+          views: 1,
+          created_date: 1,
+          category_id: '$category._id',
+          category_name: '$category.name',
+          category_type: '$category.type'
+        }
+      }
+    ]);
+
+    // Đếm tổng số sản phẩm để phân trang
+    const totalProducts = await Product.aggregate([
+      {
+        $lookup: {
+          from: 'categories',
+          localField: 'category_id',
+          foreignField: '_id',
+          as: 'category'
+        }
+      },
+      {
+        $unwind: '$category'
+      },
+      {
+        $match: {
+          'category.type': type,
+          'category.is_deleted': false,
+          is_deleted: false,
+          status: 'active'
+        }
+      },
+      {
+        $count: 'total'
+      }
+    ]);
+
+    const total = totalProducts.length > 0 ? totalProducts[0].total : 0;
+
+    res.json({
+      success: true,
+      data: products,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit)
+      },
+      message: `Lấy danh sách sản phẩm theo loại danh mục ${type} thành công`
+    });
+  } catch (err) {
+    res.status(500).json({ 
+      success: false,
+      error: err.message,
+      message: "Lỗi khi lấy danh sách sản phẩm theo loại danh mục"
+    });
   }
 };
 

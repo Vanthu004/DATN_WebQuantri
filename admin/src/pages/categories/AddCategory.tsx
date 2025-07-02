@@ -1,19 +1,35 @@
 import { createCategory } from "../../services/category";
 import { uploadImage } from "../../services/upload";
+import { getAllCategoryTypes } from "../../services/categoryType";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import "../../css/categoryCss/addCategory.css";
 import { useNavigate } from "react-router-dom";
+import CategoryType from "../../interfaces/categoryType";
 
 const AddCategory = () => {
   const [name, setName] = useState("");
   const [status, setStatus] = useState<"active" | "inactive">("active");
   const [image_url, setImageUrl] = useState("");
   const [sort_order, setSortOrder] = useState(0);
+  const [type, setType] = useState<string>("");
+  const [categoryTypes, setCategoryTypes] = useState<CategoryType[]>([]);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>("");
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchCategoryTypes = async () => {
+      try {
+        const types = await getAllCategoryTypes();
+        setCategoryTypes(types);
+      } catch (error) {
+        console.log(error);
+      }
+    };
+    fetchCategoryTypes();
+  }, []);
 
   const handleImageFileChange = async (
     e: React.ChangeEvent<HTMLInputElement>
@@ -33,15 +49,24 @@ const AddCategory = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!name.trim()) {
+      toast.error("Tên danh mục không được để trống!");
+      return;
+    }
+    if (!type) {
+      toast.error("Vui lòng chọn loại danh mục!");
+      return;
+    }
     try {
       await createCategory({
         name,
         status,
         image_url: image_url || undefined,
         sort_order,
+        type,
         is_deleted: false,
       });
-      toast("Thêm danh mục thành công");
+      toast.success("Thêm danh mục thành công");
       navigate("/categories");
     } catch (error) {
       toast.error("Thêm danh mục thất bại!");
@@ -102,6 +127,21 @@ const AddCategory = () => {
               </button>
             </div>
           )}
+        </div>
+        <div>
+          <label>Loại danh mục</label>
+          <select
+            value={type}
+            onChange={(e) => setType(e.target.value)}
+            required
+          >
+            <option value="">-- Chọn loại danh mục --</option>
+            {categoryTypes.map((catType) => (
+              <option key={catType._id} value={catType.code}>
+                {catType.name}
+              </option>
+            ))}
+          </select>
         </div>
         <div>
           <label>Thứ tự hiển thị (sort_order)</label>
