@@ -20,5 +20,6 @@ router.post('/', prodCtrl.createProduct);
 router.get('/:id', prodCtrl.getProductById);
 router.put('/:id', prodCtrl.updateProduct);
 router.delete('/:id', prodCtrl.deleteProduct);
+router.patch('/:id/restore', prodCtrl.restoreProduct);
 
 module.exports = router;
