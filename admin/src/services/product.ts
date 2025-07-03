@@ -38,6 +38,42 @@ export const getProductsByCategory = async (
   }
 };
 
+export const getProductsByCategoryType = async (
+  type: string,
+  page: number = 1,
+  limit: number = 20
+): Promise<{
+  success: boolean;
+  data: Product[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+  message: string;
+}> => {
+  try {
+    const response = await api.get(
+      `/products/category-type/${type}?page=${page}&limit=${limit}`
+    );
+    return response.data as {
+      success: boolean;
+      data: Product[];
+      pagination: {
+        page: number;
+        limit: number;
+        total: number;
+        totalPages: number;
+      };
+      message: string;
+    };
+  } catch (error) {
+    console.log(error);
+    throw error;
+  }
+};
+
 export const createProduct = async (product: {
   name: string;
   description?: string;
@@ -73,6 +109,15 @@ export const updateProduct = async (
 export const deleteProduct = async (id: string) => {
   try {
     const response = await api.delete(`/products/${id}`);
+    return response.data;
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+export const restoreProduct = async (id: string) => {
+  try {
+    const response = await api.patch(`/products/${id}/restore`);
     return response.data;
   } catch (error) {
     console.log(error);

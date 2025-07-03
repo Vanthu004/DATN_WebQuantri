@@ -25,6 +25,7 @@ const productVariantSchema = new mongoose.Schema({
     color: { type: String, required: true }
   },
   image_url: {
+
     type: String,
     default: ''
   },

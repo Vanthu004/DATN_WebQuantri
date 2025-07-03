@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { getAllProducts, deleteProduct } from "../../services/product";
+import { getAllProducts, deleteProduct, restoreProduct } from "../../services/product";
 import Product from "../../interfaces/product";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
@@ -32,13 +32,24 @@ const ListProduct = () => {
   };
 
   const handleDeleteProduct = async (id: string) => {
-    if (!window.confirm("Bạn có chắc chắn muốn xóa sản phẩm này?")) return;
+    if (!window.confirm("Bạn có chắc chắn muốn xóa sản phẩm này? Sản phẩm sẽ chuyển thành inactive và không hiển thị trên app.")) return;
     try {
       await deleteProduct(id);
-      toast.success("Xóa sản phẩm thành công!");
+      toast.success("Xóa sản phẩm thành công! Sản phẩm đã chuyển thành inactive.");
       fetchAllProducts();
     } catch (error) {
       toast.error("Xóa sản phẩm thất bại!");
+    }
+  };
+
+  const handleRestoreProduct = async (id: string) => {
+    if (!window.confirm("Bạn có chắc chắn muốn khôi phục sản phẩm này?")) return;
+    try {
+      await restoreProduct(id);
+      toast.success("Khôi phục sản phẩm thành công! Sản phẩm đã chuyển thành active.");
+      fetchAllProducts();
+    } catch (error) {
+      toast.error("Khôi phục sản phẩm thất bại!");
     }
   };
 
@@ -141,7 +152,7 @@ const ListProduct = () => {
                   >
                     Sửa
                   </button>
-                  {!product.is_deleted && (
+                  {!product.is_deleted ? (
                     <>
                       {" | "}
                       <button
@@ -149,6 +160,16 @@ const ListProduct = () => {
                         onClick={() => handleDeleteProduct(product._id)}
                       >
                         Xóa
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      {" | "}
+                      <button
+                        className="action-btn restore"
+                        onClick={() => handleRestoreProduct(product._id)}
+                      >
+                        Khôi phục
                       </button>
                     </>
                   )}

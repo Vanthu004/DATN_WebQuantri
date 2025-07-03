@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { getAllOrders, updateOrder } from "../../services/order";
 import Order from "../../interfaces/order";
 import "../../css/orders/order.css";
+import ToastMessage from "../../components/ToastMessage";
+import { useNavigate } from "react-router-dom";
 
 type PopulatedUser = { name: string; email?: string; _id: string };
 
@@ -14,9 +16,29 @@ const statusOptions = [
   "Đã hủy",
 ];
 
+// Logic kiểm tra trạng thái hợp lệ giống backend
+const validTransitions: Record<string, string[]> = {
+  "Chờ xử lý": ["Đã xác nhận", "Đã hủy", "Hoàn thành"],
+  "Đã xác nhận": ["Đang vận chuyển"],
+  "Đang vận chuyển": ["Đã giao hàng"],
+  "Đã giao hàng": ["Hoàn thành"],
+  "Hoàn thành": ["Đã hủy"],
+  "Đã hủy": [],
+};
+
+function isValidStatusTransition(current: string, next: string) {
+  if (current === next) return true;
+  return validTransitions[current]?.includes(next);
+}
+
 const OrderPage = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const [toast, setToast] = useState<{
+    type: "success" | "error";
+    message: string;
+  } | null>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     getAllOrders()
@@ -33,8 +55,17 @@ const OrderPage = () => {
             order._id === id ? { ...order, status: updated.status } : order
           )
         );
+        setToast({
+          type: "success",
+          message: "Cập nhật trạng thái thành công!",
+        });
       })
-      .catch(() => alert("Cập nhật trạng thái thất bại!"));
+      .catch((err) => {
+        setToast({
+          type: "error",
+          message: err?.response?.data?.msg || "Cập nhật trạng thái thất bại!",
+        });
+      });
   };
 
   if (loading) return <div>Đang tải...</div>;
@@ -42,6 +73,13 @@ const OrderPage = () => {
   return (
     <div>
       <h2>Danh sách đơn hàng</h2>
+      {toast && (
+        <ToastMessage
+          type={toast.type}
+          message={toast.message}
+          onClose={() => setToast(null)}
+        />
+      )}
       <table>
         <thead>
           <tr>
@@ -70,15 +108,39 @@ const OrderPage = () => {
                     handleStatusChange(order._id, e.target.value)
                   }
                 >
-                  {statusOptions.map((status) => (
-                    <option key={status} value={status}>
-                      {status}
-                    </option>
-                  ))}
+                  {statusOptions.map((status) => {
+                    const disabled = !isValidStatusTransition(
+                      order.status,
+                      status
+                    );
+                    return (
+                      <option
+                        key={status}
+                        value={status}
+                        disabled={disabled}
+                        className={disabled ? "option-disabled" : ""}
+                      >
+                        {status}
+                      </option>
+                    );
+                  })}
                 </select>
               </td>
               <td>{order.total_price.toLocaleString()}₫</td>
-              <td>{/* Có thể thêm nút xem chi tiết, xóa... */}</td>
+              <td>
+                <button
+                  onClick={() => navigate(`/orders/${order._id}`)}
+                  style={{
+                    padding: "4px 10px",
+                    borderRadius: 4,
+                    border: "1px solid #ccc",
+                    background: "#f5f5f5",
+                    cursor: "pointer",
+                  }}
+                >
+                  Xem chi tiết
+                </button>
+              </td>
             </tr>
           ))}
         </tbody>
