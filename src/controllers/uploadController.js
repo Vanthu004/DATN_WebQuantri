@@ -25,7 +25,6 @@ exports.uploadImage = [
       if (!req.file) {
         return res.status(400).json({ message: "No file uploaded" });
       }
-      
       // Tạo tên file ngẫu nhiên
       const fileExt = path.extname(req.file.originalname);
       const fileName = crypto.randomBytes(16).toString("hex") + fileExt;

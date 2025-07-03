@@ -1,3 +1,4 @@
+
 const User = require('../models/user');
 const EmailVerificationToken = require('../models/EmailVerificationToken');
 const bcrypt = require('bcrypt');
@@ -22,22 +23,7 @@ const createEmailTransporter = () => {
     },
   });
 };
-// Cấu hình multer cho upload file
-const storage = multer.memoryStorage(); // Lưu ảnh vào memory buffer
 
-const upload = multer({ 
-  storage: storage,
-  limits: {
-    fileSize: 5 * 1024 * 1024 // 5MB
-  },
-  fileFilter: function (req, file, cb) {
-    if (file.mimetype.startsWith('image/')) {
-      cb(null, true);
-    } else {
-      cb(new Error('Chỉ cho phép upload file ảnh!'), false);
-    }
-  }
-});
 // Hàm gửi email xác nhận OTP
 const sendVerificationEmail = async (email, otp) => {
   try {
@@ -83,8 +69,6 @@ const sendVerificationEmail = async (email, otp) => {
     return false;
   }
 };
-
-
 // Lấy tất cả users (không lấy user đã xóa nếu có is_deleted)
 exports.getAllUsers = async (req, res) => {
   try {
@@ -297,7 +281,6 @@ exports.updateProfile = async (req, res) => {
   }
 };
 
-
 // Cập nhật user
 exports.updateUser = async (req, res) => {
   try {
@@ -374,37 +357,40 @@ exports.changePassword = async (req, res) => {
 
     // Kiểm tra dữ liệu đầu vào
     if (!currentPassword || !newPassword) {
-      return res.status(400).json({ 
-        message: 'Vui lòng nhập mật khẩu hiện tại và mật khẩu mới' 
+      return res.status(400).json({
+        message: "Vui lòng nhập mật khẩu hiện tại và mật khẩu mới",
       });
     }
 
     // Kiểm tra độ dài mật khẩu mới
     if (newPassword.length < 6) {
-      return res.status(400).json({ 
-        message: 'Mật khẩu mới phải có ít nhất 6 ký tự' 
+      return res.status(400).json({
+        message: "Mật khẩu mới phải có ít nhất 6 ký tự",
       });
     }
 
     // Lấy thông tin user hiện tại
     const user = await User.findById(userId);
     if (!user) {
-      return res.status(404).json({ message: 'Không tìm thấy user' });
+      return res.status(404).json({ message: "Không tìm thấy user" });
     }
 
     // Kiểm tra mật khẩu hiện tại có đúng không
-    const isCurrentPasswordValid = await bcrypt.compare(currentPassword, user.password);
+    const isCurrentPasswordValid = await bcrypt.compare(
+      currentPassword,
+      user.password
+    );
     if (!isCurrentPasswordValid) {
-      return res.status(400).json({ 
-        message: 'Mật khẩu hiện tại không đúng' 
+      return res.status(400).json({
+        message: "Mật khẩu hiện tại không đúng",
       });
     }
 
     // Kiểm tra mật khẩu mới có khác mật khẩu hiện tại không
     const isNewPasswordSame = await bcrypt.compare(newPassword, user.password);
     if (isNewPasswordSame) {
-      return res.status(400).json({ 
-        message: 'Mật khẩu mới không được trùng với mật khẩu hiện tại' 
+      return res.status(400).json({
+        message: "Mật khẩu mới không được trùng với mật khẩu hiện tại",
       });
     }
 
@@ -415,11 +401,11 @@ exports.changePassword = async (req, res) => {
     user.password = hashedNewPassword;
     await user.save();
 
-    res.status(200).json({ 
-      message: 'Đổi mật khẩu thành công' 
+    res.status(200).json({
+      message: "Đổi mật khẩu thành công",
     });
   } catch (error) {
-    res.status(500).json({ message: 'Lỗi server', error: error.message });
+    res.status(500).json({ message: "Lỗi server", error: error.message });
   }
 };
 
@@ -507,22 +493,22 @@ exports.login = async (req, res) => {
 exports.getAvatar = async (req, res) => {
   try {
     const userId = req.params.id;
-    
-    const user = await User.findById(userId).select('avata_url');
+
+    const user = await User.findById(userId).select("avata_url");
     if (!user) {
-      return res.status(404).json({ message: 'Không tìm thấy user' });
+      return res.status(404).json({ message: "Không tìm thấy user" });
     }
 
     if (!user.avata_url) {
-      return res.status(404).json({ message: 'User chưa có ảnh avatar' });
+      return res.status(404).json({ message: "User chưa có ảnh avatar" });
     }
 
     // Trả về Base64 image
-    res.status(200).json({ 
-      avata_url: user.avata_url 
+    res.status(200).json({
+      avata_url: user.avata_url,
     });
   } catch (error) {
-    res.status(500).json({ message: 'Lỗi server', error: error.message });
+    res.status(500).json({ message: "Lỗi server", error: error.message });
   }
 };
 // Cập nhật avatar cho user
@@ -540,6 +526,7 @@ exports.updateAvatar = async (req, res) => {
     // Kiểm tra xem upload có tồn tại không
     const Upload = require("../models/uploadModel");
     const upload = await Upload.findById(uploadId);
+
     if (!upload) {
       return res.status(404).json({
         message: "Không tìm thấy avatar",
@@ -551,6 +538,7 @@ exports.updateAvatar = async (req, res) => {
       userId,
       { 
         avatar: uploadId,
+
         avata_url: upload.url 
       },
       { new: true, runValidators: true }

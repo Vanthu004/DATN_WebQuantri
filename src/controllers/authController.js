@@ -6,41 +6,110 @@ const bcrypt = require('bcrypt');
 
 // Hàm tạo transporter email
 const createEmailTransporter = () => {
+  // Kiểm tra các biến môi trường cần thiết
+  if (!process.env.EMAIL_USERNAME || !process.env.EMAIL_PASSWORD) {
+    throw new Error("EMAIL_USERNAME và EMAIL_PASSWORD phải được cấu hình trong file .env");
+  }
+
   return nodemailer.createTransport({
-    host: 'smtp.gmail.com',
-    port: 465,
-    secure: true,
+    service: "gmail", // Sử dụng service thay vì host/port
     auth: {
       user: process.env.EMAIL_USERNAME,
-      pass: process.env.EMAIL_PASSWORD,
+      pass: process.env.EMAIL_PASSWORD, // Phải là App Password, không phải password thường
     },
-    debug: true,
-    logger: true
   });
 };
 
 // Hàm gửi email xác nhận OTP
 const sendVerificationEmail = async (email, otp) => {
-  const transporter = createEmailTransporter();
-  
-  await transporter.sendMail({
-    from: `"Swear Support" <${process.env.EMAIL_USERNAME}>`,
-    to: email,
-    subject: 'Mã xác nhận đăng ký tài khoản',
-    html: `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2 style="color: #333;">Xác nhận đăng ký tài khoản</h2>
-        <p>Xin chào,</p>
-        <p>Cảm ơn bạn đã đăng ký tài khoản. Vui lòng nhập mã OTP bên dưới để xác nhận email của bạn:</p>
-        <div style="background-color: #f4f4f4; padding: 20px; text-align: center; margin: 20px 0;">
-          <h1 style="color: #007bff; font-size: 32px; margin: 0;">${otp}</h1>
+  try {
+    const transporter = createEmailTransporter();
+
+    const mailOptions = {
+      from: `"Swear Support" <${process.env.EMAIL_USERNAME}>`,
+      to: email,
+      subject: 'Mã xác nhận đăng ký tài khoản',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #333;">Xác nhận đăng ký tài khoản</h2>
+          <p>Xin chào,</p>
+          <p>Cảm ơn bạn đã đăng ký tài khoản. Vui lòng nhập mã OTP bên dưới để xác nhận email của bạn:</p>
+          <div style="background-color: #f4f4f4; padding: 20px; text-align: center; margin: 20px 0;">
+            <h1 style="color: #007bff; font-size: 32px; margin: 0;">${otp}</h1>
+          </div>
+          <p><strong>Lưu ý:</strong> Mã OTP này sẽ hết hạn sau 10 phút.</p>
+          <p>Nếu bạn không đăng ký tài khoản này, vui lòng bỏ qua email này.</p>
+          <p>Trân trọng,<br>Đội ngũ Swear</p>
         </div>
-        <p><strong>Lưu ý:</strong> Mã OTP này sẽ hết hạn sau 10 phút.</p>
-        <p>Nếu bạn không đăng ký tài khoản này, vui lòng bỏ qua email này.</p>
-        <p>Trân trọng,<br>Đội ngũ Swear</p>
-      </div>
-    `,
-  });
+      `,
+    };
+
+    const info = await transporter.sendMail(mailOptions);
+    console.log("✅ Email sent successfully:", info.messageId);
+    return true;
+  } catch (error) {
+    console.error("❌ Lỗi gửi email:", error.message);
+    
+    // Xử lý các lỗi cụ thể
+    if (error.code === 'EAUTH') {
+      console.error("🔐 Lỗi xác thực email. Vui lòng kiểm tra:");
+      console.error("   - EMAIL_USERNAME trong file .env");
+      console.error("   - EMAIL_PASSWORD phải là App Password (không phải password thường)");
+      console.error("   - Bật 2FA cho Gmail và tạo App Password");
+    } else if (error.code === 'ECONNECTION') {
+      console.error("🌐 Lỗi kết nối email server");
+    } else {
+      console.error("📧 Lỗi gửi email khác:", error);
+    }
+    
+    return false;
+  }
+};
+
+// Hàm gửi email reset password
+const sendPasswordResetEmail = async (email, otp) => {
+  try {
+    const transporter = createEmailTransporter();
+
+    const mailOptions = {
+      from: `"Swear Support" <${process.env.EMAIL_USERNAME}>`,
+      to: email,
+      subject: 'OTP khôi phục mật khẩu',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #333;">Khôi phục mật khẩu</h2>
+          <p>Xin chào,</p>
+          <p>Bạn đã yêu cầu khôi phục mật khẩu. Mã OTP của bạn là:</p>
+          <div style="background-color: #f4f4f4; padding: 20px; text-align: center; margin: 20px 0;">
+            <h1 style="color: #007bff; font-size: 32px; margin: 0;">${otp}</h1>
+          </div>
+          <p><strong>Lưu ý:</strong> Mã OTP này sẽ hết hạn sau 10 phút.</p>
+          <p>Nếu bạn không yêu cầu khôi phục mật khẩu, vui lòng bỏ qua email này.</p>
+          <p>Trân trọng,<br>Đội ngũ Swear</p>
+        </div>
+      `,
+    };
+
+    const info = await transporter.sendMail(mailOptions);
+    console.log("✅ Password reset email sent successfully:", info.messageId);
+    return true;
+  } catch (error) {
+    console.error("❌ Lỗi gửi email reset password:", error.message);
+    
+    // Xử lý các lỗi cụ thể
+    if (error.code === 'EAUTH') {
+      console.error("🔐 Lỗi xác thực email. Vui lòng kiểm tra:");
+      console.error("   - EMAIL_USERNAME trong file .env");
+      console.error("   - EMAIL_PASSWORD phải là App Password (không phải password thường)");
+      console.error("   - Bật 2FA cho Gmail và tạo App Password");
+    } else if (error.code === 'ECONNECTION') {
+      console.error("🌐 Lỗi kết nối email server");
+    } else {
+      console.error("📧 Lỗi gửi email khác:", error);
+    }
+    
+    return false;
+  }
 };
 
 // Gửi lại email xác nhận OTP
@@ -74,7 +143,14 @@ exports.sendVerificationEmail = async (req, res) => {
     );
     
     // Gửi email
-    await sendVerificationEmail(email, otp);
+    const emailSent = await sendVerificationEmail(email, otp);
+    
+    if (!emailSent) {
+      console.warn("⚠️ Không thể gửi email xác nhận");
+      return res.status(500).json({ 
+        message: 'Không thể gửi email. Vui lòng kiểm tra cấu hình email server.' 
+      });
+    }
     
     res.json({ message: 'Mã xác nhận đã được gửi lại về email' });
   } catch (error) {
@@ -136,121 +212,20 @@ exports.forgotPassword = async (req, res) => {
     // Lưu OTP vào database
     await PasswordResetToken.create({ email, otp });
 
-    // Kiểm tra biến môi trường
-    if (!process.env.EMAIL_USERNAME || !process.env.EMAIL_PASSWORD) {
-      console.error('❌ Lỗi: EMAIL_USERNAME hoặc EMAIL_PASSWORD không được định nghĩa');
-      return res.status(500).json({ message: 'Lỗi cấu hình email server' });
-    }
-
-    console.log('📧 Đang cấu hình email với:', {
-      user: process.env.EMAIL_USERNAME,
-      pass: process.env.EMAIL_PASSWORD ? '***' : 'undefined'
-    });
-
-    // Thử cấu hình SMTP với port 465 (SSL)
-    const transporter = nodemailer.createTransport({
-      host: 'smtp.gmail.com',
-      port: 465,
-      secure: true, // use SSL
-      auth: {
-        user: process.env.EMAIL_USERNAME,
-        pass: process.env.EMAIL_PASSWORD,
-      },
-      debug: true, // Bật debug để xem chi tiết lỗi
-      logger: true // Log to console
-    });
-
-    // Verify connection configuration
-    try {
-      await transporter.verify();
-      console.log('✅ Kết nối email server thành công');
-    } catch (verifyError) {
-      console.error('❌ Lỗi xác thực email server:', verifyError);
-      
-      // Thử cấu hình thay thế với port 587 (TLS)
-      console.log('🔄 Thử cấu hình thay thế với port 587...');
-      const transporter2 = nodemailer.createTransport({
-        host: 'smtp.gmail.com',
-        port: 587,
-        secure: false, // use TLS
-        auth: {
-          user: process.env.EMAIL_USERNAME,
-          pass: process.env.EMAIL_PASSWORD,
-        },
-        tls: {
-          rejectUnauthorized: false
-        }
+    // Gửi email reset password
+    const emailSent = await sendPasswordResetEmail(email, otp);
+    
+    if (!emailSent) {
+      console.warn("⚠️ Không thể gửi email reset password");
+      return res.status(500).json({ 
+        message: 'Không thể gửi email. Vui lòng kiểm tra cấu hình email server.' 
       });
-
-      try {
-        await transporter2.verify();
-        console.log('✅ Kết nối email server thành công với port 587');
-        
-        // Gửi email với transporter2
-        const mailOptions = {
-          from: `"Swear Support" <${process.env.EMAIL_USERNAME}>`,
-          to: email,
-          subject: 'OTP khôi phục mật khẩu',
-          html: `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-              <h2 style="color: #333;">Khôi phục mật khẩu</h2>
-              <p>Xin chào,</p>
-              <p>Bạn đã yêu cầu khôi phục mật khẩu. Mã OTP của bạn là:</p>
-              <div style="background-color: #f4f4f4; padding: 20px; text-align: center; margin: 20px 0;">
-                <h1 style="color: #007bff; font-size: 32px; margin: 0;">${otp}</h1>
-              </div>
-              <p><strong>Lưu ý:</strong> Mã OTP này sẽ hết hạn sau 10 phút.</p>
-              <p>Nếu bạn không yêu cầu khôi phục mật khẩu, vui lòng bỏ qua email này.</p>
-              <p>Trân trọng,<br>Đội ngũ hỗ trợ</p>
-            </div>
-          `,
-        };
-
-        await transporter2.sendMail(mailOptions);
-        console.log('✅ Email đã được gửi thành công đến:', email);
-        res.json({ message: 'OTP đã được gửi về email' });
-        return;
-      } catch (verifyError2) {
-        console.error('❌ Lỗi xác thực email server với port 587:', verifyError2);
-        return res.status(500).json({ 
-          message: 'Lỗi xác thực email server. Vui lòng kiểm tra:\n1. Email và App Password đúng\n2. 2-Factor Authentication đã bật\n3. App Password đã được tạo cho ứng dụng Mail' 
-        });
-      }
     }
 
-    // Gửi email với transporter gốc
-    const mailOptions = {
-      from: `"App Support" <${process.env.EMAIL_USERNAME}>`,
-      to: email,
-      subject: 'OTP khôi phục mật khẩu',
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2 style="color: #333;">Khôi phục mật khẩu</h2>
-          <p>Xin chào,</p>
-          <p>Bạn đã yêu cầu khôi phục mật khẩu. Mã OTP của bạn là:</p>
-          <div style="background-color: #f4f4f4; padding: 20px; text-align: center; margin: 20px 0;">
-            <h1 style="color: #007bff; font-size: 32px; margin: 0;">${otp}</h1>
-          </div>
-          <p><strong>Lưu ý:</strong> Mã OTP này sẽ hết hạn sau 10 phút.</p>
-          <p>Nếu bạn không yêu cầu khôi phục mật khẩu, vui lòng bỏ qua email này.</p>
-          <p>Trân trọng,<br>Đội ngũ hỗ trợ</p>
-        </div>
-      `,
-    };
-
-    await transporter.sendMail(mailOptions);
-    console.log('✅ Email đã được gửi thành công đến:', email);
-
+    console.log('✅ Email reset password đã được gửi thành công đến:', email);
     res.json({ message: 'OTP đã được gửi về email' });
   } catch (error) {
-    console.error('❌ Lỗi gửi email:', error);
-    
-    if (error.code === 'EAUTH') {
-      return res.status(500).json({ 
-        message: 'Lỗi xác thực email. Vui lòng kiểm tra:\n1. Email và App Password đúng\n2. 2-Factor Authentication đã bật\n3. App Password đã được tạo cho ứng dụng Mail\n4. App Password không có khoảng trắng thừa' 
-      });
-    }
-    
+    console.error('❌ Lỗi gửi email reset password:', error);
     res.status(500).json({ message: 'Lỗi server khi gửi OTP' });
   }
 };
