@@ -3,7 +3,11 @@ const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
 
+// Khởi tạo app và PORT
+const app = express();
+const PORT = process.env.PORT || 5000;
 
+// ====== Import Routers & Controllers ======
 const userRouter = require("./src/routers/userRouter");
 const productRouter = require("./src/routers/productRouter");
 const categoryRouter = require("./src/routers/categoryRouter");
@@ -22,28 +26,22 @@ const favoriteRouter = require("./src/routers/favoriteProductRouter");
 const authController = require('./src/controllers/authController');
 const addressRouter = require("./src/routers/addressRouter");
 const categoryTypeRouter = require("./src/routers/categoryTypeRouter");
-
-
 const uploadRouter = require("./src/routers/uploadRouter");
-
-// ✅ Thêm router mới cho Voucher & Notification
 const voucherRouter = require("./src/routers/voucherRoutes");
 const notificationRouter = require("./src/routers/notificationRoutes");
 
-
-// Kiểm tra biến môi trường bắt buộc
+// ====== Kiểm tra biến môi trường bắt buộc ======
 if (!process.env.JWT_SECRET) {
   console.error("❌ Lỗi: JWT_SECRET không được định nghĩa trong file .env");
   process.exit(1);
 }
 
-// Middleware chung
+// ====== Middleware chung ======
 app.use(cors());
 app.use(express.json());
 app.use("/uploads", express.static("uploads")); // phục vụ ảnh static
 
-// ========== ROUTE ĐIỂM VÀO ==========
-
+// ====== Định nghĩa các ROUTE ======
 app.use("/api/users", userRouter);
 app.use('/api/products', productRouter);
 app.use('/api/categories', categoryRouter);
@@ -61,36 +59,27 @@ app.use("/api/statistics", statisticApi);
 app.use("/api/favorites", favoriteRouter);
 app.use("/api", uploadRouter);
 app.use('/api/category-types', categoryTypeRouter);
+app.use('/api/vouchers', voucherRouter);
+app.use('/api/notifications', notificationRouter);
+app.use("/api/addresses", addressRouter);
 
-// app.use("/", cartApi);
-// app.use("/", cartItemApi);
-// app.use("/api/order-details", orderDetailRouter);
-// app.use("/", orderStatusRouter);
-// app.use("/", shippingRouter);
-// app.use(paymentRouter);
-// app.use("/api/addresses", addressRouter);
-// uth routes (forgot password)
+// ====== Auth routes (forgot/reset password) ======
 app.post('/api/forgot-password', authController.forgotPassword);
 app.post('/api/reset-password', authController.resetPassword);
 
-// app.use("/api", uploadRouter);
-// Route gốc hiển thị toàn bộ giỏ hàng + sản phẩm
-
-// ========== KẾT NỐI DATABASE ==========
+// ====== Kết nối DATABASE ======
 mongoose
   .connect(process.env.MONGODB_URI)
   .then(() => console.log("✅ Đã kết nối MongoDB Atlas"))
   .catch((err) => console.error("❌ Lỗi kết nối MongoDB:", err));
 
-
-// ========== MIDDLEWARE LỖI ==========
-
+// ====== Middleware xử lý lỗi ======
 app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).json({ message: "Lỗi server", error: err.message });
 });
 
-// ========== KHỞI ĐỘNG SERVER ==========
+// ====== Khởi động SERVER ======
 app.listen(PORT, () => {
   console.log(`🚀 Server đang chạy tại http://localhost:${PORT}`);
 });

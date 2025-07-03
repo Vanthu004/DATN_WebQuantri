@@ -229,17 +229,39 @@ exports.updateProduct = async (req, res) => {
   }
 };
 
-/* Xoá mềm sản phẩm */
+/* Xoá mềm sản phẩm - thay đổi status thành inactive */
 exports.deleteProduct = async (req, res) => {
   try {
     const deleted = await Product.findByIdAndUpdate(
       req.params.id,
-      { is_deleted: true },
+      { 
+        is_deleted: true,
+        status: "inactive"
+      },
       { new: true }
     );
     if (!deleted)
       return res.status(404).json({ msg: "Không tìm thấy sản phẩm" });
-    res.json({ msg: "Đã xoá (soft delete)", deleted });
+    res.json({ msg: "Đã xoá sản phẩm và chuyển status thành inactive", deleted });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+/* Khôi phục sản phẩm đã xóa */
+exports.restoreProduct = async (req, res) => {
+  try {
+    const restored = await Product.findByIdAndUpdate(
+      req.params.id,
+      { 
+        is_deleted: false,
+        status: "active"
+      },
+      { new: true }
+    );
+    if (!restored)
+      return res.status(404).json({ msg: "Không tìm thấy sản phẩm" });
+    res.json({ msg: "Đã khôi phục sản phẩm và chuyển status thành active", restored });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -249,7 +271,10 @@ exports.deleteProduct = async (req, res) => {
 exports.getBestSellers = async (req, res) => {
   try {
     const limit = parseInt(req.query.limit) || 10;
-    const bestSellers = await Product.find({ status: 'active' })
+    const bestSellers = await Product.find({ 
+      status: 'active',
+      is_deleted: false 
+    })
       .sort({ sold_quantity: -1 })
       .limit(limit)
       .select("name price image_url sold_quantity category_id")
@@ -273,7 +298,10 @@ exports.getBestSellers = async (req, res) => {
 exports.getNewestProducts = async (req, res) => {
   try {
     const limit = parseInt(req.query.limit) || 10;
-    const newestProducts = await Product.find({ status: 'active' })
+    const newestProducts = await Product.find({ 
+      status: 'active',
+      is_deleted: false 
+    })
       .sort({ created_date: -1 })
       .limit(limit)
       .select("name price image_url created_date category_id")
@@ -310,7 +338,7 @@ exports.getPopularProducts = async (req, res) => {
           }
         }
       },
-      { $match: { status: 'active' } },
+      { $match: { status: 'active', is_deleted: false } },
       { $sort: { popularity_score: -1 } },
       { $limit: limit },
       {
@@ -389,14 +417,20 @@ exports.getHomeData = async (req, res) => {
     const limit = parseInt(req.query.limit) || 10;
     
     // Lấy sản phẩm bán chạy nhất
-    const bestSellers = await Product.find({ status: 'active' })
+    const bestSellers = await Product.find({ 
+      status: 'active',
+      is_deleted: false 
+    })
       .sort({ sold_quantity: -1 })
       .limit(limit)
       .select("name price image_url sold_quantity category_id")
       .populate("category_id", "name");
     
     // Lấy sản phẩm mới nhất
-    const newestProducts = await Product.find({ status: 'active' })
+    const newestProducts = await Product.find({ 
+      status: 'active',
+      is_deleted: false 
+    })
       .sort({ created_date: -1 })
       .limit(limit)
       .select("name price image_url created_date category_id")
@@ -414,7 +448,7 @@ exports.getHomeData = async (req, res) => {
           }
         }
       },
-      { $match: { status: 'active' } },
+      { $match: { status: 'active', is_deleted: false } },
       { $sort: { popularity_score: -1 } },
       { $limit: limit },
       {
