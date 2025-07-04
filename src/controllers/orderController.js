@@ -73,9 +73,36 @@ exports.getOrdersByUser = async (req, res) => {
   }
 };
 
+// Hàm kiểm tra hợp lệ khi chuyển trạng thái đơn hàng
+function isValidStatusTransition(current, next) {
+  const transitions = {
+    "Chờ xử lý": ["Đã xác nhận", "Đã hủy"],
+    "Đã xác nhận": ["Đang vận chuyển"],
+    "Đang vận chuyển": ["Đã giao hàng"],
+    "Đã giao hàng": ["Hoàn thành"],
+    "Hoàn thành": ["Đã hủy"],
+    "Đã hủy": [],
+  };
+  return transitions[current]?.includes(next);
+}
+
 /* Cập nhật đơn hàng */
 exports.updateOrder = async (req, res) => {
   try {
+    // Nếu có cập nhật trạng thái
+    if (req.body.status) {
+      const order = await Order.findById(req.params.id);
+      if (!order) return res.status(404).json({ msg: "Không tìm thấy đơn" });
+      const currentStatus = order.status;
+      const nextStatus = req.body.status;
+      if (currentStatus === nextStatus) {
+        // Cho phép cập nhật các trường khác nếu trạng thái không đổi
+      } else if (!isValidStatusTransition(currentStatus, nextStatus)) {
+        return res.status(400).json({
+          msg: `Không thể chuyển trạng thái từ '${currentStatus}' sang '${nextStatus}'`,
+        });
+      }
+    }
     const updated = await Order.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
     });

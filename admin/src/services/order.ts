@@ -9,7 +9,7 @@ export const getAllOrders = async (): Promise<Order[]> => {
 
 // Lấy đơn hàng theo ID
 export const getOrderById = async (id: string): Promise<Order> => {
-  const res = await api.get<Order>(`/${id}`);
+  const res = await api.get<Order>(`orders/${id}`);
   return res.data;
 };
 
@@ -17,11 +17,11 @@ export const getOrderById = async (id: string): Promise<Order> => {
 export const createOrder = async (
   order: Omit<Order, "_id" | "order_code" | "createdAt" | "updatedAt">
 ): Promise<Order> => {
-  const res = await api.post<Order>(`/`, order);
+  const res = await api.post<Order>(`orders/`, order);
   return res.data;
 };
 
-// Cập nhật đơn hàng (chủ yếu là cập nhật trạng thái)
+// Cập nhật đơn hàng
 export const updateOrder = async (
   id: string,
   data: Partial<Order>
@@ -32,11 +32,11 @@ export const updateOrder = async (
 
 // Xóa đơn hàng
 export const deleteOrder = async (id: string): Promise<{ msg: string }> => {
-  const res = await api.delete<{ msg: string }>(`/${id}`);
+  const res = await api.delete<{ msg: string }>(`orders/${id}`);
   return res.data;
 };
 
 export const getOrdersByUser = async (userId: string): Promise<Order[]> => {
-  const res = await api.get<Order[]>(`/user/${userId}`);
+  const res = await api.get<Order[]>(`orders/user/${userId}`);
   return res.data;
 };

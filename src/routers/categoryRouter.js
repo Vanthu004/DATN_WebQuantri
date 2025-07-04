@@ -13,4 +13,6 @@ router
   .put(categoryCtrl.updateCategory)
   .delete(categoryCtrl.deleteCategory);
 
+router.put('/sort-orders', categoryCtrl.updateSortOrders);
+
 module.exports = router;
