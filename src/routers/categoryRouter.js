@@ -15,4 +15,6 @@ router
 
 router.put('/sort-orders', categoryCtrl.updateSortOrders);
 
+router.get('/by-category-type/:categoryTypeId', categoryCtrl.getCategoriesByCategoryType);
+
 module.exports = router;
