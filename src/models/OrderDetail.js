@@ -7,10 +7,10 @@ const orderDetailSchema = new mongoose.Schema(
       ref: "Order",
       required: true,
     },
-    variant_id: {
+    product_id: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "ProductVariant",
-      // required: true,
+      ref: "Product",
+      required: true,
     },
     quantity: {
       type: Number,
@@ -29,6 +29,7 @@ const orderDetailSchema = new mongoose.Schema(
       type: Number,
       required: true,
     },
+    product_image: { type: String },
   },
   { versionKey: false, timestamps: true }
 );

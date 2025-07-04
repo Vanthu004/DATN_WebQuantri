@@ -81,6 +81,13 @@
 .action-btn.delete:hover {
   background: #fecaca;
 }
+.action-btn.restore {
+  background: #dbeafe;
+  color: #1e40af;
+}
+.action-btn.restore:hover {
+  background: #bfdbfe;
+}
 .action-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
