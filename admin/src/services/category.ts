@@ -29,6 +29,7 @@ export const getCategoryById = async (
 export const createCategory = async (
   category: Omit<Category, "_id" | "createdAt" | "updatedAt"> & {
     image?: string;
+    categoryType: string;
   }
 ): Promise<Category | undefined> => {
   try {
@@ -43,6 +44,7 @@ export const updateCategory = async (
   id: string,
   category: Partial<Omit<Category, "_id" | "createdAt" | "updatedAt">> & {
     image?: string;
+    categoryType: string;
   }
 ): Promise<Category | undefined> => {
   try {

@@ -1,14 +1,17 @@
 import { useEffect, useState } from "react";
 import Category from "../../interfaces/category";
-import { deleteCategory, getAllCategories } from "../../services/category";
+import { deleteCategory, getAllCategories, updateCategory } from "../../services/category";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 import ManageCategoryType from "../categoryTypes/ManageCategoryType";
+import { getAllCategoryTypes } from "../../services/categoryType";
+import CategoryType from "../../interfaces/categoryType";
 
 const ListCategory = () => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [activeTab, setActiveTab] = useState<'list' | 'type' | 'deleted'>('list');
   const navigate = useNavigate();
+  const [categoryTypes, setCategoryTypes] = useState<CategoryType[]>([]);
 
   const fetchAllCategory = async (showDeleted: boolean) => {
     try {
@@ -24,6 +27,10 @@ const ListCategory = () => {
       fetchAllCategory(activeTab === 'deleted');
     }
   }, [activeTab]);
+
+  useEffect(() => {
+    getAllCategoryTypes().then(setCategoryTypes);
+  }, []);
 
   const handleDeleteCategory = async (id: string) => {
     try {
@@ -97,13 +104,27 @@ const ListCategory = () => {
                       </span>
                     </td>
                     <td className="px-4 py-2 border-b">
-                      <span className={`px-2 py-1 rounded-full text-xs ${
-                        category.type
-                          ? 'bg-blue-100 text-blue-800'
-                          : 'bg-gray-100 text-gray-600'
-                      }`}>
-                        {category.type || 'Chưa phân loại'}
-                      </span>
+                      <select
+                        className="border rounded px-2 py-1 text-xs"
+                        value={typeof category.categoryType === 'object' && category.categoryType?._id ? category.categoryType._id : (typeof category.categoryType === 'string' ? category.categoryType : '')}
+                        onChange={async (e) => {
+                          const newCategoryType = e.target.value;
+                          const { _id, createdAt, updatedAt, image, ...rest } = category;
+                          await updateCategory(category._id, {
+                            ...rest,
+                            image_url: typeof category.image === 'string' ? category.image : category.image_url,
+                            categoryType: newCategoryType
+                          });
+                          toast.success('Đã cập nhật loại danh mục!');
+                          fetchAllCategory(false);
+                        }}
+                        disabled={category.is_deleted}
+                      >
+                        <option value="">Chưa phân loại</option>
+                        {categoryTypes.map((ct) => (
+                          <option key={ct._id} value={ct._id}>{ct.name}</option>
+                        ))}
+                      </select>
                     </td>
                     <td className="px-4 py-2 border-b">
                       {category.image_url ? (
