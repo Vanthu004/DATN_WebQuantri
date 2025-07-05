@@ -85,3 +85,16 @@
   opacity: 0.5;
   cursor: not-allowed;
 }
+.toggle-btn {
+  background: none;
+  border: none;
+  color: #2563eb;
+  cursor: pointer;
+  font-size: 12px;
+  margin-left: 4px;
+  padding: 0;
+  text-decoration: underline;
+}
+.toggle-btn:hover {
+  color: #1d4ed8;
+}
