@@ -19,7 +19,7 @@ const menuItems = [
     label: "Bảng điều khiển",
   },
   {
-    path: "/notifications",
+    path: "/notify",
     icon: <MdOutlineNotificationsActive />,
     label: "Thông báo",
   },
