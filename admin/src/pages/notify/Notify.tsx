@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import "../../css/notify/notify.css";
+import { useOrderNotify } from "../../contexts/OrderNotifyContext";
 
 interface Order {
   _id: string;
@@ -17,6 +18,7 @@ const Notify = () => {
   const [recentOrders, setRecentOrders] = useState<Order[]>([]);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const navigate = useNavigate();
+  const { setNewOrderCount } = useOrderNotify();
 
   useEffect(() => {
     const fetchLatestOrders = async () => {
@@ -33,6 +35,10 @@ const Notify = () => {
           setTimeout(() => setShow(false), 4000);
         }
         setLatestOrder(newest);
+
+        // Giả sử bạn muốn đếm số đơn hàng mới chưa xem
+        const newOrders = data.filter(order => order.status === "Chờ xử lý");
+        setNewOrderCount(newOrders.length);
       }
     };
 
