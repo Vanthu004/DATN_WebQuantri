@@ -72,7 +72,7 @@ const ListProduct = () => {
           Thêm sản phẩm
         </button>
       </div>
-      <div className="overflow-x-auto">
+      <div className="product-table-scroll">
         <table className="min-w-max w-full bg-white rounded-lg shadow border border-gray-200">
           <thead>
             <tr className="bg-gray-100">

@@ -20,6 +20,7 @@ import OrderDetail from "./pages/orders/OrderDetail";
 
 import ManageCategoryType from "./pages/categoryTypes/ManageCategoryType";
 import ProductsByCategoryType from "./pages/products/ProductsByCategoryType";
+import Notify from "./pages/notify/Notify";
 
 
 function App() {
@@ -30,6 +31,7 @@ function App() {
         <Route element={<PrivateRouter />}>
           <Route element={<LayoutAdmin />}>
             <Route path="/" index element={<Dashboard />} />
+            <Route path="/notify" element={<Notify />} />
 
             {/* Product Path*/}
             <Route path="/products" element={<ListProduct />} />
