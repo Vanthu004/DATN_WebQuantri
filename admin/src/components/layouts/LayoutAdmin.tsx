@@ -11,6 +11,7 @@ import { RiDiscountPercentFill } from "react-icons/ri";
 import { BiSolidCommentDetail } from "react-icons/bi";
 import { AiFillSetting } from "react-icons/ai";
 import "../../css/layouts/layoutAdmin.css";
+import { useOrderNotify } from "../../contexts/OrderNotifyContext";
 
 const menuItems = [
   {
@@ -63,6 +64,7 @@ const menuItems = [
 const LayoutAdmin = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { newOrderCount } = useOrderNotify();
 
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -100,6 +102,10 @@ const LayoutAdmin = () => {
                   >
                     {item.icon}
                     <span>{item.label}</span>
+                    {/* Hiển thị badge nếu là menu Thông báo và có số mới > 0 */}
+                    {item.path === "/notify" && newOrderCount > 0 && (
+                      <span className="menu-badge">{newOrderCount}</span>
+                    )}
                   </Link>
                 </li>
               ))}
