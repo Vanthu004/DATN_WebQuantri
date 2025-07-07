@@ -13,6 +13,9 @@ import { AiFillSetting } from "react-icons/ai";
 import "../../css/layouts/layoutAdmin.css";
 import { useOrderNotify } from "../../contexts/OrderNotifyContext";
 
+import logo from '../../assets/LogoSwear.png';
+
+
 const menuItems = [
   {
     path: "/",
@@ -76,8 +79,7 @@ const LayoutAdmin = () => {
       {/* Header */}
       <header className="layout-header">
         <Link to="/" className="logo-section">
-          <img src="https://i.imgur.com/jInJnWw.png" alt="SneakerHub Logo" />
-          <span className="brand-name">Swear</span>
+          <img src = {logo} alt="SwearLogo" />
         </Link>
         <div className="header-actions">
           <button className="logout-btn" onClick={handleLogout}>

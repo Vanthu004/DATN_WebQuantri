@@ -114,3 +114,12 @@ export const deleteProduct = async (id: string) => {
     console.log(error);
   }
 };
+
+export const restoreProduct = async (id: string) => {
+  try {
+    const response = await api.patch(`/products/${id}/restore`);
+    return response.data;
+  } catch (error) {
+    console.log(error);
+  }
+};

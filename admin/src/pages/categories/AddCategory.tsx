@@ -13,7 +13,7 @@ const AddCategory = () => {
   const [status, setStatus] = useState<"active" | "inactive">("active");
   const [image_url, setImageUrl] = useState("");
   const [sort_order, setSortOrder] = useState(0);
-  const [type, setType] = useState<string>("");
+  const [categoryType, setCategoryType] = useState<string>("");
   const [categoryTypes, setCategoryTypes] = useState<CategoryType[]>([]);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>("");
@@ -53,7 +53,7 @@ const AddCategory = () => {
       toast.error("Tên danh mục không được để trống!");
       return;
     }
-    if (!type) {
+    if (!categoryType) {
       toast.error("Vui lòng chọn loại danh mục!");
       return;
     }
@@ -63,7 +63,7 @@ const AddCategory = () => {
         status,
         image_url: image_url || undefined,
         sort_order,
-        type,
+        categoryType,
         is_deleted: false,
       });
       toast.success("Thêm danh mục thành công");
@@ -131,13 +131,13 @@ const AddCategory = () => {
         <div>
           <label>Loại danh mục</label>
           <select
-            value={type}
-            onChange={(e) => setType(e.target.value)}
+            value={categoryType}
+            onChange={(e) => setCategoryType(e.target.value)}
             required
           >
             <option value="">-- Chọn loại danh mục --</option>
             {categoryTypes.map((catType) => (
-              <option key={catType._id} value={catType.code}>
+              <option key={catType._id} value={catType._id}>
                 {catType.name}
               </option>
             ))}
