@@ -14,7 +14,7 @@ const UpdateCategory = () => {
   const [status, setStatus] = useState<"active" | "inactive">("active");
   const [image_url, setImageUrl] = useState("");
   const [sort_order, setSortOrder] = useState(0);
-  const [type, setType] = useState<string>("");
+  const [categoryType, setCategoryType] = useState<string>("");
   const [categoryTypes, setCategoryTypes] = useState<CategoryType[]>([]);
 
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -43,7 +43,7 @@ const UpdateCategory = () => {
         setStatus(response.status);
         setImageUrl(response.image_url || "");
         setSortOrder(response.sort_order);
-        setType(response.type || "");
+        setCategoryType(typeof response.categoryType === 'string' ? response.categoryType : response.categoryType?._id || "");
         setImagePreview(response.image_url || "");
       } catch (error) {
         console.log(error);
@@ -75,12 +75,18 @@ const UpdateCategory = () => {
       toast.error("Tên danh mục không được để trống!");
       return;
     }
-    if (!type) {
+    if (!categoryType) {
       toast.error("Vui lòng chọn loại danh mục!");
       return;
     }
     try {
-      await updateCategory(id, { name, status, image_url, sort_order, type });
+      await updateCategory(id, {
+        name,
+        status,
+        image_url,
+        sort_order,
+        categoryType,
+      });
       toast.success("Cập nhật thành công!");
       navigate("/categories");
     } catch (error) {
@@ -148,13 +154,13 @@ const UpdateCategory = () => {
         <div>
           <label>Loại danh mục</label>
           <select
-            value={type}
-            onChange={(e) => setType(e.target.value)}
+            value={categoryType}
+            onChange={(e) => setCategoryType(e.target.value)}
             required
           >
             <option value="">-- Chọn loại danh mục --</option>
             {categoryTypes.map((catType) => (
-              <option key={catType._id} value={catType.code}>
+              <option key={catType._id} value={catType._id}>
                 {catType.name}
               </option>
             ))}

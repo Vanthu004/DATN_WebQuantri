@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { getAllProducts, deleteProduct } from "../../services/product";
+import { getAllProducts, deleteProduct, restoreProduct } from "../../services/product";
 import Product from "../../interfaces/product";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
@@ -33,10 +33,10 @@ const ListProduct = () => {
   };
 
   const handleDeleteProduct = async (id: string) => {
-    if (!window.confirm("Bạn có chắc chắn muốn xóa sản phẩm này?")) return;
+    if (!window.confirm("Bạn có chắc chắn muốn xóa sản phẩm này? Sản phẩm sẽ chuyển thành inactive và không hiển thị trên app.")) return;
     try {
       await deleteProduct(id);
-      toast.success("Xóa sản phẩm thành công!");
+      toast.success("Xóa sản phẩm thành công! Sản phẩm đã chuyển thành inactive.");
       fetchAllProducts();
     } catch (error) {
       toast.error("Xóa sản phẩm thất bại!");
@@ -48,6 +48,7 @@ const ListProduct = () => {
       ...prev,
       [id]: !prev[id],
     }));
+
   };
 
   return (
@@ -195,6 +196,7 @@ const ListProduct = () => {
                   </td>
                 </tr>
               ))}
+
           </tbody>
         </table>
       </div>

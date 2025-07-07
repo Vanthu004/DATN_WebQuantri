@@ -26,9 +26,11 @@ const categorySchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
-    type: {
-      type: String,
-      default: ''
+    categoryType: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'CategoryType',
+      required: false,
+      default: null
     },
   },
   { versionKey: false, timestamps: true }
