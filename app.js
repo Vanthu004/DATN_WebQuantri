@@ -23,13 +23,8 @@ const cartApi = require("./src/routers/cartApi");
 const cartItemApi = require("./src/routers/cartItemApi");
 const statisticApi = require("./src/routers/statisticApi");
 const favoriteRouter = require("./src/routers/favoriteProductRouter");
-<<<<<<<<< Temporary merge branch 1
-const authController = require("./src/controllers/authController");
-=========
 const authController = require('./src/controllers/authController');
 const addressRouter = require("./src/routers/addressRouter");
-
->>>>>>>>> Temporary merge branch 2
 const uploadRouter = require("./src/routers/uploadRouter");
 const voucherRouter = require("./src/routers/voucherRoutes");
 const notificationRouter = require("./src/routers/notificationRoutes");
@@ -57,7 +52,7 @@ app.use("/api/payments", paymentRoutes);
 app.use("/api/payment-methods", paymentRouter);
 app.use("/api/shipping-methods", shippingRouter);
 app.use("/api/product-variants", productVariantApi);
-<<<<<<<<< Temporary merge branch 1
+
 app.use("/api/cart", cartApi);
 app.use("/api/cart-items", cartItemApi);
 app.use("/api/statistics", statisticApi);
@@ -67,7 +62,7 @@ app.use("/api/uploads", uploadRouter);
 // ========== ROUTE AUTH ==========
 app.post("/api/forgot-password", authController.forgotPassword);
 app.post("/api/reset-password", authController.resetPassword);
-=========
+
 app.use("/", cartApi);
 app.use("/", cartItemApi);
 app.use("/api/order-details", orderDetailRouter);
@@ -83,7 +78,7 @@ app.post('/api/reset-password', authController.resetPassword);
 
 app.use("/api", uploadRouter);
 // Route gốc hiển thị toàn bộ giỏ hàng + sản phẩm
->>>>>>>>> Temporary merge branch 2
+
 
 // ========== KẾT NỐI DATABASE ==========
 mongoose
