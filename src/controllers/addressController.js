@@ -31,47 +31,68 @@ exports.getAddressById = async (req, res) => {
 
 // Tạo địa chỉ mới
 
+// controllers/addressController.js
+
 exports.createAddress = async (req, res) => {
   try {
-    // Lấy thông tin user từ token
     const userId = req.user.userId;
-    const { recipient_name, phone, street, ward, district, province, country, type, is_default } = req.body;
-
-    // Validation
-    if (!recipient_name || !phone || !street || !district || !province) {
-      return res.status(400).json({ 
-        message: "Vui lòng nhập đầy đủ thông tin: người nhận, số điện thoại, đường/phố, quận/huyện, tỉnh/thành phố" 
-      });
-    }
-
-    // Nếu đặt là mặc định, bỏ mặc định của tất cả địa chỉ khác
-    if (is_default) {
-      await Address.updateMany({ user_id: userId }, { is_default: false });
-    }
-
-    // Tạo địa chỉ mới
-    const address = new Address({
-      user_id: userId,
-      recipient_name,
+    const {
+      name,
       phone,
       street,
       ward,
       district,
       province,
-      country: country || 'Việt Nam',
-      type: type || 'home',
+      country,
+      type,
+      is_default
+    } = req.body;
+
+    // Kiểm tra dữ liệu đầu vào
+    if (!name || !phone || !street || !district || !province) {
+      return res.status(400).json({
+        message: "Vui lòng nhập đầy đủ thông tin: người nhận, số điện thoại, đường/phố, quận/huyện, tỉnh/thành phố"
+      });
+    }
+
+    // Nếu là địa chỉ mặc định, bỏ mặc định các địa chỉ khác
+    if (is_default) {
+      await Address.updateMany(
+        { user_id: userId },
+        { is_default: false }
+      );
+    }
+
+    // Tạo địa chỉ mới
+    const address = new Address({
+      user_id: userId,
+      name,
+      phone,
+      street,
+      ward,
+      district,
+      province,
+      country: country || "Việt Nam",
+      type: type || "home",
       is_default: is_default || false
     });
 
     await address.save();
-    res.status(201).json({ 
-      message: "Tạo địa chỉ thành công", 
-      address 
+
+    return res.status(201).json({
+      message: "Tạo địa chỉ thành công",
+      address
     });
+
   } catch (error) {
-    res.status(500).json({ message: "Lỗi server", error: error.message });
+    console.error("Lỗi khi tạo địa chỉ:", error);
+    return res.status(500).json({
+      message: "Lỗi server",
+      error: error.message
+    });
   }
 };
+
 
 
 // Cập nhật địa chỉ
