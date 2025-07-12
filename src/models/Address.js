@@ -1,12 +1,14 @@
-const mongoose = require('mongoose');
+// models/Address.js
 
-const addressSchema = new mongoose.Schema({
+const mongoose = require("mongoose");
+
+const AddressSchema = new mongoose.Schema({
   user_id: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
+    ref: "User",
     required: true,
   },
-  recipient_name: {
+  name: {
     type: String,
     required: true,
   },
@@ -31,19 +33,17 @@ const addressSchema = new mongoose.Schema({
   },
   country: {
     type: String,
-    default: 'Việt Nam',
+    default: "Việt Nam",
   },
   type: {
     type: String,
-    enum: ['home', 'work', 'shipping', 'other'],
-    default: 'home',
+    enum: ["home", "office", "other"],
+    default: "home",
   },
   is_default: {
     type: Boolean,
     default: false,
-  },
-}, {
-  timestamps: true
-});
+  }
+}, { timestamps: true });
 
-module.exports = mongoose.model('Address', addressSchema);
+module.exports = mongoose.model("Address", AddressSchema);
