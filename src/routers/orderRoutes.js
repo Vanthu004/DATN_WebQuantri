@@ -20,4 +20,7 @@ router.put("/:id", orderCtrl.updateOrder);
 // Xoá
 router.delete("/:id", orderCtrl.deleteOrder);
 
+// API tạo order kèm order detail
+router.post("/full", orderCtrl.createOrderWithDetails);
+
 module.exports = router;
