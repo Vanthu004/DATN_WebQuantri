@@ -12,6 +12,7 @@ const ListProduct = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [showDeleted, setShowDeleted] = useState(false);
+  const [expandedRows, setExpandedRows] = useState<{ [key: string]: boolean }>({});
 
   useEffect(() => {
     fetchAllProducts();
@@ -51,6 +52,13 @@ const ListProduct = () => {
     } catch (error) {
       toast.error("Khôi phục sản phẩm thất bại!");
     }
+
+  const toggleExpand = (id: string) => {
+    setExpandedRows((prev) => ({
+      ...prev,
+      [id]: !prev[id],
+    }));
+
   };
 
   return (
@@ -75,7 +83,7 @@ const ListProduct = () => {
           Thêm sản phẩm
         </button>
       </div>
-      <div className="overflow-x-auto">
+      <div className="product-table-scroll">
         <table className="min-w-max w-full bg-white rounded-lg shadow border border-gray-200">
           <thead>
             <tr className="bg-gray-100">
