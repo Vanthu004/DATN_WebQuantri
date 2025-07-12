@@ -3,9 +3,11 @@ const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
 
+
 // Khởi tạo app và PORT
 const app = express();
-const PORT = process.env.PORT || 5000;
+
+const PORT = process.env.PORT || 3000;
 
 // ====== Import Routers & Controllers ======
 const userRouter = require("./src/routers/userRouter");
@@ -52,7 +54,6 @@ app.use("/api/payments", paymentRoutes);
 app.use("/api/payment-methods", paymentRouter);
 app.use("/api/shipping-methods", shippingRouter);
 app.use("/api/product-variants", productVariantApi);
-
 app.use("/api/cart", cartApi);
 app.use("/api/cart-items", cartItemApi);
 app.use("/api/statistics", statisticApi);

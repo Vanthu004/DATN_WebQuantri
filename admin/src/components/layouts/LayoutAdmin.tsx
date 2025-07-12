@@ -11,6 +11,10 @@ import { RiDiscountPercentFill } from "react-icons/ri";
 import { BiSolidCommentDetail } from "react-icons/bi";
 import { AiFillSetting } from "react-icons/ai";
 import "../../css/layouts/layoutAdmin.css";
+import { useOrderNotify } from "../../contexts/OrderNotifyContext";
+
+import logo from '../../assets/LogoSwear.png';
+
 
 const menuItems = [
   {
@@ -19,7 +23,7 @@ const menuItems = [
     label: "Bảng điều khiển",
   },
   {
-    path: "/notifications",
+    path: "/notify",
     icon: <MdOutlineNotificationsActive />,
     label: "Thông báo",
   },
@@ -63,6 +67,7 @@ const menuItems = [
 const LayoutAdmin = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { newOrderCount } = useOrderNotify();
 
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -74,8 +79,7 @@ const LayoutAdmin = () => {
       {/* Header */}
       <header className="layout-header">
         <Link to="/" className="logo-section">
-          <img src="https://i.imgur.com/jInJnWw.png" alt="SneakerHub Logo" />
-          <span className="brand-name">Swear</span>
+          <img src = {logo} alt="SwearLogo" />
         </Link>
         <div className="header-actions">
           <button className="logout-btn" onClick={handleLogout}>
@@ -100,6 +104,10 @@ const LayoutAdmin = () => {
                   >
                     {item.icon}
                     <span>{item.label}</span>
+                    {/* Hiển thị badge nếu là menu Thông báo và có số mới > 0 */}
+                    {item.path === "/notify" && newOrderCount > 0 && (
+                      <span className="menu-badge">{newOrderCount}</span>
+                    )}
                   </Link>
                 </li>
               ))}

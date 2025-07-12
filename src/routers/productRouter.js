@@ -9,6 +9,7 @@ router.get('/popular', prodCtrl.getPopularProducts);
 router.get('/search', prodCtrl.searchProducts);
 router.get('/category/:categoryId', prodCtrl.getProductsByCategory);
 router.get('/category-type/:type', prodCtrl.getProductsByCategoryType);
+router.get('/home', prodCtrl.getHomeData);
 
 // Lấy tất cả sản phẩm
 router.get('/', prodCtrl.getAllProducts);
@@ -21,5 +22,6 @@ router.get('/:id', prodCtrl.getProductById);
 router.put('/:id', prodCtrl.updateProduct);
 router.delete('/:id', prodCtrl.deleteProduct);
 router.patch('/:id/restore', prodCtrl.restoreProduct);
+router.post('/:id/increment-views', prodCtrl.incrementViews);
 
 module.exports = router;

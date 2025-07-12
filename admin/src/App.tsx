@@ -20,7 +20,9 @@ import OrderDetail from "./pages/orders/OrderDetail";
 
 import ManageCategoryType from "./pages/categoryTypes/ManageCategoryType";
 import ProductsByCategoryType from "./pages/products/ProductsByCategoryType";
-
+import Notify from "./pages/notify/Notify";
+import Vouchers from "./pages/vouchers/Vouchers";
+import Comments from "./pages/comments/Comments";
 
 function App() {
   return (
@@ -30,6 +32,9 @@ function App() {
         <Route element={<PrivateRouter />}>
           <Route element={<LayoutAdmin />}>
             <Route path="/" index element={<Dashboard />} />
+            <Route path="/notify" element={<Notify />} />
+            <Route path="/vouchers" element={<Vouchers />} />
+            <Route path="/comments" element={<Comments />} />
 
             {/* Product Path*/}
             <Route path="/products" element={<ListProduct />} />
