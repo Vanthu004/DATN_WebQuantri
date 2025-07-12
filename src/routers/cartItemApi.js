@@ -3,15 +3,15 @@ const router = express.Router();
 const ciCtrl = require("../controllers/cartItemController");
 
 // Thêm sản phẩm vào giỏ
-router.post("/api/cart-items", ciCtrl.addItem);
+router.post("/", ciCtrl.addItem);
 
 // Lấy tất cả item của một cart
-router.get("/api/cart-items/cart/:cartId", ciCtrl.getItemsByCart);
+router.get("/cart/:cartId", ciCtrl.getItemsByCart);
 
 // Cập nhật số lượng
-router.put("/api/cart-items/:id", ciCtrl.updateQuantity);
+router.put("/:id", ciCtrl.updateQuantity);
 
 // Xoá item
-router.delete("/api/cart-items/:id", ciCtrl.deleteItem);
+router.delete("/:id", ciCtrl.deleteItem);
 
 module.exports = router;

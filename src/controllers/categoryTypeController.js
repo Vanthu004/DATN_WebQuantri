@@ -80,14 +80,19 @@ exports.getAllPublic = async (req, res) => {
 };
 
 // API cho Expo app - lấy chi tiết loại danh mục theo code
+
 exports.getOnePublicByCode = async (req, res) => {
   try {
-    const type = await CategoryType.findOne({ code: req.params.code }).select('name code description');
-    if (!type) return res.status(404).json({ success: false, message: 'Không tìm thấy loại danh mục' });
+    const { code } = req.params; // Lấy 'code' từ URL
+    const type = await CategoryType.findOne({ code }).select('name code description');
+    
+    if (!type) {
+      return res.status(404).json({ success: false, message: 'Không tìm thấy loại danh mục' });
+    }
+
     res.json({ success: true, data: type });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
 };
-
  
