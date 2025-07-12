@@ -11,6 +11,13 @@ import { RiDiscountPercentFill } from "react-icons/ri";
 import { BiSolidCommentDetail } from "react-icons/bi";
 import { AiFillSetting } from "react-icons/ai";
 import "../../css/layouts/layoutAdmin.css";
+<<<<<<< HEAD
+=======
+import { useOrderNotify } from "../../contexts/OrderNotifyContext";
+
+import logo from '../../assets/LogoSwear.png';
+
+>>>>>>> 76b74e7da45b4da85182c8151f94424bc81c9e08
 
 const menuItems = [
   {
@@ -19,7 +26,11 @@ const menuItems = [
     label: "Bảng điều khiển",
   },
   {
+<<<<<<< HEAD
     path: "/notifications",
+=======
+    path: "/notify",
+>>>>>>> 76b74e7da45b4da85182c8151f94424bc81c9e08
     icon: <MdOutlineNotificationsActive />,
     label: "Thông báo",
   },
@@ -44,7 +55,11 @@ const menuItems = [
     label: "Vouchers",
   },
   {
+<<<<<<< HEAD
     path: "/order",
+=======
+    path: "/orders",
+>>>>>>> 76b74e7da45b4da85182c8151f94424bc81c9e08
     icon: <FaShoppingCart />,
     label: "Đơn hàng",
   },
@@ -63,6 +78,10 @@ const menuItems = [
 const LayoutAdmin = () => {
   const navigate = useNavigate();
   const location = useLocation();
+<<<<<<< HEAD
+=======
+  const { newOrderCount } = useOrderNotify();
+>>>>>>> 76b74e7da45b4da85182c8151f94424bc81c9e08
 
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -74,8 +93,12 @@ const LayoutAdmin = () => {
       {/* Header */}
       <header className="layout-header">
         <Link to="/" className="logo-section">
+<<<<<<< HEAD
           <img src="https://i.imgur.com/jInJnWw.png" alt="SneakerHub Logo" />
           <span className="brand-name">Swear</span>
+=======
+          <img src = {logo} alt="SwearLogo" />
+>>>>>>> 76b74e7da45b4da85182c8151f94424bc81c9e08
         </Link>
         <div className="header-actions">
           <button className="logout-btn" onClick={handleLogout}>
@@ -100,6 +123,13 @@ const LayoutAdmin = () => {
                   >
                     {item.icon}
                     <span>{item.label}</span>
+<<<<<<< HEAD
+=======
+                    {/* Hiển thị badge nếu là menu Thông báo và có số mới > 0 */}
+                    {item.path === "/notify" && newOrderCount > 0 && (
+                      <span className="menu-badge">{newOrderCount}</span>
+                    )}
+>>>>>>> 76b74e7da45b4da85182c8151f94424bc81c9e08
                   </Link>
                 </li>
               ))}

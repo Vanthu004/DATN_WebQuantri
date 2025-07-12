@@ -38,6 +38,45 @@ export const getProductsByCategory = async (
   }
 };
 
+<<<<<<< HEAD
+=======
+export const getProductsByCategoryType = async (
+  type: string,
+  page: number = 1,
+  limit: number = 20
+): Promise<{
+  success: boolean;
+  data: Product[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+  message: string;
+}> => {
+  try {
+    const response = await api.get(
+      `/products/category-type/${type}?page=${page}&limit=${limit}`
+    );
+    return response.data as {
+      success: boolean;
+      data: Product[];
+      pagination: {
+        page: number;
+        limit: number;
+        total: number;
+        totalPages: number;
+      };
+      message: string;
+    };
+  } catch (error) {
+    console.log(error);
+    throw error;
+  }
+};
+
+>>>>>>> 76b74e7da45b4da85182c8151f94424bc81c9e08
 export const createProduct = async (product: {
   name: string;
   description?: string;
@@ -78,3 +117,15 @@ export const deleteProduct = async (id: string) => {
     console.log(error);
   }
 };
+<<<<<<< HEAD
+=======
+
+export const restoreProduct = async (id: string) => {
+  try {
+    const response = await api.patch(`/products/${id}/restore`);
+    return response.data;
+  } catch (error) {
+    console.log(error);
+  }
+};
+>>>>>>> 76b74e7da45b4da85182c8151f94424bc81c9e08

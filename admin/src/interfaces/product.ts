@@ -14,6 +14,12 @@ export default interface Product {
   images?: (Upload | string)[];
   image_url: string;
   sold_quantity: number;
+<<<<<<< HEAD
+=======
+  views?: number;
+  category_name?: string;
+  category_type?: string;
+>>>>>>> 76b74e7da45b4da85182c8151f94424bc81c9e08
   is_deleted: boolean;
   createdAt: string;
   updatedAt: string;

@@ -1,4 +1,7 @@
-const Category = require("../models/Category");
+
+const Category = require("../models/category");
+const Product = require("../models/product");
+
 
 /* Tạo danh mục */
 exports.createCategory = async (req, res) => {
@@ -57,6 +60,16 @@ exports.updateCategory = async (req, res) => {
       { new: true }
     ).populate("image");
     if (!cat) return res.status(404).json({ message: "Not found" });
+
+
+    // Nếu có đổi categoryType, cập nhật lại tất cả sản phẩm thuộc category này
+    if (rest.categoryType) {
+      await Product.updateMany(
+        { category_id: cat._id },
+        { $set: { updatedAt: new Date() } } // chỉ cập nhật updatedAt để trigger đồng bộ, không cần đổi gì khác
+      );
+    }
+
     res.json(cat);
   } catch (err) {
     res.status(400).json({ error: err.message });
@@ -77,3 +90,40 @@ exports.deleteCategory = async (req, res) => {
     res.status(400).json({ error: err.message });
   }
 };
+
+
+/* API cập nhật thứ tự sắp xếp nhiều danh mục */
+exports.updateSortOrders = async (req, res) => {
+  try {
+    const { orders } = req.body; // [{ _id, sort_order }]
+    if (!Array.isArray(orders)) {
+      return res.status(400).json({ error: 'orders must be an array' });
+    }
+    const bulkOps = orders.map(item => ({
+      updateOne: {
+        filter: { _id: item._id },
+        update: { sort_order: item.sort_order }
+      }
+    }));
+    await Category.bulkWrite(bulkOps);
+    res.json({ message: 'Cập nhật thứ tự thành công' });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+};
+
+/* Lấy tất cả category theo categoryType */
+exports.getCategoriesByCategoryType = async (req, res) => {
+  try {
+    const { categoryTypeId } = req.params;
+    const categories = await Category.find({
+      categoryType: categoryTypeId,
+      is_deleted: false,
+      status: 'active'
+    }).populate('image');
+    res.json(categories);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error });
+  }
+};
+

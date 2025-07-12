@@ -1,9 +1,17 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { getCategoryById, updateCategory } from "../../services/category";
+<<<<<<< HEAD
 import { uploadImage } from "../../services/upload";
 import { toast } from "react-toastify";
 import Category from "../../interfaces/category";
+=======
+import { getAllCategoryTypes } from "../../services/categoryType";
+import { uploadImage } from "../../services/upload";
+import { toast } from "react-toastify";
+import Category from "../../interfaces/category";
+import CategoryType from "../../interfaces/categoryType";
+>>>>>>> 76b74e7da45b4da85182c8151f94424bc81c9e08
 import "../../css/categoryCss/updateCategory.css";
 
 const UpdateCategory = () => {
@@ -12,6 +20,11 @@ const UpdateCategory = () => {
   const [status, setStatus] = useState<"active" | "inactive">("active");
   const [image_url, setImageUrl] = useState("");
   const [sort_order, setSortOrder] = useState(0);
+<<<<<<< HEAD
+=======
+  const [categoryType, setCategoryType] = useState<string>("");
+  const [categoryTypes, setCategoryTypes] = useState<CategoryType[]>([]);
+>>>>>>> 76b74e7da45b4da85182c8151f94424bc81c9e08
 
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>("");
@@ -19,6 +32,21 @@ const UpdateCategory = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
+<<<<<<< HEAD
+=======
+    const fetchCategoryTypes = async () => {
+      try {
+        const types = await getAllCategoryTypes();
+        setCategoryTypes(types);
+      } catch (error) {
+        console.log(error);
+      }
+    };
+    fetchCategoryTypes();
+  }, []);
+
+  useEffect(() => {
+>>>>>>> 76b74e7da45b4da85182c8151f94424bc81c9e08
     if (!id) return;
     const fetchCategory = async () => {
       try {
@@ -27,6 +55,10 @@ const UpdateCategory = () => {
         setStatus(response.status);
         setImageUrl(response.image_url || "");
         setSortOrder(response.sort_order);
+<<<<<<< HEAD
+=======
+        setCategoryType(typeof response.categoryType === 'string' ? response.categoryType : response.categoryType?._id || "");
+>>>>>>> 76b74e7da45b4da85182c8151f94424bc81c9e08
         setImagePreview(response.image_url || "");
       } catch (error) {
         console.log(error);
@@ -54,8 +86,27 @@ const UpdateCategory = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!id) return;
+<<<<<<< HEAD
     try {
       await updateCategory(id, { name, status, image_url, sort_order });
+=======
+    if (!name.trim()) {
+      toast.error("Tên danh mục không được để trống!");
+      return;
+    }
+    if (!categoryType) {
+      toast.error("Vui lòng chọn loại danh mục!");
+      return;
+    }
+    try {
+      await updateCategory(id, {
+        name,
+        status,
+        image_url,
+        sort_order,
+        categoryType,
+      });
+>>>>>>> 76b74e7da45b4da85182c8151f94424bc81c9e08
       toast.success("Cập nhật thành công!");
       navigate("/categories");
     } catch (error) {
@@ -121,6 +172,24 @@ const UpdateCategory = () => {
           )}
         </div>
         <div>
+<<<<<<< HEAD
+=======
+          <label>Loại danh mục</label>
+          <select
+            value={categoryType}
+            onChange={(e) => setCategoryType(e.target.value)}
+            required
+          >
+            <option value="">-- Chọn loại danh mục --</option>
+            {categoryTypes.map((catType) => (
+              <option key={catType._id} value={catType._id}>
+                {catType.name}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div>
+>>>>>>> 76b74e7da45b4da85182c8151f94424bc81c9e08
           <label>Thứ tự hiển thị (sort_order)</label>
           <input
             type="number"

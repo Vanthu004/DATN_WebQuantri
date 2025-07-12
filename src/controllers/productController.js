@@ -1,6 +1,11 @@
 // src/controllers/productController.js
 const Product = require("../models/product");
 
+const Category = require("../models/category");
+const CategoryType = require("../models/categoryType");
+const mongoose = require('mongoose');
+
+
 // Escape regex function
 function escapeRegex(text) {
   return text.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&');
@@ -105,6 +110,95 @@ exports.getProductsByCategory = async (req, res) => {
   }
 };
 
+
+/* Lấy sản phẩm theo loại danh mục */
+exports.getProductsByCategoryType = async (req, res) => {
+  try {
+    const { type } = req.params;
+    const limit = parseInt(req.query.limit) || 20;
+    const page = parseInt(req.query.page) || 1;
+    const skip = (page - 1) * limit;
+
+    // Nếu type không phải ObjectId hợp lệ thì trả về mảng rỗng
+    if (!mongoose.Types.ObjectId.isValid(type)) {
+      return res.json({
+        success: true,
+        data: [],
+        pagination: { page, limit, total: 0, totalPages: 0 },
+        message: 'Loại danh mục không hợp lệ'
+      });
+    }
+
+    const matchStage = {
+      'category.categoryType': new mongoose.Types.ObjectId(type),
+      'category.is_deleted': false,
+      is_deleted: false,
+      status: 'active'
+    };
+
+    const products = await Product.aggregate([
+      {
+        $lookup: {
+          from: 'categories',
+          localField: 'category_id',
+          foreignField: '_id',
+          as: 'category'
+        }
+      },
+      { $unwind: '$category' },
+      { $match: matchStage },
+      { $sort: { created_date: -1 } },
+      { $skip: skip },
+      { $limit: limit },
+      {
+        $project: {
+          name: 1,
+          price: 1,
+          image_url: 1,
+          sold_quantity: 1,
+          views: 1,
+          created_date: 1,
+          category_id: '$category._id',
+          category_name: '$category.name',
+          category_type: '$category.categoryType'
+        }
+      }
+    ]);
+
+    // Đếm tổng số sản phẩm để phân trang
+    const totalProducts = await Product.aggregate([
+      {
+        $lookup: {
+          from: 'categories',
+          localField: 'category_id',
+          foreignField: '_id',
+          as: 'category'
+        }
+      },
+      { $unwind: '$category' },
+      { $match: matchStage },
+      { $count: 'total' }
+    ]);
+
+    const total = totalProducts.length > 0 ? totalProducts[0].total : 0;
+
+    res.json({
+      success: true,
+      data: products,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit)
+      },
+      message: `Lấy danh sách sản phẩm theo loại danh mục ${type} thành công`
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Lỗi khi lấy sản phẩm theo loại danh mục' });
+  }
+};
+
+
 /* Cập nhật sản phẩm */
 exports.updateProduct = async (req, res) => {
   try {
@@ -126,17 +220,45 @@ exports.updateProduct = async (req, res) => {
   }
 };
 
-/* Xoá mềm sản phẩm */
+
+/* Xoá mềm sản phẩm - thay đổi status thành inactive */
+
 exports.deleteProduct = async (req, res) => {
   try {
     const deleted = await Product.findByIdAndUpdate(
       req.params.id,
-      { is_deleted: true },
+
+      { 
+        is_deleted: true,
+        status: "inactive"
+      },
+
       { new: true }
     );
     if (!deleted)
       return res.status(404).json({ msg: "Không tìm thấy sản phẩm" });
-    res.json({ msg: "Đã xoá (soft delete)", deleted });
+
+    res.json({ msg: "Đã xoá sản phẩm và chuyển status thành inactive", deleted });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+/* Khôi phục sản phẩm đã xóa */
+exports.restoreProduct = async (req, res) => {
+  try {
+    const restored = await Product.findByIdAndUpdate(
+      req.params.id,
+      { 
+        is_deleted: false,
+        status: "active"
+      },
+      { new: true }
+    );
+    if (!restored)
+      return res.status(404).json({ msg: "Không tìm thấy sản phẩm" });
+    res.json({ msg: "Đã khôi phục sản phẩm và chuyển status thành active", restored });
+
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -146,7 +268,12 @@ exports.deleteProduct = async (req, res) => {
 exports.getBestSellers = async (req, res) => {
   try {
     const limit = parseInt(req.query.limit) || 10;
-    const bestSellers = await Product.find({ status: 'active' })
+
+    const bestSellers = await Product.find({ 
+      status: 'active',
+      is_deleted: false 
+    })
+
       .sort({ sold_quantity: -1 })
       .limit(limit)
       .select("name price image_url sold_quantity category_id")
@@ -170,10 +297,15 @@ exports.getBestSellers = async (req, res) => {
 exports.getNewestProducts = async (req, res) => {
   try {
     const limit = parseInt(req.query.limit) || 10;
-    const newestProducts = await Product.find({ status: 'active' })
-      .sort({ created_date: -1 })
+
+    const newestProducts = await Product.find({ 
+      status: 'active',
+      is_deleted: false 
+    })
+      .sort({ createdAt: -1 })
       .limit(limit)
-      .select("name price image_url created_date category_id")
+      .select("name price image_url createdAt category_id")
+
       .populate("category_id", "name");
     
     res.json({
@@ -207,7 +339,9 @@ exports.getPopularProducts = async (req, res) => {
           }
         }
       },
-      { $match: { status: 'active' } },
+
+      { $match: { status: 'active', is_deleted: false } },
+
       { $sort: { popularity_score: -1 } },
       { $limit: limit },
       {
@@ -286,17 +420,27 @@ exports.getHomeData = async (req, res) => {
     const limit = parseInt(req.query.limit) || 10;
     
     // Lấy sản phẩm bán chạy nhất
-    const bestSellers = await Product.find({ status: 'active' })
+
+    const bestSellers = await Product.find({ 
+      status: 'active',
+      is_deleted: false 
+    })
+
       .sort({ sold_quantity: -1 })
       .limit(limit)
       .select("name price image_url sold_quantity category_id")
       .populate("category_id", "name");
     
     // Lấy sản phẩm mới nhất
-    const newestProducts = await Product.find({ status: 'active' })
-      .sort({ created_date: -1 })
+
+    const newestProducts = await Product.find({ 
+      status: 'active',
+      is_deleted: false 
+    })
+      .sort({ createdAt: -1 })
       .limit(limit)
-      .select("name price image_url created_date category_id")
+      .select("name price image_url createdAt category_id")
+
       .populate("category_id", "name");
     
     // Lấy sản phẩm phổ biến nhất
@@ -311,7 +455,9 @@ exports.getHomeData = async (req, res) => {
           }
         }
       },
-      { $match: { status: 'active' } },
+
+      { $match: { status: 'active', is_deleted: false } },
+
       { $sort: { popularity_score: -1 } },
       { $limit: limit },
       {

@@ -1,15 +1,21 @@
-const User = require("../models/user");
-const EmailVerificationToken = require("../models/EmailVerificationToken");
-const bcrypt = require("bcrypt");
-const jwt = require("jsonwebtoken");
-const nodemailer = require("nodemailer");
 
+
+const User = require('../models/user');
+const EmailVerificationToken = require('../models/EmailVerificationToken');
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
+const nodemailer = require('nodemailer');
+const multer = require('multer');
+const path = require('path');
+const crypto = require('crypto');
+const { S3Client, PutObjectCommand } = require("@aws-sdk/client-s3");
 // Hàm tạo transporter email
 const createEmailTransporter = () => {
   // Kiểm tra các biến môi trường cần thiết
   if (!process.env.EMAIL_USERNAME || !process.env.EMAIL_PASSWORD) {
     throw new Error("EMAIL_USERNAME và EMAIL_PASSWORD phải được cấu hình trong file .env");
   }
+
 
   return nodemailer.createTransport({
     service: "gmail", // Sử dụng service thay vì host/port
@@ -66,6 +72,7 @@ const sendVerificationEmail = async (email, otp) => {
   }
 };
 
+
 // Lấy tất cả users (không lấy user đã xóa nếu có is_deleted)
 exports.getAllUsers = async (req, res) => {
   try {
@@ -90,7 +97,6 @@ exports.getUserById = async (req, res) => {
     res.status(500).json({ message: "Lỗi server", error: error.message });
   }
 };
-
 // Tạo user mới
 exports.createUser = async (req, res) => {
   try {
@@ -313,6 +319,42 @@ exports.updateUser = async (req, res) => {
   }
 };
 
+// Cập nhật user theo ID (cho admin)
+
+exports.updateUser = async (req, res) => {
+  try {
+    const { password, avatar, avata_url, ...updateData } = req.body;
+
+    // Nếu có password thì mã hóa
+    if (password) {
+      updateData.password = await bcrypt.hash(password, 10);
+    }
+
+    const user = await User.findByIdAndUpdate(
+      req.params.id,
+      {
+        $set: {
+          ...updateData,
+          avatar: avatar || null,
+          avata_url: avata_url || "",
+        },
+      },
+      { new: true, runValidators: true }
+    )
+      .select("-password")
+      .populate("avatar");
+
+    if (!user) {
+      return res.status(404).json({ message: "Không tìm thấy user" });
+    }
+
+    res.status(200).json({ message: "Cập nhật user thành công", user });
+  } catch (error) {
+    res.status(500).json({ message: "Lỗi server", error: error.message });
+  }
+};
+
+
 // Đổi mật khẩu
 exports.changePassword = async (req, res) => {
   try {
@@ -434,6 +476,8 @@ exports.login = async (req, res) => {
         .json({ message: "Email hoặc mật khẩu không đúng" });
     }
 
+
+
     const token = jwt.sign(
       { userId: user._id, role: user.role },
       process.env.JWT_SECRET,
@@ -441,6 +485,7 @@ exports.login = async (req, res) => {
         expiresIn: "1d",
       }
     );
+
 
     res.status(200).json({
       message: "Đăng nhập thành công",
@@ -479,17 +524,22 @@ exports.getAvatar = async (req, res) => {
 exports.updateAvatar = async (req, res) => {
   try {
     const userId = req.user.userId;
-    const { avatarId } = req.body;
 
-    if (!avatarId) {
+    const { uploadId } = req.body;
+
+    if (!uploadId) {
       return res.status(400).json({
-        message: "Vui lòng cung cấp ID của avatar",
+        message: "Vui lòng cung cấp uploadId của avatar",
+
       });
     }
 
     // Kiểm tra xem upload có tồn tại không
     const Upload = require("../models/uploadModel");
-    const upload = await Upload.findById(avatarId);
+
+    const upload = await Upload.findById(uploadId);
+
+
     if (!upload) {
       return res.status(404).json({
         message: "Không tìm thấy avatar",
@@ -500,7 +550,9 @@ exports.updateAvatar = async (req, res) => {
     const user = await User.findByIdAndUpdate(
       userId,
       { 
-        avatar: avatarId,
+
+        avatar: uploadId,
+
         avata_url: upload.url 
       },
       { new: true, runValidators: true }

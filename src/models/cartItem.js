@@ -15,6 +15,21 @@ const cartItemSchema = new mongoose.Schema({
     type: Number,
     required: true,
     default: 1
+
+  },
+  // Thêm thông tin sản phẩm tại thời điểm thêm vào giỏ
+  price_at_time: {
+    type: Number,
+    required: true
+  },
+  product_name: {
+    type: String,
+    required: true,
+    trim: true
+  },
+  product_image: {
+    type: String
+
   }
 });
 

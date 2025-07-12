@@ -29,6 +29,10 @@ export const getCategoryById = async (
 export const createCategory = async (
   category: Omit<Category, "_id" | "createdAt" | "updatedAt"> & {
     image?: string;
+<<<<<<< HEAD
+=======
+    categoryType: string;
+>>>>>>> 76b74e7da45b4da85182c8151f94424bc81c9e08
   }
 ): Promise<Category | undefined> => {
   try {
@@ -43,6 +47,10 @@ export const updateCategory = async (
   id: string,
   category: Partial<Omit<Category, "_id" | "createdAt" | "updatedAt">> & {
     image?: string;
+<<<<<<< HEAD
+=======
+    categoryType: string;
+>>>>>>> 76b74e7da45b4da85182c8151f94424bc81c9e08
   }
 ): Promise<Category | undefined> => {
   try {
@@ -63,3 +71,17 @@ export const deleteCategory = async (
     console.log(error);
   }
 };
+<<<<<<< HEAD
+=======
+
+export const updateSortOrders = async (
+  orders: { _id: string; sort_order: number }[]
+): Promise<{ message: string } | undefined> => {
+  try {
+    const response = await api.put('/categories/sort-orders', { orders });
+    return response.data as { message: string };
+  } catch (error) {
+    console.log(error);
+  }
+};
+>>>>>>> 76b74e7da45b4da85182c8151f94424bc81c9e08

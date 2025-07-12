@@ -10,4 +10,8 @@ export default interface Category {
   is_deleted: boolean;
   createdAt: string;
   updatedAt: string;
+<<<<<<< HEAD
+=======
+  categoryType: string | import("./categoryType").default;
+>>>>>>> 76b74e7da45b4da85182c8151f94424bc81c9e08
 }

@@ -81,7 +81,55 @@
 .action-btn.delete:hover {
   background: #fecaca;
 }
+<<<<<<< HEAD
+=======
+.action-btn.restore {
+  background: #dbeafe;
+  color: #1e40af;
+}
+.action-btn.restore:hover {
+  background: #bfdbfe;
+}
+>>>>>>> 76b74e7da45b4da85182c8151f94424bc81c9e08
 .action-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
+<<<<<<< HEAD
+=======
+.toggle-btn {
+  background: none;
+  border: none;
+  color: #2563eb;
+  cursor: pointer;
+  font-size: 12px;
+  margin-left: 4px;
+  padding: 0;
+  text-decoration: underline;
+}
+.toggle-btn:hover {
+  color: #1d4ed8;
+}
+
+/* Thanh cuộn cho bảng sản phẩm */
+.product-table-scroll {
+  max-height: 70vh;
+  overflow-y: auto;
+  overflow-x: auto;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
+
+.product-table-scroll::-webkit-scrollbar {
+  width: 8px;
+  background: #f3f4f6;
+  border-radius: 8px;
+}
+.product-table-scroll::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 8px;
+}
+.product-table-scroll:hover::-webkit-scrollbar-thumb {
+  background: #94a3b8;
+}
+>>>>>>> 76b74e7da45b4da85182c8151f94424bc81c9e08
