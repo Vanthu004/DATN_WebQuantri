@@ -18,14 +18,17 @@ const UpdateProduct = () => {
     status: "active" as "active" | "inactive" | "out_of_stock",
     image_url: "",
     category_id: "",
+    images: [] as string[], // mảng id ảnh upload
   });
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const navigate = useNavigate();
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string>("");
 
+  // Quản lý mảng file ảnh upload mới và preview
+  const [imageFiles, setImageFiles] = useState<File[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+
+  // Khi load sản phẩm, lấy dữ liệu và ảnh hiện có (images) nếu có
   useEffect(() => {
     if (!id) return;
     const fetchProduct = async () => {
@@ -42,8 +45,21 @@ const UpdateProduct = () => {
             typeof data.category_id === "object"
               ? data.category_id._id
               : data.category_id || "",
+          images: data.images?.map((img) => typeof img === "string" ? img : img._id) || [],
         });
-        setImagePreview(data.image_url || "");
+
+        // Nếu có images thì lấy url để preview (giả sử img có trường url)
+        if (data.images && data.images.length > 0) {
+          const urls = data.images.map((img) => (typeof img === "string" ? "" : img.url));
+          setImagePreviews(urls);
+        } else if (data.image_url) {
+          setImagePreviews([data.image_url]);
+        } else {
+          setImagePreviews([]);
+        }
+
+        // reset imageFiles mới upload
+        setImageFiles([]);
       } catch (err) {
         setError("Không tìm thấy sản phẩm");
       }
@@ -71,32 +87,38 @@ const UpdateProduct = () => {
     }));
   };
 
-  const handleImageFileChange = async (
-    e: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    const file = e.target.files && e.target.files[0];
-    if (file) {
-      setImageFile(file);
-      setImagePreview(URL.createObjectURL(file));
-      try {
-        const res = (await uploadImage(file)) as { url: string };
-        setForm((prev) => ({ ...prev, image_url: res.url }));
-      } catch (err) {
-        toast.error("Upload ảnh thất bại!");
-      }
+  // Chọn nhiều file ảnh, thêm vào mảng file hiện có, tạo preview tương ứng
+  const handleImageFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      const newFiles = Array.from(e.target.files);
+      setImageFiles((prev) => [...prev, ...newFiles]);
+      const newPreviews = newFiles.map((file) => URL.createObjectURL(file));
+      setImagePreviews((prev) => [...prev, ...newPreviews]);
+      // Xóa field nhập link ảnh khi chọn file
+      setForm((prev) => ({ ...prev, image_url: "" }));
     }
   };
 
-  const handleImageUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setForm((prev) => ({ ...prev, image_url: e.target.value }));
-    setImageFile(null);
-    setImagePreview(e.target.value);
+  // Xoá ảnh theo index (cả file upload và preview)
+  const handleRemoveImage = (index: number) => {
+    setImageFiles((prev) => prev.filter((_, i) => i !== index));
+    setImagePreviews((prev) => prev.filter((_, i) => i !== index));
+    setForm((prev) => {
+      // Nếu ảnh đó thuộc images cũ (chưa upload), xoá khỏi mảng images
+      if (index < prev.images.length) {
+        const newImages = [...prev.images];
+        newImages.splice(index, 1);
+        return { ...prev, images: newImages };
+      }
+      return prev;
+    });
   };
 
-  const handleRemoveImage = () => {
-    setImageFile(null);
-    setImagePreview("");
-    setForm((prev) => ({ ...prev, image_url: "" }));
+  // Nhập link ảnh, xoá toàn bộ ảnh file upload và preview
+  const handleImageUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setForm((prev) => ({ ...prev, image_url: e.target.value, images: [] }));
+    setImageFiles([]);
+    setImagePreviews(e.target.value ? [e.target.value] : []);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -105,7 +127,32 @@ const UpdateProduct = () => {
     setLoading(true);
     setError("");
     try {
-      await updateProduct(id, form);
+      let uploadedImages: { _id: string; url: string }[] = [];
+
+      // Nếu có file ảnh mới, upload tất cả
+      if (imageFiles.length > 0) {
+        const uploadResList = await Promise.all(imageFiles.map(file => uploadImage(file)));
+        uploadedImages = uploadResList;
+      }
+
+      // Kết hợp images cũ (chưa xoá) và images mới upload
+      const newImageIds = uploadedImages.map(img => img._id);
+      const finalImageIds = [...form.images, ...newImageIds];
+
+      // Lấy url ảnh chính (ảnh đầu tiên của uploaded hoặc nếu không thì image_url nhập tay hoặc ảnh đầu tiên của images cũ)
+      let mainImageUrl = form.image_url;
+      if (uploadedImages.length > 0) {
+        mainImageUrl = uploadedImages[0].url;
+      } else if (form.images.length > 0 && imagePreviews.length > 0) {
+        mainImageUrl = imagePreviews[0];
+      }
+
+      await updateProduct(id, {
+        ...form,
+        images: finalImageIds,
+        image_url: mainImageUrl,
+      });
+
       toast.success("Cập nhật sản phẩm thành công!");
       navigate("/products");
     } catch (err) {
@@ -168,12 +215,29 @@ const UpdateProduct = () => {
           </select>
         </div>
         <div className="image-upload-section">
-          <label>Ảnh sản phẩm:</label>
+          <label>Ảnh sản phẩm (có thể chọn nhiều):</label>
           <input
             type="file"
             accept="image/*"
+            multiple
             onChange={handleImageFileChange}
           />
+          {imagePreviews.length > 0 && (
+            <div className="image-preview-list">
+              {imagePreviews.map((src, index) => (
+                <div key={index} className="image-preview-container">
+                  <img src={src} alt={`Preview ${index + 1}`} />
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveImage(index)}
+                    className="delete-image-btn"
+                  >
+                    Xóa ảnh
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
           <span>Hoặc nhập link ảnh:</span>
           <input
             name="image_url"
@@ -181,20 +245,8 @@ const UpdateProduct = () => {
             value={form.image_url}
             onChange={handleImageUrlChange}
             placeholder="Dán link ảnh nếu có"
-            disabled={!!imageFile}
+            disabled={imageFiles.length > 0}
           />
-          {imagePreview && (
-            <div className="image-preview-container">
-              <img src={imagePreview} alt="Preview" />
-              <button
-                type="button"
-                onClick={handleRemoveImage}
-                className="delete-image-btn"
-              >
-                Xóa ảnh
-              </button>
-            </div>
-          )}
         </div>
         <div>
           <label>Danh mục</label>
@@ -204,17 +256,12 @@ const UpdateProduct = () => {
             onChange={handleChange}
             required
           >
-            <option value={form.category_id}>
-              {categories.find((cat) => cat._id === form.category_id)?.name ||
-                "-- Chọn danh mục --"}
-            </option>
-            {categories
-              .filter((cat) => cat._id !== form.category_id)
-              .map((cat) => (
-                <option key={cat._id} value={cat._id}>
-                  {cat.name}
-                </option>
-              ))}
+            <option value="">-- Chọn danh mục --</option>
+            {categories.map((cat) => (
+              <option key={cat._id} value={cat._id}>
+                {cat.name}
+              </option>
+            ))}
           </select>
         </div>
         <div className="form-btn-group">
