@@ -30,28 +30,27 @@ exports.getAddressById = async (req, res) => {
 };
 
 // Tạo địa chỉ mới
+
 exports.createAddress = async (req, res) => {
   try {
     const userId = req.user.userId;
-    const { street, ward, district, province, country, type, is_default } = req.body;
+    const { recipient_name, phone, street, ward, district, province, country, type, is_default } = req.body;
 
     // Validation
-    if (!street || !district || !province) {
+    if (!recipient_name || !phone || !street || !district || !province) {
       return res.status(400).json({ 
-        message: "Vui lòng nhập đầy đủ thông tin: đường/phố, quận/huyện, tỉnh/thành phố" 
+        message: "Vui lòng nhập đầy đủ thông tin: người nhận, số điện thoại, đường/phố, quận/huyện, tỉnh/thành phố" 
       });
     }
 
-    // Nếu địa chỉ mới được đặt làm mặc định, bỏ mặc định của các địa chỉ khác
     if (is_default) {
-      await Address.updateMany(
-        { user_id: userId },
-        { is_default: false }
-      );
+      await Address.updateMany({ user_id: userId }, { is_default: false });
     }
 
     const address = new Address({
       user_id: userId,
+      recipient_name,
+      phone,
       street,
       ward,
       district,
@@ -70,6 +69,7 @@ exports.createAddress = async (req, res) => {
     res.status(500).json({ message: "Lỗi server", error: error.message });
   }
 };
+
 
 // Cập nhật địa chỉ
 exports.updateAddress = async (req, res) => {
