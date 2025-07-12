@@ -94,29 +94,24 @@ exports.createAddress = async (req, res) => {
   }
 };
 
-
-
 // Cập nhật địa chỉ
 exports.updateAddress = async (req, res) => {
   try {
     const userId = req.user.userId;
     const addressId = req.params.id;
-    const { recipient_name, phone, street, ward, district, province, country, type, is_default } = req.body;
+    const { name, phone, street, ward, district, province, country, type, is_default } = req.body;
 
-    // Kiểm tra địa chỉ tồn tại và thuộc về user
     const existingAddress = await Address.findOne({ _id: addressId, user_id: userId });
     if (!existingAddress) {
       return res.status(404).json({ message: "Không tìm thấy địa chỉ" });
     }
 
-    // Validation
-    if (!recipient_name || !phone || !street || !district || !province) {
+    if (!name || !phone || !street || !district || !province) {
       return res.status(400).json({ 
         message: "Vui lòng nhập đầy đủ thông tin: người nhận, số điện thoại, đường/phố, quận/huyện, tỉnh/thành phố" 
       });
     }
 
-    // Nếu đặt là mặc định, bỏ mặc định của tất cả địa chỉ khác
     if (is_default) {
       await Address.updateMany(
         { user_id: userId, _id: { $ne: addressId } },
@@ -124,11 +119,10 @@ exports.updateAddress = async (req, res) => {
       );
     }
 
-    // Cập nhật địa chỉ
     const updatedAddress = await Address.findByIdAndUpdate(
       addressId,
       {
-        recipient_name,
+        name,
         phone,
         street,
         ward,
@@ -138,7 +132,7 @@ exports.updateAddress = async (req, res) => {
         type: type || 'home',
         is_default: is_default || false
       },
-      { new: true }
+      { new: true, runValidators: true }
     );
 
     res.status(200).json({ 
