@@ -33,6 +33,7 @@ exports.getAddressById = async (req, res) => {
 
 exports.createAddress = async (req, res) => {
   try {
+    // Lấy thông tin user từ token
     const userId = req.user.userId;
     const { recipient_name, phone, street, ward, district, province, country, type, is_default } = req.body;
 
@@ -43,10 +44,12 @@ exports.createAddress = async (req, res) => {
       });
     }
 
+    // Nếu đặt là mặc định, bỏ mặc định của tất cả địa chỉ khác
     if (is_default) {
       await Address.updateMany({ user_id: userId }, { is_default: false });
     }
 
+    // Tạo địa chỉ mới
     const address = new Address({
       user_id: userId,
       recipient_name,
@@ -76,7 +79,7 @@ exports.updateAddress = async (req, res) => {
   try {
     const userId = req.user.userId;
     const addressId = req.params.id;
-    const { street, ward, district, province, country, type, is_default } = req.body;
+    const { recipient_name, phone, street, ward, district, province, country, type, is_default } = req.body;
 
     // Kiểm tra địa chỉ tồn tại và thuộc về user
     const existingAddress = await Address.findOne({ _id: addressId, user_id: userId });
@@ -85,13 +88,13 @@ exports.updateAddress = async (req, res) => {
     }
 
     // Validation
-    if (!street || !district || !province) {
+    if (!recipient_name || !phone || !street || !district || !province) {
       return res.status(400).json({ 
-        message: "Vui lòng nhập đầy đủ thông tin: đường/phố, quận/huyện, tỉnh/thành phố" 
+        message: "Vui lòng nhập đầy đủ thông tin: người nhận, số điện thoại, đường/phố, quận/huyện, tỉnh/thành phố" 
       });
     }
 
-    // Nếu địa chỉ được đặt làm mặc định, bỏ mặc định của các địa chỉ khác
+    // Nếu đặt là mặc định, bỏ mặc định của tất cả địa chỉ khác
     if (is_default) {
       await Address.updateMany(
         { user_id: userId, _id: { $ne: addressId } },
@@ -99,9 +102,12 @@ exports.updateAddress = async (req, res) => {
       );
     }
 
+    // Cập nhật địa chỉ
     const updatedAddress = await Address.findByIdAndUpdate(
       addressId,
       {
+        recipient_name,
+        phone,
         street,
         ward,
         district,
@@ -121,6 +127,7 @@ exports.updateAddress = async (req, res) => {
     res.status(500).json({ message: "Lỗi server", error: error.message });
   }
 };
+
 
 // Xóa địa chỉ
 exports.deleteAddress = async (req, res) => {
