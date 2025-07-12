@@ -10,6 +10,7 @@ import "../../css/products/updateProduct.css";
 
 const UpdateProduct = () => {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const [form, setForm] = useState({
     name: "",
     description: "",
