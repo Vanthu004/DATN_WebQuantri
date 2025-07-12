@@ -157,24 +157,32 @@ exports.deleteAddress = async (req, res) => {
       return res.status(404).json({ message: "Không tìm thấy địa chỉ" });
     }
 
-    // Nếu địa chỉ bị xóa là địa chỉ mặc định, đặt địa chỉ đầu tiên làm mặc định
+    // Nếu địa chỉ bị xóa là mặc định
     if (address.is_default) {
-      const firstAddress = await Address.findOne({ 
-        user_id: userId, 
-        _id: { $ne: addressId } 
+      const firstAddress = await Address.findOne({
+        user_id: userId,
+        _id: { $ne: addressId },
       }).sort({ createdAt: 1 });
-      
+
       if (firstAddress) {
         await Address.findByIdAndUpdate(firstAddress._id, { is_default: true });
       }
     }
 
-    await Address.findByIdAndDelete(addressId);
+    // Thực hiện xóa
+    const result = await Address.deleteOne({ _id: addressId, user_id: userId });
+    if (result.deletedCount === 0) {
+      return res.status(404).json({ message: "Không thể xóa địa chỉ" });
+    }
+
     res.status(200).json({ message: "Xóa địa chỉ thành công" });
+
   } catch (error) {
+    console.error("Lỗi khi xóa địa chỉ:", error);
     res.status(500).json({ message: "Lỗi server", error: error.message });
   }
 };
+
 
 // Đặt địa chỉ làm mặc định
 exports.setDefaultAddress = async (req, res) => {
