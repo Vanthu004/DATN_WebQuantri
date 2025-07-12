@@ -11,6 +11,7 @@ import { RiDiscountPercentFill } from "react-icons/ri";
 import { BiSolidCommentDetail } from "react-icons/bi";
 import { AiFillSetting } from "react-icons/ai";
 import "../../css/layouts/layoutAdmin.css";
+import logo from '../../assets/LogoSwear.png';
 import { useOrderNotify } from "../../contexts/OrderNotifyContext";
 
 const menuItems = [
@@ -76,8 +77,7 @@ const LayoutAdmin = () => {
       {/* Header */}
       <header className="layout-header">
         <Link to="/" className="logo-section">
-          <img src="https://i.imgur.com/jInJnWw.png" alt="SneakerHub Logo" />
-          <span className="brand-name">Swear</span>
+          <img src = {logo} alt="SwearLogo" />
         </Link>
         <div className="header-actions">
           <button className="logout-btn" onClick={handleLogout}>
