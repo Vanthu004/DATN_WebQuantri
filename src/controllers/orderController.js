@@ -1,4 +1,6 @@
 const Order = require("../models/Order");
+const OrderDetail = require("../models/orderDetail");
+const Product = require("../models/product");
 
 /* Tạo đơn hàng mới */
 exports.createOrder = async (req, res) => {
@@ -121,5 +123,69 @@ exports.deleteOrder = async (req, res) => {
     res.json({ msg: "Đã xoá đơn hàng" });
   } catch (err) {
     res.status(500).json({ error: err.message });
+  }
+};
+
+exports.createOrderWithDetails = async (req, res) => {
+  const session = await Order.startSession();
+  session.startTransaction();
+  try {
+    const { orderDetails, ...orderData } = req.body;
+
+    // Tạo order_code tự động (giống như createOrder)
+    const now = new Date();
+    const dd = String(now.getDate()).padStart(2, "0");
+    const mm = String(now.getMonth() + 1).padStart(2, "0");
+    const yyyy = now.getFullYear();
+    const dateStr = dd + mm + yyyy;
+    const regex = new RegExp(`^ORDER(\\d{3})${dateStr}$`);
+    const lastOrder = await Order.findOne({ order_code: { $regex: regex } }).sort({ order_code: -1 });
+    let nextNumber = 1;
+    if (lastOrder) {
+      const match = lastOrder.order_code.match(/^ORDER(\d{3})/);
+      if (match) {
+        nextNumber = parseInt(match[1], 10) + 1;
+      }
+    }
+    const order_code = `ORDER${String(nextNumber).padStart(3, "0")}${dateStr}`;
+
+    // Tạo Order
+    const order = await Order.create([{ ...orderData, order_code }], { session });
+    const orderId = order[0]._id;
+
+    // Tạo các OrderDetail
+    let total = 0;
+    const details = [];
+    for (const item of orderDetails) {
+      const product = await Product.findById(item.product_id);
+      if (!product) throw new Error("Không tìm thấy sản phẩm");
+      const detailData = {
+        order_id: orderId,
+        product_id: item.product_id,
+        quantity: item.quantity,
+        price_each: product.price,
+        product_name: product.name,
+        product_price: product.price,
+        product_image: product.image_url,
+      };
+      total += product.price * item.quantity;
+      const detail = await OrderDetail.create([detailData], { session });
+      details.push(detail[0]);
+    }
+
+    // Cập nhật tổng tiền cho Order
+    await Order.findByIdAndUpdate(orderId, { total_price: total }, { session });
+
+    await session.commitTransaction();
+    session.endSession();
+
+    res.status(201).json({
+      order: { ...order[0].toObject(), total_price: total },
+      orderDetails: details,
+    });
+  } catch (err) {
+    await session.abortTransaction();
+    session.endSession();
+    res.status(400).json({ error: err.message });
   }
 };

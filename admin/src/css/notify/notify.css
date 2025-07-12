@@ -1,0 +1,84 @@
+.notify-toast {
+  position: fixed;
+  top: 80px;
+  right: 30px;
+  background: #27ae60;
+  color: #fff;
+  padding: 18px 36px;
+  border-radius: 10px;
+  font-size: 18px;
+  z-index: 9999;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.18);
+  animation: fadeInOut 4s;
+  min-width: 260px;
+  max-width: 90vw;
+  font-weight: 500;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+@keyframes fadeInOut {
+  0% { opacity: 0; transform: translateY(-20px);}
+  10% { opacity: 1; transform: translateY(0);}
+  90% { opacity: 1; }
+  100% { opacity: 0; transform: translateY(-20px);}
+}
+
+.notify-toast:hover {
+  background: #219150;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.22);
+}
+
+.order-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 24px;
+  background: #fff;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+.order-table th, .order-table td {
+  padding: 10px 12px;
+  border: 1px solid #e0e0e0;
+  text-align: left;
+}
+.order-table th {
+  background: #f8f8f8;
+  font-weight: 600;
+}
+.order-table tr:hover {
+  background: #f1f7f4;
+}
+.order-view-btn {
+  background: #2ecc40;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  padding: 6px 18px;
+  font-size: 15px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.order-view-btn:hover {
+  background: #219150;
+}
+
+@media (max-width: 700px) {
+  .notify-toast {
+    top: 20px;
+    right: 10px;
+    padding: 12px 10px;
+    font-size: 15px;
+    min-width: 160px;
+  }
+  .order-table th, .order-table td {
+    padding: 6px 4px;
+    font-size: 13px;
+  }
+  .order-view-btn {
+    padding: 4px 10px;
+    font-size: 13px;
+  }
+}
