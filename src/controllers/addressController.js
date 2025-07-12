@@ -30,9 +30,6 @@ exports.getAddressById = async (req, res) => {
 };
 
 // Tạo địa chỉ mới
-
-// controllers/addressController.js
-
 exports.createAddress = async (req, res) => {
   try {
     const userId = req.user.userId;
@@ -48,19 +45,23 @@ exports.createAddress = async (req, res) => {
       is_default
     } = req.body;
 
-    // Kiểm tra dữ liệu đầu vào
     if (!name || !phone || !street || !district || !province) {
       return res.status(400).json({
         message: "Vui lòng nhập đầy đủ thông tin: người nhận, số điện thoại, đường/phố, quận/huyện, tỉnh/thành phố"
       });
     }
 
+    // Validate type
+    const validTypes = ["home", "office", "other"];
+    if (type && !validTypes.includes(type)) {
+      return res.status(400).json({ message: "Loại địa chỉ không hợp lệ" });
+    }
+
+    const isDefaultBoolean = Boolean(is_default === true || is_default === "true");
+
     // Nếu là địa chỉ mặc định, bỏ mặc định các địa chỉ khác
-    if (is_default) {
-      await Address.updateMany(
-        { user_id: userId },
-        { is_default: false }
-      );
+    if (isDefaultBoolean) {
+      await Address.updateMany({ user_id: userId }, { is_default: false });
     }
 
     // Tạo địa chỉ mới
@@ -74,7 +75,7 @@ exports.createAddress = async (req, res) => {
       province,
       country: country || "Việt Nam",
       type: type || "home",
-      is_default: is_default || false
+      is_default: isDefaultBoolean
     });
 
     await address.save();
