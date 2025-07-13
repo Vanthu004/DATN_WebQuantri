@@ -75,6 +75,7 @@ const ListProduct = () => {
       ...prev,
       [id]: !prev[id],
     }));
+
   };
 
   const getCategoryName = (product: Product) => {
@@ -262,6 +263,12 @@ const ListProduct = () => {
                   </td>
                 </tr>
               ))}
+<!-- <<<<<<< quangvinh
+
+          </tbody>
+        </table>
+      </div>
+======= -->
             </tbody>
           </table>
         </div>
