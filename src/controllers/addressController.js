@@ -33,41 +33,64 @@ exports.getAddressById = async (req, res) => {
 exports.createAddress = async (req, res) => {
   try {
     const userId = req.user.userId;
-    const { street, ward, district, province, country, type, is_default } = req.body;
-
-    // Validation
-    if (!street || !district || !province) {
-      return res.status(400).json({ 
-        message: "Vui lòng nhập đầy đủ thông tin: đường/phố, quận/huyện, tỉnh/thành phố" 
-      });
-    }
-
-    // Nếu địa chỉ mới được đặt làm mặc định, bỏ mặc định của các địa chỉ khác
-    if (is_default) {
-      await Address.updateMany(
-        { user_id: userId },
-        { is_default: false }
-      );
-    }
-
-    const address = new Address({
-      user_id: userId,
+    const {
+      name,
+      phone,
       street,
       ward,
       district,
       province,
-      country: country || 'Việt Nam',
-      type: type || 'home',
-      is_default: is_default || false
+      country,
+      type,
+      is_default
+    } = req.body;
+
+    if (!name || !phone || !street || !district || !province) {
+      return res.status(400).json({
+        message: "Vui lòng nhập đầy đủ thông tin: người nhận, số điện thoại, đường/phố, quận/huyện, tỉnh/thành phố"
+      });
+    }
+
+    // Validate type
+    const validTypes = ["home", "office", "other"];
+    if (type && !validTypes.includes(type)) {
+      return res.status(400).json({ message: "Loại địa chỉ không hợp lệ" });
+    }
+
+    const isDefaultBoolean = Boolean(is_default === true || is_default === "true");
+
+    // Nếu là địa chỉ mặc định, bỏ mặc định các địa chỉ khác
+    if (isDefaultBoolean) {
+      await Address.updateMany({ user_id: userId }, { is_default: false });
+    }
+
+    // Tạo địa chỉ mới
+    const address = new Address({
+      user_id: userId,
+      name,
+      phone,
+      street,
+      ward,
+      district,
+      province,
+      country: country || "Việt Nam",
+      type: type || "home",
+      is_default: isDefaultBoolean
     });
 
     await address.save();
-    res.status(201).json({ 
-      message: "Tạo địa chỉ thành công", 
-      address 
+
+    return res.status(201).json({
+      message: "Tạo địa chỉ thành công",
+      address
     });
+
   } catch (error) {
-    res.status(500).json({ message: "Lỗi server", error: error.message });
+    console.error("Lỗi khi tạo địa chỉ:", error);
+    return res.status(500).json({
+      message: "Lỗi server",
+      error: error.message
+    });
   }
 };
 
@@ -76,22 +99,19 @@ exports.updateAddress = async (req, res) => {
   try {
     const userId = req.user.userId;
     const addressId = req.params.id;
-    const { street, ward, district, province, country, type, is_default } = req.body;
+    const { name, phone, street, ward, district, province, country, type, is_default } = req.body;
 
-    // Kiểm tra địa chỉ tồn tại và thuộc về user
     const existingAddress = await Address.findOne({ _id: addressId, user_id: userId });
     if (!existingAddress) {
       return res.status(404).json({ message: "Không tìm thấy địa chỉ" });
     }
 
-    // Validation
-    if (!street || !district || !province) {
+    if (!name || !phone || !street || !district || !province) {
       return res.status(400).json({ 
-        message: "Vui lòng nhập đầy đủ thông tin: đường/phố, quận/huyện, tỉnh/thành phố" 
+        message: "Vui lòng nhập đầy đủ thông tin: người nhận, số điện thoại, đường/phố, quận/huyện, tỉnh/thành phố" 
       });
     }
 
-    // Nếu địa chỉ được đặt làm mặc định, bỏ mặc định của các địa chỉ khác
     if (is_default) {
       await Address.updateMany(
         { user_id: userId, _id: { $ne: addressId } },
@@ -102,6 +122,8 @@ exports.updateAddress = async (req, res) => {
     const updatedAddress = await Address.findByIdAndUpdate(
       addressId,
       {
+        name,
+        phone,
         street,
         ward,
         district,
@@ -110,7 +132,7 @@ exports.updateAddress = async (req, res) => {
         type: type || 'home',
         is_default: is_default || false
       },
-      { new: true }
+      { new: true, runValidators: true }
     );
 
     res.status(200).json({ 
@@ -121,6 +143,7 @@ exports.updateAddress = async (req, res) => {
     res.status(500).json({ message: "Lỗi server", error: error.message });
   }
 };
+
 
 // Xóa địa chỉ
 exports.deleteAddress = async (req, res) => {
@@ -134,24 +157,32 @@ exports.deleteAddress = async (req, res) => {
       return res.status(404).json({ message: "Không tìm thấy địa chỉ" });
     }
 
-    // Nếu địa chỉ bị xóa là địa chỉ mặc định, đặt địa chỉ đầu tiên làm mặc định
+    // Nếu địa chỉ bị xóa là mặc định
     if (address.is_default) {
-      const firstAddress = await Address.findOne({ 
-        user_id: userId, 
-        _id: { $ne: addressId } 
+      const firstAddress = await Address.findOne({
+        user_id: userId,
+        _id: { $ne: addressId },
       }).sort({ createdAt: 1 });
-      
+
       if (firstAddress) {
         await Address.findByIdAndUpdate(firstAddress._id, { is_default: true });
       }
     }
 
-    await Address.findByIdAndDelete(addressId);
+    // Thực hiện xóa
+    const result = await Address.deleteOne({ _id: addressId, user_id: userId });
+    if (result.deletedCount === 0) {
+      return res.status(404).json({ message: "Không thể xóa địa chỉ" });
+    }
+
     res.status(200).json({ message: "Xóa địa chỉ thành công" });
+
   } catch (error) {
+    console.error("Lỗi khi xóa địa chỉ:", error);
     res.status(500).json({ message: "Lỗi server", error: error.message });
   }
 };
+
 
 // Đặt địa chỉ làm mặc định
 exports.setDefaultAddress = async (req, res) => {
