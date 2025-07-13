@@ -21,8 +21,10 @@ const AddProduct = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const navigate = useNavigate();
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string>("");
+
+  // Lưu mảng file ảnh và preview ảnh
+  const [imageFiles, setImageFiles] = useState<File[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
 
   useEffect(() => {
     getAllCategories().then((data) => {
@@ -44,27 +46,31 @@ const AddProduct = () => {
     }));
   };
 
-  const handleImageFileChange = async (
-    e: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    const file = e.target.files && e.target.files[0];
-    if (file) {
-      setImageFile(file);
-      setImagePreview(URL.createObjectURL(file));
-      setForm((prev) => ({ ...prev, image_url: "" })); // reset link nếu chọn file
+  // Chọn nhiều ảnh, thêm ảnh mới vào mảng ảnh cũ
+  const handleImageFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      const newFiles = Array.from(e.target.files);
+      setImageFiles((prev) => [...prev, ...newFiles]);
+
+      const newPreviews = newFiles.map((file) => URL.createObjectURL(file));
+      setImagePreviews((prev) => [...prev, ...newPreviews]);
+
+      // Xóa input image_url khi chọn file
+      setForm((prev) => ({ ...prev, image_url: "" }));
     }
   };
 
-  const handleImageUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setForm((prev) => ({ ...prev, image_url: e.target.value }));
-    setImageFile(null);
-    setImagePreview(e.target.value);
+  // Xóa ảnh theo index
+  const handleRemoveImage = (index: number) => {
+    setImageFiles((prev) => prev.filter((_, i) => i !== index));
+    setImagePreviews((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const handleRemoveImage = () => {
-    setImageFile(null);
-    setImagePreview("");
-    setForm((prev) => ({ ...prev, image_url: "" }));
+  // Nhập link ảnh (xóa ảnh file đang chọn)
+  const handleImageUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setForm((prev) => ({ ...prev, image_url: e.target.value }));
+    setImageFiles([]);
+    setImagePreviews([]);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -72,12 +78,25 @@ const AddProduct = () => {
     setLoading(true);
     setError("");
     try {
-      let imageUrl = form.image_url;
-      if (imageFile) {
-        const uploadRes = (await uploadImage(imageFile)) as { url: string };
-        imageUrl = uploadRes.url;
+      let mainImageUrl = form.image_url;
+      let uploadedImages: { _id: string; url: string }[] = [];
+
+      if (imageFiles.length > 0) {
+        for (const file of imageFiles) {
+          const uploadRes = await uploadImage(file); // { _id, url }
+          uploadedImages.push(uploadRes);
+        }
+        mainImageUrl = uploadedImages[0].url;
       }
-      await createProduct({ ...form, image_url: imageUrl });
+
+      const imageIds = uploadedImages.map((img) => img._id);
+
+      await createProduct({
+        ...form,
+        image_url: mainImageUrl,
+        images: imageIds,
+      });
+
       setForm({
         name: "",
         description: "",
@@ -87,8 +106,9 @@ const AddProduct = () => {
         image_url: "",
         category_id: "",
       });
-      setImageFile(null);
-      setImagePreview("");
+      setImageFiles([]);
+      setImagePreviews([]);
+
       toast.success("Thêm sản phẩm thành công!");
       navigate("/products");
     } catch (err) {
@@ -150,13 +170,31 @@ const AddProduct = () => {
             <option value="out_of_stock">Hết hàng</option>
           </select>
         </div>
+
         <div className="image-upload-section">
-          <label>Ảnh sản phẩm:</label>
+          <label>Ảnh sản phẩm (có thể chọn nhiều):</label>
           <input
             type="file"
             accept="image/*"
+            multiple
             onChange={handleImageFileChange}
           />
+          {imagePreviews.length > 0 && (
+            <div className="image-preview-list">
+              {imagePreviews.map((src, index) => (
+                <div key={index} className="image-preview-container">
+                  <img src={src} alt={`Preview ${index + 1}`} />
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveImage(index)}
+                    className="delete-image-btn"
+                  >
+                    Xóa ảnh
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
           <span>Hoặc nhập link ảnh:</span>
           <input
             name="image_url"
@@ -164,21 +202,10 @@ const AddProduct = () => {
             value={form.image_url}
             onChange={handleImageUrlChange}
             placeholder="Dán link ảnh nếu có"
-            disabled={!!imageFile}
+            disabled={imageFiles.length > 0}
           />
-          {imagePreview && (
-            <div className="image-preview-container">
-              <img src={imagePreview} alt="Preview" />
-              <button
-                type="button"
-                onClick={handleRemoveImage}
-                className="delete-image-btn"
-              >
-                Xóa ảnh
-              </button>
-            </div>
-          )}
         </div>
+
         <div>
           <label>Danh mục:</label>
           <select
@@ -195,6 +222,7 @@ const AddProduct = () => {
             ))}
           </select>
         </div>
+
         <button type="submit" disabled={loading} className="submit-btn">
           {loading ? "Đang thêm..." : "Thêm sản phẩm"}
         </button>
