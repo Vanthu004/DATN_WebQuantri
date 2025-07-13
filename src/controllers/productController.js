@@ -73,8 +73,69 @@ exports.createProduct = async (req, res) => {
 exports.getAllProducts = async (req, res) => {
   const filter = req.query.showDeleted === "true" ? {} : { is_deleted: false };
   try {
-    const list = await Product.find(filter).populate(["category_id", "images"]);
-    res.json(list);
+    const list = await Product.find(filter)
+      .populate('category_id', 'name image_url')
+      .populate('images')
+      .lean();
+
+    // Nếu cần thêm reviews và rating cho từng sản phẩm
+    const includeReviews = req.query.includeReviews === "true";
+    
+    if (includeReviews) {
+      const Review = require('../models/review');
+      const productsWithReviews = await Promise.all(
+        list.map(async (product) => {
+          const reviews = await Review.find({ product_id: product._id })
+            .populate('user_id', 'name email avatar')
+            .lean();
+
+          let rating = 0;
+          let totalRating = 0;
+          let ratingCount = 0;
+
+          if (reviews.length > 0) {
+            reviews.forEach(review => {
+              if (review.rating && review.rating >= 1 && review.rating <= 5) {
+                totalRating += review.rating;
+                ratingCount++;
+              }
+            });
+            rating = ratingCount > 0 ? (totalRating / ratingCount).toFixed(1) : 0;
+          }
+
+          return {
+            ...product,
+            reviews: reviews,
+            rating: parseFloat(rating),
+            ratingCount: ratingCount,
+            stock: product.stock_quantity,
+            images: product.images || [],
+            image_url: product.image_url || "",
+            category: product.category_id ? {
+              _id: product.category_id._id,
+              name: product.category_id.name,
+              image_url: product.category_id.image_url
+            } : null
+          };
+        })
+      );
+      return res.json(productsWithReviews);
+    }
+
+    // Trả về danh sách sản phẩm với thông tin cơ bản
+    const result = list.map(product => ({
+      ...product,
+      stock: product.stock_quantity,
+      images: product.images || [],
+      image_url: product.image_url || "",
+      category: product.category_id ? {
+        _id: product.category_id._id,
+        name: product.category_id.name,
+        image_url: product.category_id.image_url
+      } : null
+    }));
+
+    res.json(result);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -83,15 +144,55 @@ exports.getAllProducts = async (req, res) => {
 /* Lấy sản phẩm theo ID */
 exports.getProductById = async (req, res) => {
   try {
-    const product = await Product.findById(req.params.id).populate([
-      "category_id",
-      "images",
-    ]);
-    if (!product || product.is_deleted)
-      return res.status(404).json({ msg: "Không tìm thấy sản phẩm" });
-    res.json(product);
+    const product = await Product.findById(req.params.id)
+      .populate('category_id', 'name image_url')
+      .populate('images')
+      .lean();
+
+    if (!product || product.is_deleted) {
+      return res.status(404).json({ msg: 'Không tìm thấy sản phẩm' });
+    }
+
+    // Lấy reviews nếu có
+    const Review = require('../models/review');
+    const reviews = await Review.find({ product_id: product._id })
+      .populate('user_id', 'name email avatar')
+      .lean();
+
+    // Tính rating trung bình
+    let rating = 0;
+    let totalRating = 0;
+    let ratingCount = 0;
+
+    if (reviews.length > 0) {
+      reviews.forEach(review => {
+        if (review.rating && review.rating >= 1 && review.rating <= 5) {
+          totalRating += review.rating;
+          ratingCount++;
+        }
+      });
+      rating = ratingCount > 0 ? (totalRating / ratingCount).toFixed(1) : 0;
+    }
+
+    // Đảm bảo các trường cần thiết
+    const result = {
+      ...product,
+      reviews: reviews,
+      rating: parseFloat(rating),
+      ratingCount: ratingCount,
+      stock: product.stock_quantity, // Thêm trường stock cho FE
+      images: product.images || [],
+      image_url: product.image_url || "",
+      category: product.category_id ? {
+        _id: product.category_id._id,
+        name: product.category_id.name,
+        image_url: product.category_id.image_url
+      } : null
+    };
+
+    return res.json(result);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    return res.status(500).json({ msg: 'Lỗi server', error: err.message });
   }
 };
 
@@ -101,8 +202,69 @@ exports.getProductsByCategory = async (req, res) => {
     const list = await Product.find({
       category_id: req.params.categoryId,
       is_deleted: false,
-    }).populate(["category_id", "images"]);
-    res.json(list);
+    })
+      .populate('category_id', 'name image_url')
+      .populate('images')
+      .lean();
+
+    // Nếu cần thêm reviews và rating cho từng sản phẩm
+    const includeReviews = req.query.includeReviews === "true";
+    
+    if (includeReviews) {
+      const Review = require('../models/review');
+      const productsWithReviews = await Promise.all(
+        list.map(async (product) => {
+          const reviews = await Review.find({ product_id: product._id })
+            .populate('user_id', 'name email avatar')
+            .lean();
+
+          let rating = 0;
+          let totalRating = 0;
+          let ratingCount = 0;
+
+          if (reviews.length > 0) {
+            reviews.forEach(review => {
+              if (review.rating && review.rating >= 1 && review.rating <= 5) {
+                totalRating += review.rating;
+                ratingCount++;
+              }
+            });
+            rating = ratingCount > 0 ? (totalRating / ratingCount).toFixed(1) : 0;
+          }
+
+          return {
+            ...product,
+            reviews: reviews,
+            rating: parseFloat(rating),
+            ratingCount: ratingCount,
+            stock: product.stock_quantity,
+            images: product.images || [],
+            image_url: product.image_url || "",
+            category: product.category_id ? {
+              _id: product.category_id._id,
+              name: product.category_id.name,
+              image_url: product.category_id.image_url
+            } : null
+          };
+        })
+      );
+      return res.json(productsWithReviews);
+    }
+
+    // Trả về danh sách sản phẩm với thông tin cơ bản
+    const result = list.map(product => ({
+      ...product,
+      stock: product.stock_quantity,
+      images: product.images || [],
+      image_url: product.image_url || "",
+      category: product.category_id ? {
+        _id: product.category_id._id,
+        name: product.category_id.name,
+        image_url: product.category_id.image_url
+      } : null
+    }));
+
+    res.json(result);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -363,6 +525,75 @@ exports.getPopularProducts = async (req, res) => {
       success: false,
       error: err.message,
       message: "Lỗi khi lấy danh sách sản phẩm phổ biến"
+    });
+  }
+};
+
+/* Lấy thông tin reviews và rating của sản phẩm */
+exports.getProductReviews = async (req, res) => {
+  try {
+    const productId = req.params.id;
+    
+    // Kiểm tra sản phẩm có tồn tại không
+    const product = await Product.findById(productId).lean();
+    if (!product || product.is_deleted) {
+      return res.status(404).json({ 
+        success: false,
+        message: "Không tìm thấy sản phẩm" 
+      });
+    }
+
+    // Lấy reviews
+    const Review = require('../models/review');
+    const reviews = await Review.find({ product_id: productId })
+      .populate('user_id', 'name email avatar')
+      .sort({ create_date: -1 })
+      .lean();
+
+    // Tính rating trung bình và thống kê
+    let totalRating = 0;
+    let ratingCount = 0;
+    const ratingStats = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+
+    reviews.forEach(review => {
+      if (review.rating && review.rating >= 1 && review.rating <= 5) {
+        totalRating += review.rating;
+        ratingCount++;
+        ratingStats[review.rating]++;
+      }
+    });
+
+    const averageRating = ratingCount > 0 ? (totalRating / ratingCount).toFixed(1) : 0;
+
+    // Tính phần trăm cho từng rating
+    const ratingPercentages = {};
+    Object.keys(ratingStats).forEach(rating => {
+      ratingPercentages[rating] = ratingCount > 0 ? ((ratingStats[rating] / ratingCount) * 100).toFixed(1) : 0;
+    });
+
+    res.json({
+      success: true,
+      data: {
+        product: {
+          _id: product._id,
+          name: product.name,
+          image_url: product.image_url
+        },
+        reviews: reviews,
+        rating: {
+          average: parseFloat(averageRating),
+          total: ratingCount,
+          stats: ratingStats,
+          percentages: ratingPercentages
+        }
+      },
+      message: "Lấy thông tin đánh giá sản phẩm thành công"
+    });
+  } catch (err) {
+    res.status(500).json({ 
+      success: false,
+      error: err.message,
+      message: "Lỗi khi lấy thông tin đánh giá sản phẩm"
     });
   }
 };

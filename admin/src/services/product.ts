@@ -2,11 +2,16 @@ import api from "../configs/api";
 import Product from "../interfaces/product";
 
 export const getAllProducts = async (
-  showDeleted = false
+  showDeleted = false,
+  includeReviews = false
 ): Promise<Product[]> => {
   try {
+    const params = new URLSearchParams();
+    if (showDeleted) params.append('showDeleted', 'true');
+    if (includeReviews) params.append('includeReviews', 'true');
+    
     const response = await api.get(
-      `/products${showDeleted ? "?showDeleted=true" : ""}`
+      `/products${params.toString() ? `?${params.toString()}` : ""}`
     );
     return response.data as Product[];
   } catch (error) {
@@ -27,10 +32,16 @@ export const getProductById = async (
 };
 
 export const getProductsByCategory = async (
-  categoryId: string
+  categoryId: string,
+  includeReviews = false
 ): Promise<Product[]> => {
   try {
-    const response = await api.get(`/products/category/${categoryId}`);
+    const params = new URLSearchParams();
+    if (includeReviews) params.append('includeReviews', 'true');
+    
+    const response = await api.get(
+      `/products/category/${categoryId}${params.toString() ? `?${params.toString()}` : ""}`
+    );
     return response.data as Product[];
   } catch (error) {
     console.log(error);
@@ -121,5 +132,15 @@ export const restoreProduct = async (id: string) => {
     return response.data;
   } catch (error) {
     console.log(error);
+  }
+};
+
+export const getProductReviews = async (id: string) => {
+  try {
+    const response = await api.get(`/products/${id}/reviews`);
+    return response.data;
+  } catch (error) {
+    console.log(error);
+    throw error;
   }
 };

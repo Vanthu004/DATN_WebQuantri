@@ -19,6 +19,7 @@ router.post('/', prodCtrl.createProduct);
 
 // Lấy, cập nhật, xoá sản phẩm theo ID (luôn đặt cuối cùng)
 router.get('/:id', prodCtrl.getProductById);
+router.get('/:id/reviews', prodCtrl.getProductReviews);
 router.put('/:id', prodCtrl.updateProduct);
 router.delete('/:id', prodCtrl.deleteProduct);
 router.patch('/:id/restore', prodCtrl.restoreProduct);
