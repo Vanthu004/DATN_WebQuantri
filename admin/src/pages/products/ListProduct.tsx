@@ -13,22 +13,38 @@ const ListProduct = () => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [showDeleted, setShowDeleted] = useState(false);
   const [expandedRows, setExpandedRows] = useState<{ [key: string]: boolean }>({});
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     fetchAllProducts();
-    getAllCategories().then((data) => {
-      if (Array.isArray(data)) setCategories(data);
-      else setCategories([]);
-    });
-    // eslint-disable-next-line
+    fetchCategories();
   }, [showDeleted]);
 
+  const fetchCategories = async () => {
+    try {
+      const data = await getAllCategories();
+      if (Array.isArray(data)) {
+        setCategories(data);
+      } else {
+        setCategories([]);
+      }
+    } catch (error) {
+      console.error("Error fetching categories:", error);
+      setCategories([]);
+    }
+  };
+
   const fetchAllProducts = async () => {
+    setLoading(true);
     try {
       const data = await getAllProducts(showDeleted);
       setProducts(Array.isArray(data) ? data : []);
     } catch (error) {
-      console.log(error);
+      console.error("Error fetching products:", error);
+      toast.error("Không thể tải danh sách sản phẩm!");
+      setProducts([]);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -43,6 +59,17 @@ const ListProduct = () => {
     }
   };
 
+  const handleRestoreProduct = async (id: string) => {
+    if (!window.confirm("Bạn có chắc chắn muốn khôi phục sản phẩm này?")) return;
+    try {
+      await restoreProduct(id);
+      toast.success("Khôi phục sản phẩm thành công! Sản phẩm đã chuyển thành active.");
+      fetchAllProducts();
+    } catch (error) {
+      toast.error("Khôi phục sản phẩm thất bại!");
+    }
+  };
+
   const toggleExpand = (id: string) => {
     setExpandedRows((prev) => ({
       ...prev,
@@ -50,6 +77,61 @@ const ListProduct = () => {
     }));
 
   };
+
+  const getCategoryName = (product: Product) => {
+    if (typeof product.category_id === "object" && product.category_id?.name) {
+      return product.category_id.name;
+    }
+    const category = categories.find((cat) => cat._id === product.category_id);
+    return category?.name || "--";
+  };
+
+  const formatDate = (dateString: string) => {
+    if (!dateString || isNaN(Date.parse(dateString))) return "";
+    return new Date(dateString).toLocaleString();
+  };
+
+  const renderProductName = (product: Product) => {
+    if (!product.name) return "--";
+    
+    if (product.name.length > 20) {
+      return (
+        <>
+          {expandedRows[product.product_id] ? product.name : product.name.slice(0, 20) + "..."}
+          <button
+            className="toggle-btn"
+            onClick={() => toggleExpand(product.product_id)}
+          >
+            {expandedRows[product.product_id] ? "Ẩn bớt" : "Xem thêm"}
+          </button>
+        </>
+      );
+    }
+    return product.name;
+  };
+
+  const renderProductDescription = (product: Product) => {
+    if (!product.description) return "--";
+    
+    if (product.description.length > 40) {
+      return (
+        <>
+          {expandedRows[product.product_id + "_desc"]
+            ? product.description
+            : product.description.slice(0, 40) + "..."}
+          <button
+            className="toggle-btn"
+            onClick={() => toggleExpand(product.product_id + "_desc")}
+          >
+            {expandedRows[product.product_id + "_desc"] ? "Ẩn bớt" : "Xem thêm"}
+          </button>
+        </>
+      );
+    }
+    return product.description;
+  };
+
+  const filteredProducts = products.filter((product) => product.is_deleted === showDeleted);
 
   return (
     <div className="w-full">
@@ -73,90 +155,73 @@ const ListProduct = () => {
           Thêm sản phẩm
         </button>
       </div>
-      <div className="product-table-scroll">
-        <table className="min-w-max w-full bg-white rounded-lg shadow border border-gray-200">
-          <thead>
-            <tr className="bg-gray-100">
-              <th className="px-4 py-2 border-b">#</th>
-              <th className="px-4 py-2 border-b">ID</th>
-              <th className="px-4 py-2 border-b">Name</th>
-              <th className="px-4 py-2 border-b">Description</th>
-              <th className="px-4 py-2 border-b">Price</th>
-              <th className="px-4 py-2 border-b">Stock Quantity</th>
-              <th className="px-4 py-2 border-b">Status</th>
-              <th className="px-4 py-2 border-b">Category</th>
-              <th className="px-4 py-2 border-b">Image</th>
-              <th className="px-4 py-2 border-b">Sold Quantity</th>
-              <th className="px-4 py-2 border-b">Đã xóa?</th>
-              <th className="px-4 py-2 border-b">Created At</th>
-              <th className="px-4 py-2 border-b">Updated At</th>
-              <th className="px-4 py-2 border-b">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {products
-              .filter((product) => product.is_deleted === showDeleted)
-              .map((product: Product, index: number) => (
+
+      {loading && (
+        <div className="text-center py-4">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          <p className="mt-2 text-gray-600">Đang tải dữ liệu...</p>
+        </div>
+      )}
+
+      {!loading && filteredProducts.length === 0 && (
+        <div className="text-center py-8">
+          <p className="text-gray-500 text-lg">
+            {showDeleted ? "Không có sản phẩm nào đã bị xóa" : "Không có sản phẩm nào"}
+          </p>
+        </div>
+      )}
+
+      {!loading && filteredProducts.length > 0 && (
+        <div className="product-table-scroll">
+          <table className="min-w-max w-full bg-white rounded-lg shadow border border-gray-200">
+            <thead>
+              <tr className="bg-gray-100">
+                <th className="px-4 py-2 border-b">#</th>
+                <th className="px-4 py-2 border-b">ID</th>
+                <th className="px-4 py-2 border-b">Name</th>
+                <th className="px-4 py-2 border-b">Description</th>
+                <th className="px-4 py-2 border-b">Price</th>
+                <th className="px-4 py-2 border-b">Stock Quantity</th>
+                <th className="px-4 py-2 border-b">Status</th>
+                <th className="px-4 py-2 border-b">Category</th>
+                <th className="px-4 py-2 border-b">Image</th>
+                <th className="px-4 py-2 border-b">Sold Quantity</th>
+                <th className="px-4 py-2 border-b">Đã xóa?</th>
+                <th className="px-4 py-2 border-b">Created At</th>
+                <th className="px-4 py-2 border-b">Updated At</th>
+                <th className="px-4 py-2 border-b">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredProducts.map((product: Product, index: number) => (
                 <tr key={product.product_id} className="hover:bg-gray-50">
                   <td className="px-4 py-2 border-b">{index + 1}</td>
-                  <td className="px-4 py-2 border-b">{product.product_id}</td>
+                  <td className="px-4 py-2 border-b">{product.product_id || "--"}</td>
+                  <td className="px-4 py-2 border-b">{renderProductName(product)}</td>
+                  <td className="px-4 py-2 border-b">{renderProductDescription(product)}</td>
+                  <td className="px-4 py-2 border-b">{product.price?.toLocaleString() || "0"}</td>
+                  <td className="px-4 py-2 border-b">{product.stock_quantity || "0"}</td>
                   <td className="px-4 py-2 border-b">
-                    {product.name.length > 20 ? (
-                      <>
-                        {expandedRows[product.product_id] ? product.name : product.name.slice(0, 20) + "..."}
-                        <button
-                          className="toggle-btn"
-                          onClick={() => toggleExpand(product.product_id)}
-                        >
-                          {expandedRows[product.product_id] ? "Ẩn bớt" : "Xem thêm"}
-                        </button>
-                      </>
-                    ) : (
-                      product.name
-                    )}
-                  </td>
-                  <td className="px-4 py-2 border-b">
-                    {product.description && product.description.length > 40 ? (
-                      <>
-                        {expandedRows[product.product_id + "_desc"]
-                          ? product.description
-                          : product.description.slice(0, 40) + "..."}
-                        <button
-                          className="toggle-btn"
-                          onClick={() => toggleExpand(product.product_id + "_desc")}
-                        >
-                          {expandedRows[product.product_id + "_desc"] ? "Ẩn bớt" : "Xem thêm"}
-                        </button>
-                      </>
-                    ) : (
-                      product.description
-                    )}
-                  </td>
-                  <td className="px-4 py-2 border-b">{product.price}</td>
-                  <td className="px-4 py-2 border-b">{product.stock_quantity}</td>
-                  <td className="px-4 py-2 border-b">
-                    <span className={`status-badge ${product.status}`}>
-                      {product.status}
+                    <span className={`status-badge ${product.status || "inactive"}`}>
+                      {product.status || "inactive"}
                     </span>
                   </td>
-                  <td className="px-4 py-2 border-b">
-                    {typeof product.category_id === "object"
-                      ? product.category_id?.name
-                      : categories.find((cat) => cat._id === product.category_id)
-                          ?.name || "--"}
-                  </td>
+                  <td className="px-4 py-2 border-b">{getCategoryName(product)}</td>
                   <td className="px-4 py-2 border-b">
                     {product.image_url ? (
                       <img
                         src={product.image_url}
                         alt={product.name}
                         className="w-12 h-12 object-cover rounded"
+                        onError={(e) => {
+                          e.currentTarget.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 24 24' fill='none' stroke='%23ccc' stroke-width='2'%3E%3Crect x='3' y='3' width='18' height='18' rx='2' ry='2'/%3E%3Ccircle cx='8.5' cy='8.5' r='1.5'/%3E%3Cpolyline points='21,15 16,10 5,21'/%3E%3C/svg%3E";
+                        }}
                       />
                     ) : (
                       <span className="text-gray-400 italic">No image</span>
                     )}
                   </td>
-                  <td className="px-4 py-2 border-b">{product.sold_quantity}</td>
+                  <td className="px-4 py-2 border-b">{product.sold_quantity || "0"}</td>
                   <td className="px-4 py-2 border-b">
                     {product.is_deleted ? (
                       <span className="deleted-badge">Đã xóa</span>
@@ -164,16 +229,8 @@ const ListProduct = () => {
                       <span className="not-deleted-badge">Chưa xóa</span>
                     )}
                   </td>
-                  <td className="px-4 py-2 border-b">
-                    {product.createdAt && !isNaN(Date.parse(product.createdAt))
-                      ? new Date(product.createdAt).toLocaleString()
-                      : ""}
-                  </td>
-                  <td className="px-4 py-2 border-b">
-                    {product.updatedAt && !isNaN(Date.parse(product.updatedAt))
-                      ? new Date(product.updatedAt).toLocaleString()
-                      : ""}
-                  </td>
+                  <td className="px-4 py-2 border-b">{formatDate(product.createdAt)}</td>
+                  <td className="px-4 py-2 border-b">{formatDate(product.updatedAt)}</td>
                   <td className="px-4 py-2 border-b">
                     <button
                       className="action-btn edit"
@@ -182,7 +239,7 @@ const ListProduct = () => {
                     >
                       Sửa
                     </button>
-                    {!product.is_deleted && (
+                    {!product.is_deleted ? (
                       <>
                         {" | "}
                         <button
@@ -192,14 +249,30 @@ const ListProduct = () => {
                           Xóa
                         </button>
                       </>
+                    ) : (
+                      <>
+                        {" | "}
+                        <button
+                          className="action-btn restore"
+                          onClick={() => handleRestoreProduct(product._id)}
+                        >
+                          Khôi phục
+                        </button>
+                      </>
                     )}
                   </td>
                 </tr>
               ))}
+<!-- <<<<<<< quangvinh
 
           </tbody>
         </table>
       </div>
+======= -->
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 };
