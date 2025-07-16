@@ -155,45 +155,31 @@ const ListProduct = () => {
           Thêm sản phẩm
         </button>
       </div>
+      <div className="product-table-scroll">
+        <table className="min-w-max w-full bg-white rounded-lg shadow border border-gray-200">
+          <thead>
+            <tr className="bg-gray-100">
+              <th className="px-4 py-2 border-b">#</th>
+              <th className="px-4 py-2 border-b">ID</th>
+              <th className="px-4 py-2 border-b">Name</th>
+              <th className="px-4 py-2 border-b">Description</th>
+              <th className="px-4 py-2 border-b">Price</th>
+              <th className="px-4 py-2 border-b">Stock Quantity</th>
+              <th className="px-4 py-2 border-b">Status</th>
+              <th className="px-4 py-2 border-b">Category</th>
+              <th className="px-4 py-2 border-b">Image</th>
+              <th className="px-4 py-2 border-b">Sold Quantity</th>
+              <th className="px-4 py-2 border-b">Đã xóa?</th>
+              <th className="px-4 py-2 border-b">Created At</th>
+              <th className="px-4 py-2 border-b">Updated At</th>
+              <th className="px-4 py-2 border-b">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {products
+              .filter((product) => product.is_deleted === showDeleted)
+              .map((product: Product, index: number) => (
 
-      {loading && (
-        <div className="text-center py-4">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-          <p className="mt-2 text-gray-600">Đang tải dữ liệu...</p>
-        </div>
-      )}
-
-      {!loading && filteredProducts.length === 0 && (
-        <div className="text-center py-8">
-          <p className="text-gray-500 text-lg">
-            {showDeleted ? "Không có sản phẩm nào đã bị xóa" : "Không có sản phẩm nào"}
-          </p>
-        </div>
-      )}
-
-      {!loading && filteredProducts.length > 0 && (
-        <div className="product-table-scroll">
-          <table className="min-w-max w-full bg-white rounded-lg shadow border border-gray-200">
-            <thead>
-              <tr className="bg-gray-100">
-                <th className="px-4 py-2 border-b">#</th>
-                <th className="px-4 py-2 border-b">ID</th>
-                <th className="px-4 py-2 border-b">Name</th>
-                <th className="px-4 py-2 border-b">Description</th>
-                <th className="px-4 py-2 border-b">Price</th>
-                <th className="px-4 py-2 border-b">Stock Quantity</th>
-                <th className="px-4 py-2 border-b">Status</th>
-                <th className="px-4 py-2 border-b">Category</th>
-                <th className="px-4 py-2 border-b">Image</th>
-                <th className="px-4 py-2 border-b">Sold Quantity</th>
-                <th className="px-4 py-2 border-b">Đã xóa?</th>
-                <th className="px-4 py-2 border-b">Created At</th>
-                <th className="px-4 py-2 border-b">Updated At</th>
-                <th className="px-4 py-2 border-b">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredProducts.map((product: Product, index: number) => (
                 <tr key={product.product_id} className="hover:bg-gray-50">
                   <td className="px-4 py-2 border-b">{index + 1}</td>
                   <td className="px-4 py-2 border-b">{product.product_id || "--"}</td>
@@ -263,12 +249,10 @@ const ListProduct = () => {
                   </td>
                 </tr>
               ))}
-<!-- <<<<<<< quangvinh
 
           </tbody>
         </table>
       </div>
-======= -->
             </tbody>
           </table>
         </div>
