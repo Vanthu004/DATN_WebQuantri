@@ -14,7 +14,6 @@ import "../../css/layouts/layoutAdmin.css";
 import logo from '../../assets/LogoSwear.png';
 import { useOrderNotify } from "../../contexts/OrderNotifyContext";
 
-import logo from '../../assets/LogoSwear.png';
 
 
 const menuItems = [
