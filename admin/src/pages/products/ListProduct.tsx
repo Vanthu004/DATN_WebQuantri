@@ -263,12 +263,6 @@ const ListProduct = () => {
                   </td>
                 </tr>
               ))}
-<!-- <<<<<<< quangvinh
-
-          </tbody>
-        </table>
-      </div>
-======= -->
             </tbody>
           </table>
         </div>
