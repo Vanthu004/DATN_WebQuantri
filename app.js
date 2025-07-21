@@ -57,8 +57,22 @@ app.use("/api/cart", cartApi);
 app.use("/api/cart-items", cartItemApi);
 app.use("/api/statistics", statisticApi);
 app.use("/api/favorites", favoriteRouter);
-app.use("/api", uploadRouter);
+
+app.use("/api/uploads", uploadRouter);
+
+// ========== ROUTE AUTH ==========
+app.post("/api/forgot-password", authController.forgotPassword);
+app.post("/api/reset-password", authController.resetPassword);
+
+// Thêm lại route cho category-types
 app.use('/api/category-types', categoryTypeRouter);
+
+app.use("/api", uploadRouter);
+app.use("/api/vouchers", voucherRouter);
+// Route gốc hiển thị toàn bộ giỏ hàng + sản phẩm
+
+
+app.use("/api", uploadRouter);
 app.use('/api/vouchers', voucherRouter);
 app.use('/api/notifications', notificationRouter);
 app.use("/api/addresses", addressRouter);
@@ -67,7 +81,6 @@ app.use("/api/addresses", addressRouter);
 app.post('/api/forgot-password', authController.forgotPassword);
 app.post('/api/reset-password', authController.resetPassword);
 
-// ====== Kết nối DATABASE ======
 mongoose
   .connect(process.env.MONGODB_URI)
   .then(() => console.log("✅ Đã kết nối MongoDB Atlas"))

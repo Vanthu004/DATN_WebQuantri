@@ -104,6 +104,10 @@
   gap: 4px;
 }
 
+.menu-item {
+  position: relative;
+}
+
 .menu-item a {
   display: flex;
   align-items: center;
@@ -126,6 +130,27 @@
   background-color: #fff1ed;
   color: #ff5b2e;
   font-weight: 600;
+}
+
+.menu-badge {
+  position: absolute;
+  top: 8px;
+  right: 18px;
+  background: #ff3b30;
+  color: #fff;
+  border-radius: 50%;
+  min-width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.10);
+  z-index: 2;
+  border: 2px solid #fff;
+  pointer-events: none;
+  transition: background 0.2s;
 }
 
 /* Main Content */

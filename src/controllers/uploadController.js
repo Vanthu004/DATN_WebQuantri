@@ -54,11 +54,10 @@ exports.uploadImage = [
       
       const savedUpload = await upload.save();
       
-      res.json({ 
-        url: imageUrl,
-        uploadId: savedUpload._id,
-        upload: savedUpload
-      });
+res.json({
+  _id: savedUpload._id.toString(),
+  url: imageUrl,
+});
     } catch (err) {
       console.error("UPLOAD ERROR:", err);
       res.status(500).json({ message: "Upload failed", error: err.message });
