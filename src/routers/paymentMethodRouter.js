@@ -3,18 +3,18 @@ const router = express.Router();
 const pmCtrl = require("../controllers/paymentMethodController");
 
 // Tạo mới
-router.post("/api/payment-methods", pmCtrl.createPaymentMethod);
+router.post("/", pmCtrl.createPaymentMethod);
 
 // Lấy tất cả
-router.get("/api/payment-methods", pmCtrl.getAllPaymentMethods);
+router.get("/", pmCtrl.getAllPaymentMethods);
 
 // Theo ID
-router.get("/api/payment-methods/:id", pmCtrl.getPaymentMethodById);
+router.get("/:id", pmCtrl.getPaymentMethodById);
 
 // Cập nhật
-router.put("/api/payment-methods/:id", pmCtrl.updatePaymentMethod);
+router.put("/:id", pmCtrl.updatePaymentMethod);
 
 // Xoá
-router.delete("/api/payment-methods/:id", pmCtrl.deletePaymentMethod);
+router.delete("/:id", pmCtrl.deletePaymentMethod);
 
 module.exports = router;
