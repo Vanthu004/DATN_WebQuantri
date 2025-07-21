@@ -1,6 +1,7 @@
 const Order = require("../models/Order");
 const OrderDetail = require("../models/orderDetail");
 const Product = require("../models/product");
+const OrderStatusHistory = require("../models/orderStatusHistory");
 
 /* Tạo đơn hàng mới */
 exports.createOrder = async (req, res) => {
@@ -102,6 +103,13 @@ exports.updateOrder = async (req, res) => {
       } else if (!isValidStatusTransition(currentStatus, nextStatus)) {
         return res.status(400).json({
           msg: `Không thể chuyển trạng thái từ '${currentStatus}' sang '${nextStatus}'`,
+        });
+      } else {
+        // Nếu trạng thái thay đổi hợp lệ, tạo bản ghi lịch sử trạng thái
+        await OrderStatusHistory.create({
+          order_id: order._id,
+          status: nextStatus,
+          update_by: req.user?._id || null // Cần middleware xác thực để có req.user
         });
       }
     }
