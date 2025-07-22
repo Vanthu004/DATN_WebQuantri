@@ -25,9 +25,7 @@ const statisticApi = require("./src/routers/statisticApi");
 const favoriteRouter = require("./src/routers/favoriteProductRouter");
 const authController = require('./src/controllers/authController');
 const addressRouter = require("./src/routers/addressRouter");
-
 const categoryTypeRouter = require("./src/routers/categoryTypeRouter");
-
 const uploadRouter = require("./src/routers/uploadRouter");
 const voucherRouter = require("./src/routers/voucherRoutes");
 const notificationRouter = require("./src/routers/notificationRoutes");
@@ -66,37 +64,23 @@ app.use("/api/uploads", uploadRouter);
 app.post("/api/forgot-password", authController.forgotPassword);
 app.post("/api/reset-password", authController.resetPassword);
 
-app.use("/", cartApi);
-app.use("/", cartItemApi);
-app.use("/api/order-details", orderDetailRouter);
-app.use("/", orderStatusRouter);
-app.use("/", shippingRouter);
-app.use(paymentRouter);
-app.use(favoriteRouter);
-app.use("/api/addresses", addressRouter);
-
-// uth routes (forgot password)
-app.post('/api/forgot-password', authController.forgotPassword);
-app.post('/api/reset-password', authController.resetPassword);
+// Thêm lại route cho category-types
+app.use('/api/category-types', categoryTypeRouter);
 
 app.use("/api", uploadRouter);
+app.use("/api/vouchers", voucherRouter);
 // Route gốc hiển thị toàn bộ giỏ hàng + sản phẩm
 
 
-// ========== KẾT NỐI DATABASE ==========
-// =======
-// app.use("/api", uploadRouter);
-// app.use('/api/category-types', categoryTypeRouter);
-// app.use('/api/vouchers', voucherRouter);
-// app.use('/api/notifications', notificationRouter);
-// app.use("/api/addresses", addressRouter);
+app.use("/api", uploadRouter);
+app.use('/api/vouchers', voucherRouter);
+app.use('/api/notifications', notificationRouter);
+app.use("/api/addresses", addressRouter);
 
-// // ====== Auth routes (forgot/reset password) ======
-// app.post('/api/forgot-password', authController.forgotPassword);
-// app.post('/api/reset-password', authController.resetPassword);
+// ====== Auth routes (forgot/reset password) ======
+app.post('/api/forgot-password', authController.forgotPassword);
+app.post('/api/reset-password', authController.resetPassword);
 
-// // ====== Kết nối DATABASE ======
-// >>>>>>> TestCode
 mongoose
   .connect(process.env.MONGODB_URI)
   .then(() => console.log("✅ Đã kết nối MongoDB Atlas"))
