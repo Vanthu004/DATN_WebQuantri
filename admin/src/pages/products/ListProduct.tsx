@@ -23,11 +23,7 @@ const ListProduct = () => {
   const fetchCategories = async () => {
     try {
       const data = await getAllCategories();
-      if (Array.isArray(data)) {
-        setCategories(data);
-      } else {
-        setCategories([]);
-      }
+      setCategories(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error("Error fetching categories:", error);
       setCategories([]);
@@ -75,7 +71,6 @@ const ListProduct = () => {
       ...prev,
       [id]: !prev[id],
     }));
-
   };
 
   const getCategoryName = (product: Product) => {
@@ -93,15 +88,12 @@ const ListProduct = () => {
 
   const renderProductName = (product: Product) => {
     if (!product.name) return "--";
-    
+
     if (product.name.length > 20) {
       return (
         <>
           {expandedRows[product.product_id] ? product.name : product.name.slice(0, 20) + "..."}
-          <button
-            className="toggle-btn"
-            onClick={() => toggleExpand(product.product_id)}
-          >
+          <button className="toggle-btn" onClick={() => toggleExpand(product.product_id)}>
             {expandedRows[product.product_id] ? "Ẩn bớt" : "Xem thêm"}
           </button>
         </>
@@ -112,26 +104,22 @@ const ListProduct = () => {
 
   const renderProductDescription = (product: Product) => {
     if (!product.description) return "--";
-    
+
+    const descKey = product.product_id + "_desc";
     if (product.description.length > 40) {
       return (
         <>
-          {expandedRows[product.product_id + "_desc"]
+          {expandedRows[descKey]
             ? product.description
             : product.description.slice(0, 40) + "..."}
-          <button
-            className="toggle-btn"
-            onClick={() => toggleExpand(product.product_id + "_desc")}
-          >
-            {expandedRows[product.product_id + "_desc"] ? "Ẩn bớt" : "Xem thêm"}
+          <button className="toggle-btn" onClick={() => toggleExpand(descKey)}>
+            {expandedRows[descKey] ? "Ẩn bớt" : "Xem thêm"}
           </button>
         </>
       );
     }
     return product.description;
   };
-
-  const filteredProducts = products.filter((product) => product.is_deleted === showDeleted);
 
   return (
     <div className="w-full">
@@ -179,7 +167,6 @@ const ListProduct = () => {
             {products
               .filter((product) => product.is_deleted === showDeleted)
               .map((product: Product, index: number) => (
-
                 <tr key={product.product_id} className="hover:bg-gray-50">
                   <td className="px-4 py-2 border-b">{index + 1}</td>
                   <td className="px-4 py-2 border-b">{product.product_id || "--"}</td>
@@ -200,7 +187,8 @@ const ListProduct = () => {
                         alt={product.name}
                         className="w-12 h-12 object-cover rounded"
                         onError={(e) => {
-                          e.currentTarget.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 24 24' fill='none' stroke='%23ccc' stroke-width='2'%3E%3Crect x='3' y='3' width='18' height='18' rx='2' ry='2'/%3E%3Ccircle cx='8.5' cy='8.5' r='1.5'/%3E%3Cpolyline points='21,15 16,10 5,21'/%3E%3C/svg%3E";
+                          e.currentTarget.src =
+                            "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 24 24' fill='none' stroke='%23ccc' stroke-width='2'%3E%3Crect x='3' y='3' width='18' height='18' rx='2' ry='2'/%3E%3Ccircle cx='8.5' cy='8.5' r='1.5'/%3E%3Cpolyline points='21,15 16,10 5,21'/%3E%3C/svg%3E";
                         }}
                       />
                     ) : (
@@ -225,38 +213,28 @@ const ListProduct = () => {
                     >
                       Sửa
                     </button>
+                    {" | "}
                     {!product.is_deleted ? (
-                      <>
-                        {" | "}
-                        <button
-                          className="action-btn delete"
-                          onClick={() => handleDeleteProduct(product._id)}
-                        >
-                          Xóa
-                        </button>
-                      </>
+                      <button
+                        className="action-btn delete"
+                        onClick={() => handleDeleteProduct(product._id)}
+                      >
+                        Xóa
+                      </button>
                     ) : (
-                      <>
-                        {" | "}
-                        <button
-                          className="action-btn restore"
-                          onClick={() => handleRestoreProduct(product._id)}
-                        >
-                          Khôi phục
-                        </button>
-                      </>
+                      <button
+                        className="action-btn restore"
+                        onClick={() => handleRestoreProduct(product._id)}
+                      >
+                        Khôi phục
+                      </button>
                     )}
                   </td>
                 </tr>
               ))}
-
           </tbody>
         </table>
       </div>
-            </tbody>
-          </table>
-        </div>
-      )}
     </div>
   );
 };
