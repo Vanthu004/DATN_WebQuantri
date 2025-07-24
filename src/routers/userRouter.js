@@ -19,6 +19,7 @@ router.put("/change-password", authMiddleware, userController.changePassword);
 
 // Protected routes (yêu cầu xác thực) - routes có parameter
 router.get("/", authMiddleware, userController.getAllUsers);
+router.get("/all", userController.getAllUsers);
 router.get("/avatar/:id", userController.getAvatar);
 router.get("/:id", authMiddleware, userController.getUserById);
 router.put("/:id", authMiddleware, userController.updateUser);
