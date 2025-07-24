@@ -32,7 +32,7 @@ exports.createReview = async (req, res) => {
 
     const populatedReview = await Review.findById(savedReview._id)
       .populate({ path: "user_id", select: "name avata_url" })
-      .populate({ path: "product_id", select: "name" });
+      .populate({ path: "product_id", select: "name image_url" });
 
     res.status(201).json(populatedReview);
   } catch (error) {
@@ -56,7 +56,7 @@ exports.getReviews = async (req, res) => {
     const reviews = await Review.find(filter)
       .sort({ create_date: -1 })
       .populate({ path: "user_id", select: "name avata_url" })
-      .populate({ path: "product_id", select: "name" });
+      .populate({ path: "product_id", select: "name image_url" });
 
     res.status(200).json(reviews);
   } catch (error) {
@@ -76,7 +76,7 @@ exports.getReviewById = async (req, res) => {
 
     const review = await Review.findById(id)
       .populate({ path: "user_id", select: "name avata_url" })
-      .populate({ path: "product_id", select: "name" });
+      .populate({ path: "product_id", select: "name image_url" });
 
     if (!review) {
       return res.status(404).json({ message: "Review không tồn tại" });
@@ -100,7 +100,7 @@ exports.getReviewsByUserId = async (req, res) => {
     const reviews = await Review.find({ user_id: new ObjectId(user_id) })
       .sort({ create_date: -1 })
       .populate({ path: "user_id", select: "name avata_url" })
-      .populate({ path: "product_id", select: "name" });
+      .populate({ path: "product_id", select: "name image_url" });
 
     res.status(200).json(reviews);
   } catch (error) {
@@ -131,7 +131,7 @@ exports.updateReview = async (req, res) => {
 
     const populatedReview = await Review.findById(updated._id)
       .populate({ path: "user_id", select: "name avata_url" })
-      .populate({ path: "product_id", select: "name" });
+      .populate({ path: "product_id", select: "name image_url" });
 
     res.status(200).json(populatedReview);
   } catch (error) {
