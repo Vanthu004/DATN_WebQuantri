@@ -20,3 +20,8 @@ export const updateUser = async (
 ) => {
   return api.put(`/users/${id}`, user);
 };
+// Hàm lấy danh sách toàn bộ user
+export const getAllUsers = async () => {
+  const res = await api.get("/users/all");
+  return res.data; // giả sử API trả về mảng user
+};
