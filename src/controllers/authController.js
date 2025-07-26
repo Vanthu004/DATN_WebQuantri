@@ -1,3 +1,4 @@
+// src/controllers/authController.js
 const User = require("../models/user");
 const PasswordResetToken = require('../models/PasswordResetToken');
 const EmailVerificationToken = require('../models/EmailVerificationToken');

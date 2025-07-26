@@ -1,4 +1,4 @@
-
+// src/controllers/userController.js
 const User = require('../models/user');
 const EmailVerificationToken = require('../models/EmailVerificationToken');
 const bcrypt = require('bcrypt');
@@ -316,38 +316,38 @@ exports.updateUser = async (req, res) => {
 };
 // Cập nhật user theo ID (cho admin)
 
-exports.updateUser = async (req, res) => {
-  try {
-    const { password, avatar, avata_url, ...updateData } = req.body;
+// exports.updateUser = async (req, res) => {
+//   try {
+//     const { password, avatar, avata_url, ...updateData } = req.body;
 
-    // Nếu có password thì mã hóa
-    if (password) {
-      updateData.password = await bcrypt.hash(password, 10);
-    }
+//     // Nếu có password thì mã hóa
+//     if (password) {
+//       updateData.password = await bcrypt.hash(password, 10);
+//     }
 
-    const user = await User.findByIdAndUpdate(
-      req.params.id,
-      {
-        $set: {
-          ...updateData,
-          avatar: avatar || null,
-          avata_url: avata_url || "",
-        },
-      },
-      { new: true, runValidators: true }
-    )
-      .select("-password")
-      .populate("avatar");
+//     const user = await User.findByIdAndUpdate(
+//       req.params.id,
+//       {
+//         $set: {
+//           ...updateData,
+//           avatar: avatar || null,
+//           avata_url: avata_url || "",
+//         },
+//       },
+//       { new: true, runValidators: true }
+//     )
+//       .select("-password")
+//       .populate("avatar");
 
-    if (!user) {
-      return res.status(404).json({ message: "Không tìm thấy user" });
-    }
+//     if (!user) {
+//       return res.status(404).json({ message: "Không tìm thấy user" });
+//     }
 
-    res.status(200).json({ message: "Cập nhật user thành công", user });
-  } catch (error) {
-    res.status(500).json({ message: "Lỗi server", error: error.message });
-  }
-};
+//     res.status(200).json({ message: "Cập nhật user thành công", user });
+//   } catch (error) {
+//     res.status(500).json({ message: "Lỗi server", error: error.message });
+//   }
+// };
 
 // Đổi mật khẩu
 exports.changePassword = async (req, res) => {
@@ -409,28 +409,61 @@ exports.changePassword = async (req, res) => {
   }
 };
 
-// Xóa user
+
 // Chặn hoặc mở chặn user
-exports.blockUser = async (req, res) => {
+exports.banUser = async (req, res) => {
   try {
-    const { block } = req.body; // true: chặn, false: mở chặn
+   const { isBanned, bannedUntil, reason } = req.body;
+
+const banData = {
+  isBanned: isBanned === true,
+  bannedUntil: isBanned ? bannedUntil || null : null,
+  reason: isBanned ? reason || "" : "",
+};
+
+
     const user = await User.findByIdAndUpdate(
       req.params.id,
-      { is_blocked: block },
+      { ban: banData },
       { new: true }
     )
       .select("-password")
       .populate("avatar");
+
     if (!user) {
       return res.status(404).json({ message: "Không tìm thấy user" });
     }
-    res
-      .status(200)
-      .json({ message: block ? "Đã chặn user" : "Đã mở chặn user", user });
+
+    res.status(200).json({
+      message: isBanned ? "Đã khóa (ban) tài khoản người dùng" : "Đã mở khóa (unban) tài khoản người dùng",
+      user,
+    });
   } catch (error) {
     res.status(500).json({ message: "Lỗi server", error: error.message });
   }
 };
+
+// Mở khóa (unban) user
+// Unban user controller
+exports.unbanUser = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ message: 'Không tìm thấy người dùng' });
+
+    user.ban = {
+      isBanned: false,
+      bannedUntil: null,
+      reason: ''
+    };
+
+    await user.save();
+    res.status(200).json({ message: 'Đã gỡ ban người dùng.', user });
+  } catch (error) {
+    res.status(500).json({ message: 'Lỗi server', error: error.message });
+  }
+};
+
+
 
 // Xóa user (xóa thật)
 exports.deleteUser = async (req, res) => {
@@ -457,11 +490,19 @@ exports.login = async (req, res) => {
         .json({ message: "Email hoặc mật khẩu không đúng" });
     }
 
-    if (user.is_blocked) {
-      return res.status(403).json({
-        message: "Tài khoản đã bị chặn. Vui lòng liên hệ quản trị viên.",
-      });
-    }
+    if (user.ban && user.ban.isBanned) {
+  // Kiểm tra thời hạn ban
+  if (user.ban.until && user.ban.until < new Date()) {
+    // Ban đã hết hạn, gỡ ban
+    user.ban = { isBanned: false, until: null, reason: "" };
+    await user.save();
+  } else {
+    return res.status(403).json({
+      message: `Tài khoản của bạn đã bị khóa${user.ban.until ? ` đến ${new Date(user.ban.until).toLocaleString("vi-VN")}` : ""}. Lý do: ${user.ban.reason || "Không rõ lý do"}`,
+    });
+  }
+}
+
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
@@ -559,3 +600,4 @@ exports.updateAvatar = async (req, res) => {
     res.status(500).json({ message: "Lỗi server", error: error.message });
   }
 };
+
