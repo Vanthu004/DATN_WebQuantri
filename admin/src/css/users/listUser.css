@@ -80,3 +80,98 @@
   font-weight: 500;
   margin-top: 16px;
 }
+.user-list-container {
+  padding: 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.user-list-title {
+  font-size: 1.8rem;
+  font-weight: bold;
+  color: #1f2937;
+  margin-bottom: 16px;
+}
+
+.user-list-table-wrap {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  overflow-x: auto;
+}
+
+.user-list-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.user-list-table th,
+.user-list-table td {
+  padding: 12px;
+  text-align: left;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.user-list-table th {
+  background: #f3f4f6;
+  font-weight: 600;
+  color: #374151;
+}
+
+.user-row:hover {
+  background: #f9fafb;
+}
+
+.user-badge {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.875rem;
+}
+
+.user-badge.active {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.user-badge.blocked {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.user-action-btn {
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.user-action-btn.block {
+  background: #ef4444;
+  color: #fff;
+}
+
+.user-action-btn.block:hover {
+  background: #dc2626;
+}
+
+.user-action-btn.unblock {
+  background: #10b981;
+  color: #fff;
+}
+
+.user-action-btn.unblock:hover {
+  background: #059669;
+}
+
+.user-action-btn:disabled {
+  background: #d1d5db;
+  cursor: not-allowed;
+}
+
+.user-list-loading {
+  text-align: center;
+  padding: 16px;
+  color: #6b7280;
+}

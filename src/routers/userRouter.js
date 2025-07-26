@@ -1,3 +1,4 @@
+// File: src/routers/userRouter.js (backend)
 const express = require("express");
 const router = express.Router();
 const userController = require("../controllers/userController");
@@ -23,6 +24,7 @@ router.get("/avatar/:id", userController.getAvatar);
 router.get("/:id", authMiddleware, userController.getUserById);
 router.put("/:id", authMiddleware, userController.updateUser);
 router.delete("/:id", authMiddleware, userController.deleteUser);
+// Ban/unban user
 router.patch("/:id/block", authMiddleware, userController.blockUser);
 
 module.exports = router;
