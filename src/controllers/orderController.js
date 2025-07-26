@@ -189,3 +189,28 @@ exports.createOrderWithDetails = async (req, res) => {
     res.status(400).json({ error: err.message });
   }
 };
+
+// controllers/orderController.js
+
+// Hủy đơn hàng
+// controllers/orderController.js
+exports.cancelOrder = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const updatedOrder = await Order.findByIdAndUpdate(
+      id,
+      { status: "Đã hủy" }, // hoặc "cancelled"
+      { new: true }
+    );
+
+    if (!updatedOrder) {
+      return res.status(404).json({ message: "Không tìm thấy đơn hàng" });
+    }
+
+    res.json({ message: "Hủy đơn hàng thành công", order: updatedOrder });
+  } catch (error) {
+    console.error("Lỗi huỷ đơn hàng:", error);
+    res.status(500).json({ message: "Lỗi khi hủy đơn hàng" });
+  }
+};

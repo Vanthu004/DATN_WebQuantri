@@ -1,6 +1,8 @@
+// src/routers/orderRoutes.js
 const express = require("express");
 const router = express.Router();
 const orderCtrl = require("../controllers/orderController");
+const Order = require("../models/Order"); 
 
 // Tạo đơn
 router.post("/", orderCtrl.createOrder);
@@ -22,5 +24,10 @@ router.delete("/:id", orderCtrl.deleteOrder);
 
 // API tạo order kèm order detail
 router.post("/full", orderCtrl.createOrderWithDetails);
+
+// API hủy đơn
+router.put("/:id/cancel", orderCtrl.cancelOrder);
+
+
 
 module.exports = router;
