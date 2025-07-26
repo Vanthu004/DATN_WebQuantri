@@ -15,7 +15,8 @@ exports.getAllStatusHistory = async (_req, res) => {
   try {
     const list = await OrderStatusHistory.find()
       .populate("order_id", "_id")
-      .populate("update_by", "name email");
+      .populate("update_by", "name email")
+      .sort({ createdAt: -1 }); // ✅ Sắp xếp theo thời gian mới nhất
     res.json(list);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -26,7 +27,7 @@ exports.getAllStatusHistory = async (_req, res) => {
 exports.getStatusHistoryByOrder = async (req, res) => {
   try {
     const history = await OrderStatusHistory.find({ order_id: req.params.orderId })
-      .sort({ update_at: -1 })
+      .sort({ createdAt: -1 }) // ✅ Thay vì update_at
       .populate("update_by", "name email");
     res.json(history);
   } catch (err) {

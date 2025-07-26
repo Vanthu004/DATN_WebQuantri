@@ -1,4 +1,4 @@
-
+// src/controllers/userController.js
 const User = require('../models/user');
 const EmailVerificationToken = require('../models/EmailVerificationToken');
 const bcrypt = require('bcrypt');
@@ -7,6 +7,7 @@ const nodemailer = require('nodemailer');
 const multer = require('multer');
 const path = require('path');
 const crypto = require('crypto');
+const createError = require("http-errors");
 const { S3Client, PutObjectCommand } = require("@aws-sdk/client-s3");
 // Hàm tạo transporter email
 const createEmailTransporter = () => {
@@ -316,38 +317,38 @@ exports.updateUser = async (req, res) => {
 };
 // Cập nhật user theo ID (cho admin)
 
-exports.updateUser = async (req, res) => {
-  try {
-    const { password, avatar, avata_url, ...updateData } = req.body;
+// exports.updateUser = async (req, res) => {
+//   try {
+//     const { password, avatar, avata_url, ...updateData } = req.body;
 
-    // Nếu có password thì mã hóa
-    if (password) {
-      updateData.password = await bcrypt.hash(password, 10);
-    }
+//     // Nếu có password thì mã hóa
+//     if (password) {
+//       updateData.password = await bcrypt.hash(password, 10);
+//     }
 
-    const user = await User.findByIdAndUpdate(
-      req.params.id,
-      {
-        $set: {
-          ...updateData,
-          avatar: avatar || null,
-          avata_url: avata_url || "",
-        },
-      },
-      { new: true, runValidators: true }
-    )
-      .select("-password")
-      .populate("avatar");
+//     const user = await User.findByIdAndUpdate(
+//       req.params.id,
+//       {
+//         $set: {
+//           ...updateData,
+//           avatar: avatar || null,
+//           avata_url: avata_url || "",
+//         },
+//       },
+//       { new: true, runValidators: true }
+//     )
+//       .select("-password")
+//       .populate("avatar");
 
-    if (!user) {
-      return res.status(404).json({ message: "Không tìm thấy user" });
-    }
+//     if (!user) {
+//       return res.status(404).json({ message: "Không tìm thấy user" });
+//     }
 
-    res.status(200).json({ message: "Cập nhật user thành công", user });
-  } catch (error) {
-    res.status(500).json({ message: "Lỗi server", error: error.message });
-  }
-};
+//     res.status(200).json({ message: "Cập nhật user thành công", user });
+//   } catch (error) {
+//     res.status(500).json({ message: "Lỗi server", error: error.message });
+//   }
+// };
 
 // Đổi mật khẩu
 exports.changePassword = async (req, res) => {
@@ -409,28 +410,39 @@ exports.changePassword = async (req, res) => {
   }
 };
 
-// Xóa user
-// Chặn hoặc mở chặn user
-exports.blockUser = async (req, res) => {
+// Ban user
+exports.blockUser = async (req, res, next) => {
   try {
-    const { block } = req.body; // true: chặn, false: mở chặn
+    const { id } = req.params;
+    const { isBanned, bannedUntil, reason } = req.body;
+
+    const banData = {
+      isBanned: isBanned === true,
+      bannedUntil: isBanned ? bannedUntil || null : null,
+      reason: isBanned ? reason || "" : "",
+    };
+
     const user = await User.findByIdAndUpdate(
-      req.params.id,
-      { is_blocked: block },
+      id,
+      { ban: banData },
       { new: true }
     )
       .select("-password")
       .populate("avatar");
+
     if (!user) {
-      return res.status(404).json({ message: "Không tìm thấy user" });
+      throw createError(404, "Không tìm thấy người dùng");
     }
-    res
-      .status(200)
-      .json({ message: block ? "Đã chặn user" : "Đã mở chặn user", user });
+
+    res.status(200).json({
+      message: isBanned ? "Đã khóa (ban) tài khoản người dùng" : "Đã mở khóa (unban) tài khoản người dùng",
+      user,
+    });
   } catch (error) {
-    res.status(500).json({ message: "Lỗi server", error: error.message });
+    next(error);
   }
 };
+
 
 // Xóa user (xóa thật)
 exports.deleteUser = async (req, res) => {
@@ -452,31 +464,41 @@ exports.login = async (req, res) => {
 
     const user = await User.findOne({ email }).populate("avatar");
     if (!user) {
-      return res
-        .status(401)
-        .json({ message: "Email hoặc mật khẩu không đúng" });
+      return res.status(401).json({ message: "Email hoặc mật khẩu không đúng" });
     }
 
-    if (user.is_blocked) {
-      return res.status(403).json({
-        message: "Tài khoản đã bị chặn. Vui lòng liên hệ quản trị viên.",
-      });
+    // Kiểm tra trạng thái ban
+    if (user.ban?.isBanned) {
+      // Nếu có thời hạn ban và thời hạn đã kết thúc => tự động unban
+      if (user.ban.bannedUntil && user.ban.bannedUntil < new Date()) {
+        user.ban = {
+          isBanned: false,
+          bannedUntil: null,
+          reason: ""
+        };
+        await user.save();
+      } else {
+        // Ban còn hiệu lực (hoặc ban vĩnh viễn)
+        return res.status(403).json({
+          message:
+            `Tài khoản của bạn đã bị khóa` +
+            (user.ban.bannedUntil
+              ? ` đến ${new Date(user.ban.bannedUntil).toLocaleString("vi-VN")}`
+              : " vĩnh viễn") +
+            (user.ban.reason ? `. Lý do: ${user.ban.reason}` : ""),
+        });
+      }
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      return res
-        .status(401)
-        .json({ message: "Email hoặc mật khẩu không đúng" });
+      return res.status(401).json({ message: "Email hoặc mật khẩu không đúng" });
     }
-
 
     const token = jwt.sign(
       { userId: user._id, role: user.role },
       process.env.JWT_SECRET,
-      {
-        expiresIn: "1d",
-      }
+      { expiresIn: "1d" }
     );
 
     res.status(200).json({
@@ -559,3 +581,4 @@ exports.updateAvatar = async (req, res) => {
     res.status(500).json({ message: "Lỗi server", error: error.message });
   }
 };
+
