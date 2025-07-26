@@ -1,3 +1,4 @@
+// File: src/routers/userRouter.js (backend)
 const express = require("express");
 const router = express.Router();
 const userController = require("../controllers/userController");
@@ -16,7 +17,7 @@ router.post("/verify-email", authController.verifyEmail);
 router.put("/update-profile", authMiddleware, userController.updateProfile);
 router.put("/update-avatar", authMiddleware, userController.updateAvatar);
 router.put("/change-password", authMiddleware, userController.changePassword);
-
+// router.get("/profile", authMiddleware, userController.getProfile);
 // Protected routes (yêu cầu xác thực) - routes có parameter
 router.get("/", authMiddleware, userController.getAllUsers);
 router.get("/all", userController.getAllUsers);
@@ -24,6 +25,7 @@ router.get("/avatar/:id", userController.getAvatar);
 router.get("/:id", authMiddleware, userController.getUserById);
 router.put("/:id", authMiddleware, userController.updateUser);
 router.delete("/:id", authMiddleware, userController.deleteUser);
+// Ban/unban user
 router.patch("/:id/block", authMiddleware, userController.blockUser);
 
 module.exports = router;

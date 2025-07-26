@@ -41,31 +41,42 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: "",
     },
-    is_blocked: {
-      type: Boolean,
-      default: false,
+    ban: {
+      isBanned: {
+        type: Boolean,
+        default: false,
+      },
+      bannedUntil: {
+        type: Date,
+        default: null, // null = ban vĩnh viễn hoặc không bị ban
+      },
+      reason: {
+        type: String,
+        default: "",
+      },
     },
-     gender: {
-    type: String,
-    enum: ['male', 'female', 'other'],
-    default: 'other'
-  },
-  birthdate: {
-    type: Date
-  },
-  // Thêm trường cho xác nhận email
-  email_verified: {
-    type: Boolean,
-    default: false
-  },
-  email_verification_otp: {
-    type: String,
-    default: null
-  },
-  email_verification_expires: {
-    type: Date,
-    default: null
-  }
+
+    gender: {
+      type: String,
+      enum: ['male', 'female', 'other'],
+      default: 'other'
+    },
+    birthdate: {
+      type: Date
+    },
+    // Thêm trường cho xác nhận email
+    email_verified: {
+      type: Boolean,
+      default: false
+    },
+    email_verification_otp: {
+      type: String,
+      default: null
+    },
+    email_verification_expires: {
+      type: Date,
+      default: null
+    }
   },
 
   { timestamps: true }
