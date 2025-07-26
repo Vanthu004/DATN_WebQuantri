@@ -4,21 +4,27 @@ import { toast } from "react-toastify";
 import "../../css/users/listUser.css";
 import api from "../../configs/api";
 import { blockUser } from "../../services/user";
+import { FaBan } from "react-icons/fa";
 
 const ListUser = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(false);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [showModal, setShowModal] = useState<string | null>(null);
+  const [banReason, setBanReason] = useState("");
+  const [banDuration, setBanDuration] = useState<string>("");
 
   const fetchUsers = async () => {
     setLoading(true);
     try {
       const token = localStorage.getItem("token");
+      if (!token) throw new Error("Không tìm thấy token đăng nhập");
       const res = await api.get("/users", {
         headers: { Authorization: `Bearer ${token}` },
       });
       setUsers(res.data as User[]);
     } catch (err) {
-      toast.error("Lỗi khi lấy danh sách người dùng");
+      toast.error(err.message || "Lỗi khi lấy danh sách người dùng");
     } finally {
       setLoading(false);
     }
@@ -28,14 +34,56 @@ const ListUser = () => {
     fetchUsers();
   }, []);
 
-  const handleBlock = async (id: string, block: boolean) => {
+  const handleBlock = async (id: string) => {
+    setShowModal(id);
+  };
+
+  const confirmBlock = async (id: string) => {
+    setActionLoading(id);
     try {
       const token = localStorage.getItem("token") || "";
-      await blockUser(id, block, token);
-      toast.success(block ? "Đã chặn người dùng" : "Đã mở chặn người dùng");
-      fetchUsers();
+      if (!token) throw new Error("Không tìm thấy token đăng nhập");
+
+      const banData = {
+        isBanned: true,
+        bannedUntil: banDuration ? new Date(banDuration).toISOString() : null,
+        reason: banReason || "",
+      };
+
+      await blockUser(id, banData, token);
+      toast.success("Đã chặn người dùng");
+      await fetchUsers();
+      setShowModal(null);
+      setBanReason("");
+      setBanDuration("");
     } catch (err) {
-      toast.error("Thao tác thất bại");
+      toast.error(err.message || "Thao tác thất bại");
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleUnblock = async (id: string) => {
+    if (!window.confirm("Bạn có chắc muốn mở chặn người dùng này?")) return;
+
+    setActionLoading(id);
+    try {
+      const token = localStorage.getItem("token") || "";
+      if (!token) throw new Error("Không tìm thấy token đăng nhập");
+
+      const banData = {
+        isBanned: false,
+        bannedUntil: null,
+        reason: "",
+      };
+
+      await blockUser(id, banData, token);
+      toast.success("Đã mở chặn người dùng");
+      await fetchUsers();
+    } catch (err) {
+      toast.error(err.message || "Thao tác thất bại");
+    } finally {
+      setActionLoading(null);
     }
   };
 
@@ -52,7 +100,8 @@ const ListUser = () => {
               <th>Vai trò</th>
               <th>Số điện thoại</th>
               <th>Trạng thái</th>
-              <th>Ngày tạo</th>
+              <th>Thời hạn chặn</th>
+              <th>Lý do</th>
               <th>Hành động</th>
             </tr>
           </thead>
@@ -65,31 +114,34 @@ const ListUser = () => {
                 <td>{user.role}</td>
                 <td>{user.phone_number || "-"}</td>
                 <td>
-                  {user.is_blocked ? (
+                  {user.ban.isBanned ? (
                     <span className="user-badge blocked">Đã chặn</span>
                   ) : (
                     <span className="user-badge active">Hoạt động</span>
                   )}
                 </td>
                 <td>
-                  {user.createdAt
-                    ? new Date(user.createdAt).toLocaleString()
-                    : ""}
+                  {user.ban.bannedUntil
+                    ? new Date(user.ban.bannedUntil).toLocaleString()
+                    : "Vĩnh viễn"}
                 </td>
+                <td>{user.ban.reason || "-"}</td>
                 <td>
-                  {user.is_blocked ? (
+                  {user.ban.isBanned ? (
                     <button
                       className="user-action-btn unblock"
-                      onClick={() => handleBlock(user._id, false)}
+                      onClick={() => handleUnblock(user._id)}
+                      disabled={actionLoading === user._id}
                     >
-                      Mở chặn
+                      {actionLoading === user._id ? "Đang xử lý..." : "Mở chặn"}
                     </button>
                   ) : (
                     <button
                       className="user-action-btn block"
-                      onClick={() => handleBlock(user._id, true)}
+                      onClick={() => handleBlock(user._id)}
+                      disabled={actionLoading === user._id}
                     >
-                      Chặn
+                      {actionLoading === user._id ? "Đang xử lý..." : "Chặn"}
                     </button>
                   )}
                 </td>
@@ -99,6 +151,56 @@ const ListUser = () => {
         </table>
         {loading && <div className="user-list-loading">Đang tải...</div>}
       </div>
+
+      {/* Modal để nhập lý do và thời hạn ban */}
+      {showModal && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center">
+          <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
+            <h3 className="text-lg font-semibold mb-4">Chặn người dùng</h3>
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700">
+                Lý do chặn
+              </label>
+              <textarea
+                className="mt-1 w-full p-2 border rounded"
+                value={banReason}
+                onChange={(e) => setBanReason(e.target.value)}
+                placeholder="Nhập lý do chặn (không bắt buộc)"
+              />
+            </div>
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700">
+                Thời hạn chặn (không bắt buộc)
+              </label>
+              <input
+                type="datetime-local"
+                className="mt-1 w-full p-2 border rounded"
+                value={banDuration}
+                onChange={(e) => setBanDuration(e.target.value)}
+              />
+            </div>
+            <div className="flex justify-end gap-2">
+              <button
+                className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400"
+                onClick={() => {
+                  setShowModal(null);
+                  setBanReason("");
+                  setBanDuration("");
+                }}
+              >
+                Hủy
+              </button>
+              <button
+                className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
+                onClick={() => confirmBlock(showModal)}
+                disabled={actionLoading === showModal}
+              >
+                {actionLoading === showModal ? "Đang xử lý..." : "Xác nhận"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

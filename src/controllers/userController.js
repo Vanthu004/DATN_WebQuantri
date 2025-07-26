@@ -7,6 +7,7 @@ const nodemailer = require('nodemailer');
 const multer = require('multer');
 const path = require('path');
 const crypto = require('crypto');
+const createError = require("http-errors");
 const { S3Client, PutObjectCommand } = require("@aws-sdk/client-s3");
 // Hàm tạo transporter email
 const createEmailTransporter = () => {
@@ -409,21 +410,20 @@ exports.changePassword = async (req, res) => {
   }
 };
 
-
-// Chặn hoặc mở chặn user
-exports.banUser = async (req, res) => {
+// Ban user
+exports.blockUser = async (req, res, next) => {
   try {
-   const { isBanned, bannedUntil, reason } = req.body;
+    const { id } = req.params;
+    const { isBanned, bannedUntil, reason } = req.body;
 
-const banData = {
-  isBanned: isBanned === true,
-  bannedUntil: isBanned ? bannedUntil || null : null,
-  reason: isBanned ? reason || "" : "",
-};
-
+    const banData = {
+      isBanned: isBanned === true,
+      bannedUntil: isBanned ? bannedUntil || null : null,
+      reason: isBanned ? reason || "" : "",
+    };
 
     const user = await User.findByIdAndUpdate(
-      req.params.id,
+      id,
       { ban: banData },
       { new: true }
     )
@@ -431,7 +431,7 @@ const banData = {
       .populate("avatar");
 
     if (!user) {
-      return res.status(404).json({ message: "Không tìm thấy user" });
+      throw createError(404, "Không tìm thấy người dùng");
     }
 
     res.status(200).json({
@@ -439,30 +439,9 @@ const banData = {
       user,
     });
   } catch (error) {
-    res.status(500).json({ message: "Lỗi server", error: error.message });
+    next(error);
   }
 };
-
-// Mở khóa (unban) user
-// Unban user controller
-exports.unbanUser = async (req, res) => {
-  try {
-    const user = await User.findById(req.params.id);
-    if (!user) return res.status(404).json({ message: 'Không tìm thấy người dùng' });
-
-    user.ban = {
-      isBanned: false,
-      bannedUntil: null,
-      reason: ''
-    };
-
-    await user.save();
-    res.status(200).json({ message: 'Đã gỡ ban người dùng.', user });
-  } catch (error) {
-    res.status(500).json({ message: 'Lỗi server', error: error.message });
-  }
-};
-
 
 
 // Xóa user (xóa thật)
