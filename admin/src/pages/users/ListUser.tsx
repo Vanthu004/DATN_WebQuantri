@@ -4,7 +4,7 @@ import { toast } from "react-toastify";
 import "../../css/users/listUser.css";
 import api from "../../configs/api";
 import { blockUser } from "../../services/user";
-import { FaBan } from "react-icons/fa";
+
 
 
 const ListUser = () => {
@@ -25,7 +25,11 @@ const ListUser = () => {
       });
       setUsers(res.data as User[]);
     } catch (err) {
-      toast.error(err.message || "Lỗi khi lấy danh sách người dùng");
+      if (err instanceof Error) {
+        toast.error(err.message || "Lỗi khi lấy danh sách người dùng");
+      } else {
+        toast.error("Lỗi khi lấy danh sách người dùng");
+      }
     } finally {
       setLoading(false);
     }
@@ -59,7 +63,11 @@ const ListUser = () => {
       setBanReason("");
       setBanDuration("");
     } catch (err) {
-      toast.error(err.message || "Thao tác thất bại");
+      if (err instanceof Error) {
+        toast.error(err.message || "Thao tác thất bại");
+      } else {
+        toast.error("Thao tác thất bại");
+      }
     } finally {
       setActionLoading(null);
     }
@@ -83,7 +91,11 @@ const ListUser = () => {
       toast.success("Đã mở chặn người dùng");
       await fetchUsers();
     } catch (err) {
-      toast.error(err.message || "Thao tác thất bại");
+      if (err instanceof Error) {
+        toast.error(err.message || "Thao tác thất bại");
+      } else {
+        toast.error("Thao tác thất bại");
+      }
     } finally {
       setActionLoading(null);
     }
