@@ -6,6 +6,7 @@ import api from "../../configs/api";
 import { blockUser } from "../../services/user";
 import { FaBan } from "react-icons/fa";
 
+
 const ListUser = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(false);
@@ -123,7 +124,7 @@ const ListUser = () => {
                 <td>
                   {user.ban.bannedUntil
                     ? new Date(user.ban.bannedUntil).toLocaleString()
-                    : "Vĩnh viễn"}
+                    : "-" || "-"}
                 </td>
                 <td>{user.ban.reason || "-"}</td>
                 <td>
