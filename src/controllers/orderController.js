@@ -171,6 +171,12 @@ exports.createOrderWithDetails = async (req, res) => {
       total += product.price * item.quantity;
       const detail = await OrderDetail.create([detailData], { session });
       details.push(detail[0]);
+      // Bổ sung: Tăng sold_quantity cho sản phẩm
+      await Product.findByIdAndUpdate(
+        item.product_id,
+        { $inc: { sold_quantity: item.quantity } },
+        { session }
+      );
     }
 
     // Cập nhật tổng tiền cho Order
