@@ -50,7 +50,7 @@ const sendVerificationEmail = async (email, otp) => {
     return true;
   } catch (error) {
     console.error("❌ Lỗi gửi email:", error.message);
-    
+
     // Xử lý các lỗi cụ thể
     if (error.code === 'EAUTH') {
       console.error("🔐 Lỗi xác thực email. Vui lòng kiểm tra:");
@@ -62,7 +62,7 @@ const sendVerificationEmail = async (email, otp) => {
     } else {
       console.error("📧 Lỗi gửi email khác:", error);
     }
-    
+
     return false;
   }
 };
@@ -96,7 +96,7 @@ const sendPasswordResetEmail = async (email, otp) => {
     return true;
   } catch (error) {
     console.error("❌ Lỗi gửi email reset password:", error.message);
-    
+
     // Xử lý các lỗi cụ thể
     if (error.code === 'EAUTH') {
       console.error("🔐 Lỗi xác thực email. Vui lòng kiểm tra:");
@@ -108,7 +108,7 @@ const sendPasswordResetEmail = async (email, otp) => {
     } else {
       console.error("📧 Lỗi gửi email khác:", error);
     }
-    
+
     return false;
   }
 };
@@ -117,42 +117,64 @@ const sendPasswordResetEmail = async (email, otp) => {
 exports.sendVerificationEmail = async (req, res) => {
   try {
     const { email } = req.body;
-    
+
     const user = await User.findOne({ email });
     if (!user) {
       return res.status(404).json({ message: 'Email không tồn tại' });
     }
-    
+
     if (user.email_verified) {
       return res.status(400).json({ message: 'Email đã được xác nhận trước đó' });
     }
 
+    // Kiểm tra trạng thái ban
+    if (user.ban?.isBanned) {
+      if (!user.ban.bannedUntil || user.ban.bannedUntil > new Date()) {
+        return res.status(403).json({
+          message:
+            "Tài khoản của bạn đã bị khóa" +
+            (user.ban.bannedUntil
+              ? ` đến ${new Date(user.ban.bannedUntil).toLocaleString("vi-VN")}`
+              : " vĩnh viễn") +
+            (user.ban.reason ? `. Lý do: ${user.ban.reason}` : ""),
+        });
+      } else {
+        user.ban = {
+          isBanned: false,
+          bannedUntil: null,
+          reason: ""
+        };
+        await user.save();
+      }
+    }
+
+
     // Tạo OTP 6 số mới
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    
+
     // Cập nhật OTP trong database
     await EmailVerificationToken.deleteMany({ email }); // Xóa OTP cũ
     await EmailVerificationToken.create({ email, otp });
-    
+
     // Cập nhật OTP trong user
     await User.findOneAndUpdate(
       { email },
-      { 
+      {
         email_verification_otp: otp,
         email_verification_expires: new Date(Date.now() + 10 * 60 * 1000)
       }
     );
-    
+
     // Gửi email
     const emailSent = await sendVerificationEmail(email, otp);
-    
+
     if (!emailSent) {
       console.warn("⚠️ Không thể gửi email xác nhận");
-      return res.status(500).json({ 
-        message: 'Không thể gửi email. Vui lòng kiểm tra cấu hình email server.' 
+      return res.status(500).json({
+        message: 'Không thể gửi email. Vui lòng kiểm tra cấu hình email server.'
       });
     }
-    
+
     res.json({ message: 'Mã xác nhận đã được gửi lại về email' });
   } catch (error) {
     console.error('❌ Lỗi gửi email xác nhận:', error);
@@ -164,32 +186,32 @@ exports.sendVerificationEmail = async (req, res) => {
 exports.verifyEmail = async (req, res) => {
   try {
     const { email, otp } = req.body;
-    
+
     // Tìm OTP trong database
     const verificationRecord = await EmailVerificationToken.findOne({ email, otp });
     if (!verificationRecord) {
       return res.status(400).json({ message: 'Mã OTP không hợp lệ hoặc đã hết hạn' });
     }
-    
+
     // Kiểm tra OTP có hết hạn chưa
     if (new Date() > verificationRecord.expireAt) {
       await EmailVerificationToken.deleteMany({ email });
       return res.status(400).json({ message: 'Mã OTP đã hết hạn' });
     }
-    
+
     // Cập nhật trạng thái xác nhận email
     await User.findOneAndUpdate(
       { email },
-      { 
+      {
         email_verified: true,
         email_verification_otp: null,
         email_verification_expires: null
       }
     );
-    
+
     // Xóa OTP sau khi sử dụng
     await EmailVerificationToken.deleteMany({ email });
-    
+
     res.json({ message: 'Email đã được xác nhận thành công' });
   } catch (error) {
     console.error('❌ Lỗi xác nhận email:', error);
@@ -200,7 +222,7 @@ exports.verifyEmail = async (req, res) => {
 exports.forgotPassword = async (req, res) => {
   try {
     const { email } = req.body;
-    
+
     // Kiểm tra email có tồn tại không
     const user = await User.findOne({ email });
     if (!user) {
@@ -215,13 +237,36 @@ exports.forgotPassword = async (req, res) => {
 
     // Gửi email reset password
     const emailSent = await sendPasswordResetEmail(email, otp);
-    
+
     if (!emailSent) {
       console.warn("⚠️ Không thể gửi email reset password");
-      return res.status(500).json({ 
-        message: 'Không thể gửi email. Vui lòng kiểm tra cấu hình email server.' 
+      return res.status(500).json({
+        message: 'Không thể gửi email. Vui lòng kiểm tra cấu hình email server.'
       });
     }
+
+
+    // Kiểm tra trạng thái ban
+    if (user.ban?.isBanned) {
+      if (!user.ban.bannedUntil || user.ban.bannedUntil > new Date()) {
+        return res.status(403).json({
+          message:
+            "Tài khoản của bạn đã bị khóa" +
+            (user.ban.bannedUntil
+              ? ` đến ${new Date(user.ban.bannedUntil).toLocaleString("vi-VN")}`
+              : " vĩnh viễn") +
+            (user.ban.reason ? `. Lý do: ${user.ban.reason}` : ""),
+        });
+      } else {
+        user.ban = {
+          isBanned: false,
+          bannedUntil: null,
+          reason: ""
+        };
+        await user.save();
+      }
+    }
+
 
     console.log('✅ Email reset password đã được gửi thành công đến:', email);
     res.json({ message: 'OTP đã được gửi về email' });
@@ -249,7 +294,7 @@ exports.resetPassword = async (req, res) => {
 
     // Hash mật khẩu mới
     const hashedPassword = await bcrypt.hash(newPassword, 10);
-    
+
     // Cập nhật mật khẩu
     await User.findOneAndUpdate({ email }, { password: hashedPassword });
 
