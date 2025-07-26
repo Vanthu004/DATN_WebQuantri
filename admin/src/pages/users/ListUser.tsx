@@ -44,6 +44,7 @@ const ListUser = () => {
       const token = localStorage.getItem("token") || "";
       if (!token) throw new Error("Không tìm thấy token đăng nhập");
 
+      
       const banData = {
         isBanned: true,
         bannedUntil: banDuration ? new Date(banDuration).toISOString() : null,
@@ -123,8 +124,9 @@ const ListUser = () => {
                 <td>
                   {user.ban.bannedUntil
                     ? new Date(user.ban.bannedUntil).toLocaleString()
-                    : "Vĩnh viễn"}
+                    : "-"}
                 </td>
+
                 <td>{user.ban.reason || "-"}</td>
                 <td>
                   {user.ban.isBanned ? (
