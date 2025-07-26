@@ -10,15 +10,13 @@ const orderStatusHistorySchema = new mongoose.Schema({
     type: String,
     required: true
   },
-  update_at: {
-    type: Date,
-    default: Date.now
-  },
   update_by: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "User", // nếu bạn lưu theo người dùng cập nhật trạng thái
+    ref: "User",
     required: true
   }
+}, {
+  timestamps: true // ✅ Tự động tạo createdAt, updatedAt
 });
 
 module.exports = mongoose.model("OrderStatusHistory", orderStatusHistorySchema);
