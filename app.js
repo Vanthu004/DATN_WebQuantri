@@ -29,6 +29,8 @@ const categoryTypeRouter = require("./src/routers/categoryTypeRouter");
 const uploadRouter = require("./src/routers/uploadRouter");
 const voucherRouter = require("./src/routers/voucherRoutes");
 const notificationRouter = require("./src/routers/notificationRoutes");
+const refundRoutes = require("./src/routers/refundRequestRoutes");
+
 
 // ====== Kiểm tra biến môi trường bắt buộc ======
 if (!process.env.JWT_SECRET) {
@@ -70,7 +72,7 @@ app.use('/api/category-types', categoryTypeRouter);
 app.use("/api", uploadRouter);
 app.use("/api/vouchers", voucherRouter);
 // Route gốc hiển thị toàn bộ giỏ hàng + sản phẩm
-
+app.use("/api/refund-requests", refundRoutes);
 
 app.use("/api", uploadRouter);
 app.use('/api/vouchers', voucherRouter);
