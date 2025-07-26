@@ -485,39 +485,41 @@ exports.login = async (req, res) => {
 
     const user = await User.findOne({ email }).populate("avatar");
     if (!user) {
-      return res
-        .status(401)
-        .json({ message: "Email hoặc mật khẩu không đúng" });
+      return res.status(401).json({ message: "Email hoặc mật khẩu không đúng" });
     }
 
-    if (user.ban && user.ban.isBanned) {
-  // Kiểm tra thời hạn ban
-  if (user.ban.until && user.ban.until < new Date()) {
-    // Ban đã hết hạn, gỡ ban
-    user.ban = { isBanned: false, until: null, reason: "" };
-    await user.save();
-  } else {
-    return res.status(403).json({
-      message: `Tài khoản của bạn đã bị khóa${user.ban.until ? ` đến ${new Date(user.ban.until).toLocaleString("vi-VN")}` : ""}. Lý do: ${user.ban.reason || "Không rõ lý do"}`,
-    });
-  }
-}
-
+    // Kiểm tra trạng thái ban
+    if (user.ban?.isBanned) {
+      // Nếu có thời hạn ban và thời hạn đã kết thúc => tự động unban
+      if (user.ban.bannedUntil && user.ban.bannedUntil < new Date()) {
+        user.ban = {
+          isBanned: false,
+          bannedUntil: null,
+          reason: ""
+        };
+        await user.save();
+      } else {
+        // Ban còn hiệu lực (hoặc ban vĩnh viễn)
+        return res.status(403).json({
+          message:
+            `Tài khoản của bạn đã bị khóa` +
+            (user.ban.bannedUntil
+              ? ` đến ${new Date(user.ban.bannedUntil).toLocaleString("vi-VN")}`
+              : " vĩnh viễn") +
+            (user.ban.reason ? `. Lý do: ${user.ban.reason}` : ""),
+        });
+      }
+    }
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      return res
-        .status(401)
-        .json({ message: "Email hoặc mật khẩu không đúng" });
+      return res.status(401).json({ message: "Email hoặc mật khẩu không đúng" });
     }
-
 
     const token = jwt.sign(
       { userId: user._id, role: user.role },
       process.env.JWT_SECRET,
-      {
-        expiresIn: "1d",
-      }
+      { expiresIn: "1d" }
     );
 
     res.status(200).json({

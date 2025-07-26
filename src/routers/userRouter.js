@@ -25,6 +25,6 @@ router.get("/:id", authMiddleware, userController.getUserById);
 router.put("/:id", authMiddleware, userController.updateUser);
 router.delete("/:id", authMiddleware, userController.deleteUser);
 router.patch("/:id/ban", authMiddleware, userController.banUser);
-router.patch("/:id/unban", authMiddleware, userController.unbanUser);
+router.patch("/:id/ban", authMiddleware, userController.unbanUser);
 
 module.exports = router;
