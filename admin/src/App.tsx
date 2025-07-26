@@ -21,6 +21,8 @@ import ManageCategoryType from "./pages/categoryTypes/ManageCategoryType";
 import ProductsByCategoryType from "./pages/products/ProductsByCategoryType";
 import Notify from "./pages/notify/Notify";
 import Vouchers from "./pages/vouchers/Vouchers";
+import AddVoucher from "./pages/vouchers/AddVoucher";
+import EditVoucher from "./pages/vouchers/UpdateVoucher";
 import Comments from "./pages/comments/Comments";
 import Guides from "./pages/guides/Guides"; // Import trang mới
 
@@ -34,6 +36,9 @@ function App() {
             <Route path="/" index element={<Dashboard />} />
             <Route path="/notify" element={<Notify />} />
             <Route path="/vouchers" element={<Vouchers />} />
+            <Route path="/addvouchers" element={<AddVoucher />} />
+            <Route path="//updatevouchers/:voucher_id" element={<EditVoucher />} />
+
             <Route path="/comments" element={<Comments />} />
 
             {/* Product Path */}
