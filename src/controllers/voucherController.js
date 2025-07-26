@@ -1,6 +1,6 @@
 const Voucher = require('../models/Voucher');
 const mongoose = require('mongoose');
-const User = require('../models/User'); // Giả sử bạn có model User để lấy danh sách user
+const User = require('../models/User');
 
 // Tạo voucher (1 bản ghi hoặc nhiều bản ghi voucher cá nhân)
 // Nếu req.body có userIds: tạo voucher cá nhân cho từng userId
@@ -64,6 +64,43 @@ exports.createVoucher = async (req, res) => {
     res.status(500).json({ error: err.message || "Lỗi server khi tạo voucher." });
   }
 };
+// Lấy danh sách voucher theo userId (có thể rỗng => lấy cả dùng chung)
+exports.getVouchersByUserId = async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    const today = new Date();
+
+    // Tạo điều kiện lọc voucher hợp lệ
+    const baseConditions = {
+      status: "active",
+      expiry_date: { $gte: today },
+      usage_limit: { $gt: 0 },
+    };
+
+    // Nếu userId có => lấy chung + của user đó
+    const query = userId
+      ? {
+          ...baseConditions,
+          $or: [
+            { User_id: null },
+            { User_id: userId },
+          ],
+        }
+      : {
+          ...baseConditions,
+          User_id: null,
+        };
+
+    const vouchers = await Voucher.find(query).populate('User_id', 'name email');
+
+    res.status(200).json(vouchers);
+  } catch (err) {
+    console.error("❌ Lỗi khi lấy voucher theo userId:", err);
+    res.status(500).json({ error: err.message || "Lỗi server khi lấy voucher." });
+  }
+};
+
 
 // Lấy tất cả voucher (chưa gộp, trả về đầy đủ)
 exports.getAllVouchers = async (req, res) => {
@@ -149,3 +186,48 @@ exports.getVoucherByVoucherId = async (req, res) => {
     res.status(500).json({ error: err.message || "Lỗi server khi lấy voucher." });
   }
 };
+//áp dụng voucher của người dùng 
+exports.applyVoucherToOrder = async (req, res) => {
+  try {
+    const { voucherId, userId } = req.params;
+
+    if (!voucherId) {
+      return res.status(400).json({ error: "voucher_id là bắt buộc." });
+    }
+
+    // Tìm voucher theo voucherId và userId
+    const voucher = await Voucher.findOne({
+      voucher_id: voucherId,
+      $or: [{ User_id: null }, { User_id: userId }],
+    });
+
+    if (!voucher) {
+      return res.status(404).json({ error: "Không tìm thấy voucher hợp lệ." });
+    }
+
+    // Các kiểm tra 
+    if (voucher.status !== 'active') {
+      return res.status(400).json({ error: "Voucher không còn hiệu lực (status)." });
+    }
+
+    if (new Date(voucher.expiry_date) < new Date()) {
+      return res.status(400).json({ error: "Voucher đã hết hạn." });
+    }
+
+    if (voucher.usage_limit <= 0) {
+      return res.status(400).json({ error: "Voucher đã hết lượt sử dụng." });
+    }
+
+    // Cập nhật usage
+    voucher.usage_limit -= 1;
+    voucher.used_count += 1;
+    await voucher.save();
+
+    res.status(200).json({ message: "Áp dụng voucher thành công.", voucher });
+  } catch (err) {
+    console.error("❌ applyVoucherToOrder error:", err);
+    res.status(500).json({ error: "Lỗi server khi áp dụng voucher." });
+  }
+};
+
+
