@@ -60,6 +60,7 @@ app.use("/api/cart", cartApi);
 app.use("/api/cart-items", cartItemApi);
 app.use("/api/statistics", statisticApi);
 app.use("/api/favorites", favoriteRouter);
+app.use("/api/vouchers", voucherRouter);
 
 app.use("/api/uploads", uploadRouter);
 
