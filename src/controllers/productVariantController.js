@@ -25,7 +25,9 @@ exports.createVariant = async (req, res) => {
 // Lấy tất cả biến thể của 1 sản phẩm
 exports.getVariantsByProduct = async (req, res) => {
   try {
-    const variants = await ProductVariant.find({ product_id: req.params.productId });
+    const variants = await ProductVariant.find({ product_id: req.params.productId })
+      .populate('attributes.size')
+      .populate('attributes.color');
     res.json(variants);
   } catch (err) {
     res.status(500).json({ error: err.message });
