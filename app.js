@@ -53,7 +53,7 @@ app.use("/api/payments", paymentRoutes);
 app.use("/api/payment-methods", paymentRouter);
 app.use("/api/shipping-methods", shippingRouter);
 app.use("/api/product-variants", productVariantApi);
-app.use("/api/cart", cartApi);
+app.use("/api/carts", cartApi);
 app.use("/api/cart-items", cartItemApi);
 app.use("/api/statistics", statisticApi);
 app.use("/api/favorites", favoriteRouter);
