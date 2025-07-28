@@ -7,6 +7,23 @@ const orderSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
+    products: [
+      {
+        productId: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "Product",
+          required: true,
+        },
+        quantity: {
+          type: Number,
+          required: true,
+        },
+        price: {
+          type: Number,
+          required: true,
+        },
+      },
+    ],
     status: {
       type: String,
       enum: [
@@ -77,6 +94,8 @@ const orderSchema = new mongoose.Schema(
     cancelled_at: {
       type: Date
     }
+
+    cancel_reason: { type: String, default: null },
   },
   { 
     versionKey: false, 

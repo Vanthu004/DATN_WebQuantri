@@ -17,18 +17,22 @@ import ListUser from "./pages/users/ListUser";
 import Setting from "./pages/settings/Setting";
 import OrderPage from "./pages/orders/Order";
 import OrderDetail from "./pages/orders/OrderDetail";
-
 import ManageCategoryType from "./pages/categoryTypes/ManageCategoryType";
 import ProductsByCategoryType from "./pages/products/ProductsByCategoryType";
 import Notify from "./pages/notify/Notify";
 import Vouchers from "./pages/vouchers/Vouchers";
+import AddVoucher from "./pages/vouchers/AddVoucher";
+import EditVoucher from "./pages/vouchers/UpdateVoucher";
 import Comments from "./pages/comments/Comments";
+
 import ListSizes from "./pages/sizes/ListSizes";
 import AddSize from "./pages/sizes/AddSize";
 import UpdateSize from "./pages/sizes/UpdateSize";
 import ListColors from "./pages/colors/ListColors";
 import AddColor from "./pages/colors/AddColor";
 import UpdateColor from "./pages/colors/UpdateColor";
+import Guides from "./pages/guides/Guides"; // Import trang mới
+
 
 function App() {
   return (
@@ -40,9 +44,12 @@ function App() {
             <Route path="/" index element={<Dashboard />} />
             <Route path="/notify" element={<Notify />} />
             <Route path="/vouchers" element={<Vouchers />} />
+            <Route path="/addvouchers" element={<AddVoucher />} />
+            <Route path="//updatevouchers/:voucher_id" element={<EditVoucher />} />
+
             <Route path="/comments" element={<Comments />} />
 
-            {/* Product Path*/}
+            {/* Product Path */}
             <Route path="/products" element={<ListProduct />} />
             <Route path="/products/add" element={<AddProduct />} />
             <Route path="/products/update/:id" element={<UpdateProduct />} />
@@ -73,6 +80,9 @@ function App() {
             <Route path="/orders" element={<OrderPage />} />
             <Route path="/orders/:id" element={<OrderDetail />} />
             <Route path="/setting" element={<Setting />} />
+
+            {/* Thêm route mới cho Guides */}
+            <Route path="/guides" element={<Guides />} />
           </Route>
         </Route>
         {/* Public path */}

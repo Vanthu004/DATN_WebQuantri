@@ -102,8 +102,8 @@ const ListProduct = () => {
 
   const renderProductDescription = (product: Product) => {
     if (!product.description) return "--";
-
     const descKey = product._id + "_desc";
+
     if (product.description.length > 40) {
       return (
         <>
