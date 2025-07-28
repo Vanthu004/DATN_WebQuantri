@@ -1,53 +1,163 @@
 import api from "../configs/api";
-import OrderDetail from "../interfaces/orderDetail";
+import { OrderDetail } from "../interfaces/order";
 import Order from "../interfaces/order";
 
 // Tạo mới order detail
 export const createOrderDetail = async (
-  data: Omit<OrderDetail, "_id" | "createdAt" | "updatedAt">
-): Promise<OrderDetail> => {
-  const res = await api.post<OrderDetail>("/order-details", data);
-  return res.data;
+  data: {
+    order_id: string;
+    product_id: string;
+    product_variant_id?: string;
+    quantity: number;
+    price_each: number;
+  }
+): Promise<{
+  success: boolean;
+  msg: string;
+  data: OrderDetail;
+}> => {
+  try {
+    const response = await api.post("/order-details", data);
+    return response.data;
+  } catch (error) {
+    console.error("Error creating order detail:", error);
+    throw error;
+  }
 };
 
-// Lấy tất cả order detail
-export const getAllOrderDetails = async (): Promise<OrderDetail[]> => {
-  const res = await api.get<OrderDetail[]>("/order-details");
-  return res.data;
+// Lấy tất cả order detail với pagination và filter
+export const getAllOrderDetails = async (
+  status?: string,
+  page: number = 1,
+  limit: number = 10
+): Promise<{
+  success: boolean;
+  data: {
+    details: OrderDetail[];
+    pagination: {
+      page: number;
+      limit: number;
+      total: number;
+      totalPages: number;
+    };
+  };
+}> => {
+  try {
+    const params = new URLSearchParams();
+    if (status) params.append('status', status);
+    params.append('page', page.toString());
+    params.append('limit', limit.toString());
+
+    const response = await api.get(`/order-details?${params.toString()}`);
+    return response.data;
+  } catch (error) {
+    console.error("Error getting all order details:", error);
+    throw error;
+  }
 };
 
 // Lấy order detail theo id
-export const getOrderDetailById = async (id: string): Promise<OrderDetail> => {
-  const res = await api.get<OrderDetail>(`/order-details/${id}`);
-  return res.data;
+export const getOrderDetailById = async (id: string): Promise<{
+  success: boolean;
+  data: OrderDetail;
+}> => {
+  try {
+    const response = await api.get(`/order-details/${id}`);
+    return response.data;
+  } catch (error) {
+    console.error("Error getting order detail by id:", error);
+    throw error;
+  }
 };
 
 // Lấy order detail theo order_id
 export const getOrderDetailsByOrderId = async (
-  orderId: string
-): Promise<OrderDetail[]> => {
-  const res = await api.get<OrderDetail[]>(`/order-details/order/${orderId}`);
-  return res.data;
+  orderId: string,
+  status?: string
+): Promise<{
+  success: boolean;
+  data: {
+    details: OrderDetail[];
+    total_amount: number;
+    item_count: number;
+  };
+}> => {
+  try {
+    const params = new URLSearchParams();
+    if (status) params.append('status', status);
+
+    const response = await api.get(`/order-details/order/${orderId}?${params.toString()}`);
+    return response.data;
+  } catch (error) {
+    console.error("Error getting order details by order id:", error);
+    throw error;
+  }
 };
 
-// Xóa order detail
+// Cập nhật order detail
+export const updateOrderDetail = async (
+  id: string,
+  updateData: Partial<OrderDetail>
+): Promise<{
+  success: boolean;
+  msg: string;
+  data: OrderDetail;
+}> => {
+  try {
+    const response = await api.put(`/order-details/${id}`, updateData);
+    return response.data;
+  } catch (error) {
+    console.error("Error updating order detail:", error);
+    throw error;
+  }
+};
+
+// Xóa order detail (soft delete)
 export const deleteOrderDetail = async (
   id: string
-): Promise<{ msg: string }> => {
-  const res = await api.delete<{ msg: string }>(`/order-details/${id}`);
-  return res.data;
+): Promise<{
+  success: boolean;
+  msg: string;
+}> => {
+  try {
+    const response = await api.delete(`/order-details/${id}`);
+    return response.data;
+  } catch (error) {
+    console.error("Error deleting order detail:", error);
+    throw error;
+  }
 };
 
-export interface OrderDetailFull
-  extends Omit<OrderDetail, "order_id" | "product_id"> {
-  order_id: Order;
-  product_id: { _id: string; name: string; price: number };
+export interface ProductVariantPopulated {
+  _id: string;
+  sku?: string;
+  price?: number;
+  image_url?: string;
+  attributes?: {
+    size?: { _id: string; name: string };
+    color?: { _id: string; name: string };
+  };
 }
 
-// Lấy order detail đầy đủ theo id (kèm order, product)
+export interface OrderDetailFull
+  extends Omit<OrderDetail, "order_id" | "product_id" | "product_variant_id"> {
+  order_id: Order;
+  product_id: { _id: string; name: string; price: number; image_url?: string; status?: string; description?: string };
+  product_variant_id?: string | ProductVariantPopulated;
+}
+
+// Lấy order detail đầy đủ theo id (kèm order, product, variant)
 export const getOrderDetailFullById = async (
   id: string
-): Promise<OrderDetailFull> => {
-  const res = await api.get<OrderDetailFull>(`/order-details/${id}/full`);
-  return res.data;
+): Promise<{
+  success: boolean;
+  data: OrderDetailFull;
+}> => {
+  try {
+    const response = await api.get(`/order-details/${id}/full`);
+    return response.data;
+  } catch (error) {
+    console.error("Error getting order detail full by id:", error);
+    throw error;
+  }
 };
