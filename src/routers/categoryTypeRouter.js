@@ -11,7 +11,4 @@ router.route('/:id')
   .get(ctrl.getById)
   .put(ctrl.update)
   .delete(ctrl.delete);
-
-
-
 module.exports = router; 
