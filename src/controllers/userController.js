@@ -80,20 +80,28 @@ exports.getAllUsers = async (req, res) => {
   }
 };
 
-// Lấy user theo ID
-exports.getUserById = async (req, res) => {
+// Lấy thông tin người dùng theo ID
+exports.getUserById = async (req, res, next) => {
   try {
-    const user = await User.findById(req.params.id)
+    const userId = req.params.id;
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(400).json({ message: "ID người dùng không hợp lệ" });
+    }
+
+    const user = await User.findById(userId)
       .select("-password")
       .populate("avatar");
     if (!user) {
-      return res.status(404).json({ message: "Không tìm thấy user" });
+      return res.status(404).json({ message: "Không tìm thấy người dùng" });
     }
+
     res.status(200).json(user);
   } catch (error) {
+    console.error("Get user by ID error:", error);
     res.status(500).json({ message: "Lỗi server", error: error.message });
   }
 };
+
 // Tạo user mới
 exports.createUser = async (req, res) => {
   try {
@@ -469,7 +477,6 @@ exports.login = async (req, res) => {
 
     // Kiểm tra trạng thái ban
     if (user.ban?.isBanned) {
-      // Nếu có thời hạn ban và thời hạn đã kết thúc => tự động unban
       if (user.ban.bannedUntil && user.ban.bannedUntil < new Date()) {
         user.ban = {
           isBanned: false,
@@ -478,7 +485,6 @@ exports.login = async (req, res) => {
         };
         await user.save();
       } else {
-        // Ban còn hiệu lực (hoặc ban vĩnh viễn)
         return res.status(403).json({
           message:
             `Tài khoản của bạn đã bị khóa` +
@@ -496,7 +502,7 @@ exports.login = async (req, res) => {
     }
 
     const token = jwt.sign(
-      { userId: user._id, role: user.role },
+      { userId: user._id.toString(), role: user.role },
       process.env.JWT_SECRET,
       { expiresIn: "1d" }
     );
@@ -510,6 +516,7 @@ exports.login = async (req, res) => {
     res.status(500).json({ message: "Lỗi server", error: error.message });
   }
 };
+
 
 // Lấy ảnh avatar của user
 exports.getAvatar = async (req, res) => {
@@ -582,3 +589,24 @@ exports.updateAvatar = async (req, res) => {
   }
 };
 
+// Lấy thông tin người dùng hiện tại (đã xác thực)
+exports.getCurrentUser = async (req, res, next) => {
+  try {
+    const userId = req.user?.userId;
+    if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(401).json({ message: "ID người dùng không hợp lệ" });
+    }
+
+    const user = await User.findById(userId)
+      .select("-password")
+      .populate("avatar");
+    if (!user) {
+      return res.status(404).json({ message: "Không tìm thấy người dùng" });
+    }
+
+    res.status(200).json(user);
+  } catch (error) {
+    console.error("Get current user error:", error);
+    res.status(500).json({ message: "Lỗi server", error: error.message });
+  }
+};
