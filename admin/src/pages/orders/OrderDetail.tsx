@@ -6,8 +6,9 @@ import {
   deleteOrderDetail,
 } from "../../services/orderDetail";
 import Order from "../../interfaces/order";
-import OrderDetailType from "../../interfaces/orderDetail";
+import { OrderDetail as OrderDetailType } from "../../interfaces/order";
 import ToastMessage from "../../components/ToastMessage";
+import "../../css/orders/orderDetail.css";
 
 const OrderDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -23,59 +24,113 @@ const OrderDetail = () => {
   useEffect(() => {
     if (!id) return;
     setLoading(true);
-    Promise.all([getOrderById(id), getOrderDetailsByOrderId(id)])
-      .then(([orderData, detailData]) => {
+    
+    const loadOrderData = async () => {
+      try {
+        const [orderData, detailResponse] = await Promise.all([
+          getOrderById(id),
+          getOrderDetailsByOrderId(id)
+        ]);
+        
         setOrder(orderData);
-        setDetails(detailData);
-      })
-      .catch(() =>
-        setToast({ type: "error", message: "Không tải được dữ liệu đơn hàng!" })
-      )
-      .finally(() => setLoading(false));
+        if (detailResponse.success) {
+          setDetails(detailResponse.data.details);
+        }
+      } catch (error) {
+        setToast({ 
+          type: "error", 
+          message: "Không tải được dữ liệu đơn hàng!" 
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadOrderData();
   }, [id]);
 
-  const handleDeleteDetail = (detailId: string) => {
+  const handleDeleteDetail = async (detailId: string) => {
     if (!window.confirm("Bạn có chắc muốn xóa sản phẩm này khỏi đơn hàng?"))
       return;
-    deleteOrderDetail(detailId)
-      .then(() => {
+    
+    try {
+      const response = await deleteOrderDetail(detailId);
+      if (response.success) {
         setDetails((prev) => prev.filter((d) => d._id !== detailId));
         setToast({
           type: "success",
           message: "Đã xóa sản phẩm khỏi đơn hàng!",
         });
-      })
-      .catch(() => setToast({ type: "error", message: "Xóa thất bại!" }));
+      }
+    } catch (error) {
+      setToast({ type: "error", message: "Xóa thất bại!" });
+    }
   };
 
-  if (loading) return <div>Đang tải chi tiết đơn hàng...</div>;
-  if (!order) return <div>Không tìm thấy đơn hàng.</div>;
+  const getVariantDisplay = (detail: OrderDetailType) => {
+    if (detail.variant_info) {
+      const parts = [];
+      if (detail.variant_info.size?.name) parts.push(detail.variant_info.size.name);
+      if (detail.variant_info.color?.name) parts.push(detail.variant_info.color.name);
+      return parts.length > 0 ? parts.join(' - ') : null;
+    }
+    
+    if (typeof detail.product_variant_id === 'object' && detail.product_variant_id) {
+      const variant = detail.product_variant_id;
+      const parts = [];
+      if (variant.attributes?.size?.name) parts.push(variant.attributes.size.name);
+      if (variant.attributes?.color?.name) parts.push(variant.attributes.color.name);
+      return parts.length > 0 ? parts.join(' - ') : null;
+    }
+    
+    return null;
+  };
+
+  const getProductImage = (detail: OrderDetailType) => {
+    if (detail.product_image) return detail.product_image;
+    if (typeof detail.product_id === 'object' && detail.product_id?.image_url) {
+      return detail.product_id.image_url;
+    }
+    if (typeof detail.product_variant_id === 'object' && detail.product_variant_id?.image_url) {
+      return detail.product_variant_id.image_url;
+    }
+    return null;
+  };
+
+  const getProductName = (detail: OrderDetailType) => {
+    if (typeof detail.product_id === 'object' && detail.product_id?.name) {
+      return detail.product_id.name;
+    }
+    return detail.product_name;
+  };
+
+  const getStatusDisplayClass = (status: string) => {
+    const statusMap: Record<string, string> = {
+      "Chờ xử lý": "pending",
+      "Đã xác nhận": "confirmed", 
+      "Đang vận chuyển": "shipping",
+      "Đã giao hàng": "delivered",
+      "Hoàn thành": "completed",
+      "Đã hủy": "cancelled"
+    };
+    return statusMap[status] || "default";
+  };
+
+  if (loading) return <div className="loading">Đang tải chi tiết đơn hàng...</div>;
+  if (!order) return <div className="error-message">Không tìm thấy đơn hàng.</div>;
 
   return (
-    <div
-      style={{
-        maxWidth: 900,
-        margin: "0 auto",
-        background: "#fff",
-        padding: 24,
-        borderRadius: 8,
-        boxShadow: "0 2px 8px rgba(0,0,0,0.07)",
-      }}
-    >
-      <button
-        onClick={() => navigate(-1)}
-        style={{
-          marginBottom: 16,
-          background: "#f5f5f5",
-          border: "1px solid #ccc",
-          borderRadius: 4,
-          padding: "4px 12px",
-          cursor: "pointer",
-        }}
-      >
-        ← Quay lại
-      </button>
-      <h2>Chi tiết đơn hàng</h2>
+    <div className="order-detail-page">
+      <div className="order-detail-header">
+        <button
+          onClick={() => navigate(-1)}
+          className="btn-back"
+        >
+          ← Quay lại
+        </button>
+        <h2>Chi tiết đơn hàng</h2>
+      </div>
+
       {toast && (
         <ToastMessage
           type={toast.type}
@@ -83,97 +138,145 @@ const OrderDetail = () => {
           onClose={() => setToast(null)}
         />
       )}
-      <div style={{ marginBottom: 24 }}>
-        <strong>Mã đơn:</strong> {order.order_code} <br />
-        <strong>Khách hàng:</strong>{" "}
-        {typeof order.user_id === "object" &&
-        order.user_id !== null &&
-        "name" in order.user_id
-          ? order.user_id.name
-          : order.user_id}{" "}
-        <br />
-        <strong>Trạng thái:</strong> {order.status} <br />
-        <strong>Tổng tiền:</strong> {order.total_price.toLocaleString()}₫ <br />
-        <strong>Ngày tạo:</strong>{" "}
-        {order.createdAt ? new Date(order.createdAt).toLocaleString() : "-"}
+
+      <div className="order-info-section">
+        <div className="order-info-grid">
+          <div className="info-item">
+            <label>Mã đơn hàng:</label>
+            <span className="order-code">{order.order_code}</span>
+          </div>
+          
+          <div className="info-item">
+            <label>Khách hàng:</label>
+            <span>
+              {typeof order.user_id === "object" &&
+              order.user_id !== null &&
+              "name" in order.user_id
+                ? order.user_id.name
+                : order.user_id}
+            </span>
+          </div>
+          
+          <div className="info-item">
+            <label>Trạng thái:</label>
+            <span className={`status-badge status-${getStatusDisplayClass(order.status)}`}>
+              {order.status}
+            </span>
+          </div>
+          
+          <div className="info-item">
+            <label>Thanh toán:</label>
+            <span className={`status-badge payment-${order.payment_status || 'default'}`}>
+              {order.payment_status === 'pending' && 'Chờ thanh toán'}
+              {order.payment_status === 'paid' && 'Đã thanh toán'}
+              {order.payment_status === 'failed' && 'Thanh toán thất bại'}
+              {order.payment_status === 'refunded' && 'Đã hoàn tiền'}
+              {!order.payment_status && 'N/A'}
+            </span>
+          </div>
+          
+          <div className="info-item">
+            <label>Vận chuyển:</label>
+            <span className={`status-badge shipping-${order.shipping_status || 'default'}`}>
+              {order.shipping_status === 'pending' && 'Chờ vận chuyển'}
+              {order.shipping_status === 'shipped' && 'Đang vận chuyển'}
+              {order.shipping_status === 'delivered' && 'Đã giao hàng'}
+              {order.shipping_status === 'returned' && 'Đã trả hàng'}
+              {!order.shipping_status && 'N/A'}
+            </span>
+          </div>
+          
+          <div className="info-item">
+            <label>Tổng tiền:</label>
+            <span className="total-price">{order.total_price.toLocaleString()}₫</span>
+          </div>
+          
+          <div className="info-item">
+            <label>Số lượng sản phẩm:</label>
+            <span>{order.item_count || 0} sản phẩm</span>
+          </div>
+          
+          <div className="info-item">
+            <label>Ngày tạo:</label>
+            <span>
+              {order.createdAt ? new Date(order.createdAt).toLocaleString('vi-VN') : "-"}
+            </span>
+          </div>
+          
+          {order.note && (
+            <div className="info-item full-width">
+              <label>Ghi chú:</label>
+              <span>{order.note}</span>
+            </div>
+          )}
+        </div>
       </div>
-      <h3>Sản phẩm trong đơn hàng</h3>
-      <table
-        style={{
-          width: "100%",
-          borderCollapse: "collapse",
-          background: "#fafbfc",
-        }}
-      >
-        <thead>
-          <tr style={{ background: "#f5f5f5" }}>
-            <th style={{ padding: 8, border: "1px solid #eee" }}>
-              Tên sản phẩm
-            </th>
-            <th style={{ padding: 8, border: "1px solid #eee" }}>Giá</th>
-            <th style={{ padding: 8, border: "1px solid #eee" }}>Số lượng</th>
-            <th style={{ padding: 8, border: "1px solid #eee" }}>Thành tiền</th>
-            <th style={{ padding: 8, border: "1px solid #eee" }}>Thao tác</th>
-          </tr>
-        </thead>
-        <tbody>
-          {details.length === 0 ? (
-            <tr>
-              <td colSpan={5} style={{ textAlign: "center", padding: 16 }}>
-                Không có sản phẩm nào trong đơn hàng này.
-              </td>
-            </tr>
-          ) : (
-            details.map((item) => (
-              <tr key={item._id}>
-                <td style={{ padding: 8, border: "1px solid #eee" }}>
-                  {typeof item.product_id === "object" &&
-                  item.product_id !== null &&
-                  "name" in item.product_id
-                    ? item.product_id.name
-                    : item.product_name}
-                </td>
-                <td style={{ padding: 8, border: "1px solid #eee" }}>
-                  {typeof item.product_id === "object" &&
-                  item.product_id !== null &&
-                  "price" in item.product_id
-                    ? item.product_id.price.toLocaleString()
-                    : item.product_price}
-                  ₫
-                </td>
-                <td style={{ padding: 8, border: "1px solid #eee" }}>
-                  {item.quantity}
-                </td>
-                <td style={{ padding: 8, border: "1px solid #eee" }}>
-                  {(
-                    (typeof item.product_id === "object" &&
-                    item.product_id !== null &&
-                    "price" in item.product_id
-                      ? item.product_id.price
-                      : item.product_price) * item.quantity
-                  ).toLocaleString()}
-                  ₫
-                </td>
-                <td style={{ padding: 8, border: "1px solid #eee" }}>
+
+      <div className="order-details-section">
+        <h3>Sản phẩm trong đơn hàng</h3>
+        
+        {details.length === 0 ? (
+          <div className="no-items">
+            <p>Không có sản phẩm nào trong đơn hàng này.</p>
+          </div>
+        ) : (
+          <div className="order-items">
+            {details.map((item) => (
+              <div key={item._id} className="order-item">
+                <div className="item-image">
+                  <img 
+                    src={getProductImage(item) || '/placeholder-product.png'} 
+                    alt={getProductName(item)}
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = '/placeholder-product.png';
+                    }}
+                  />
+                </div>
+                
+                <div className="item-info">
+                  <h4 className="item-name">{getProductName(item)}</h4>
+                  {getVariantDisplay(item) && (
+                    <div className="item-variant">
+                      <span className="variant-label">Biến thể:</span>
+                      <span className="variant-value">{getVariantDisplay(item)}</span>
+                    </div>
+                  )}
+                  <div className="item-sku">
+                    {item.variant_info?.sku && `SKU: ${item.variant_info.sku}`}
+                  </div>
+                </div>
+                
+                <div className="item-price">
+                  <span className="price-label">Giá:</span>
+                  <span className="price-value">{item.price_each.toLocaleString()}₫</span>
+                </div>
+                
+                <div className="item-quantity">
+                  <span className="quantity-label">Số lượng:</span>
+                  <span className="quantity-value">{item.quantity}</span>
+                </div>
+                
+                <div className="item-total">
+                  <span className="total-label">Thành tiền:</span>
+                  <span className="total-value">
+                    {(item.price_each * item.quantity).toLocaleString()}₫
+                  </span>
+                </div>
+                
+                <div className="item-actions">
                   <button
                     onClick={() => handleDeleteDetail(item._id)}
-                    style={{
-                      background: "#f44336",
-                      color: "#fff",
-                      border: "none",
-                      borderRadius: 4,
-                      padding: "4px 10px",
-                      cursor: "pointer",
-                    }}
+                    className="btn-delete"
+                    disabled={order.status === "Hoàn thành" || order.status === "Đã hủy"}
                   >
                     Xóa
                   </button>
-                </td>
-              </tr>
-            ))
-          )}
-        </tbody>
-      </table>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 };

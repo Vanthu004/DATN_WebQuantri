@@ -18,6 +18,7 @@ router.get('/', prodCtrl.getAllProducts);
 router.post('/', prodCtrl.createProduct);
 
 // Lấy, cập nhật, xoá sản phẩm theo ID (luôn đặt cuối cùng)
+router.get('/:id/frontend', prodCtrl.getProductForFrontend); // Route tối ưu cho Frontend
 router.get('/:id', prodCtrl.getProductById);
 router.get('/:id/reviews', prodCtrl.getProductReviews);
 router.put('/:id', prodCtrl.updateProduct);

@@ -21,6 +21,25 @@ export interface RatingStats {
   percentages: { [key: number]: number };
 }
 
+export interface ProductVariant {
+  _id: string;
+  product_id: string;
+  sku: string;
+  price: number;
+  stock_quantity: number;
+  attributes: {
+    size: { _id: string; name: string };
+    color: { _id: string; name: string };
+  };
+  image_url: string;
+  is_active: boolean;
+  sort_order: number;
+  variant_key?: string;
+  size_name?: string;
+  color_name?: string;
+  createdAt: string;
+}
+
 export default interface Product {
   _id: string;
   product_id: string;
@@ -47,8 +66,24 @@ export default interface Product {
   is_deleted: boolean;
   createdAt: string;
   updatedAt: string;
+  
   // Reviews và Rating
   reviews?: Review[];
   rating?: number;
   ratingCount?: number;
+  
+  // Các trường mới cho variants
+  has_variants?: boolean;
+  min_price?: number;
+  max_price?: number;
+  total_variants?: number;
+  available_sizes?: Array<{ _id: string; name: string }>;
+  available_colors?: Array<{ _id: string; name: string }>;
+  
+  // Virtual fields
+  total_stock?: number;
+  main_image?: string;
+  
+  // Variants (khi includeVariants=true)
+  variants?: ProductVariant[];
 }
