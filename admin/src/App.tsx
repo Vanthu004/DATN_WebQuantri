@@ -25,6 +25,12 @@ import AddVoucher from "./pages/vouchers/AddVoucher";
 import EditVoucher from "./pages/vouchers/UpdateVoucher";
 import Comments from "./pages/comments/Comments";
 import Guides from "./pages/guides/Guides"; // Import trang mới
+import ListSizes from "./pages/sizes/ListSizes";
+import AddSize from "./pages/sizes/AddSize";
+import UpdateSize from "./pages/sizes/UpdateSize";
+import ListColors from "./pages/colors/ListColors";
+import AddColor from "./pages/colors/AddColor";
+import UpdateColor from "./pages/colors/UpdateColor";
 
 function App() {
   return (
@@ -51,6 +57,16 @@ function App() {
             <Route path="/categories" element={<ListCategory />} />
             <Route path="/categories/add" element={<AddCategory />} />
             <Route path="/categories/update/:id" element={<UpdateCategory />} />
+
+            {/* Size Path */}
+            <Route path="/sizes" element={<ListSizes />} />
+            <Route path="/sizes/add" element={<AddSize />} />
+            <Route path="/sizes/update/:id" element={<UpdateSize />} />
+
+            {/* Color Path */}
+            <Route path="/colors" element={<ListColors />} />
+            <Route path="/colors/add" element={<AddColor />} />
+            <Route path="/colors/update/:id" element={<UpdateColor />} />
 
             {/* Products by Category Type */}
             <Route path="/products/category-type/:type" element={<ProductsByCategoryType />} />

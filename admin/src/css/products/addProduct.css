@@ -143,3 +143,77 @@
   font-weight: 500;
   margin-top: 16px;
 }
+
+.add-variant-btn {
+  background: #2563eb;
+  color: #fff;
+  font-weight: 600;
+  padding: 8px 18px;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  cursor: pointer;
+  margin-left: 12px;
+  margin-bottom: 8px;
+  transition: background 0.2s;
+}
+.add-variant-btn:hover {
+  background: #1d4ed8;
+}
+.variant-form-section {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 18px 16px 10px 16px;
+  margin-bottom: 18px;
+}
+.variant-form > div {
+  margin-bottom: 12px;
+}
+.variant-form label {
+  display: block;
+  font-weight: 500;
+  margin-bottom: 6px;
+}
+.variant-form input[type="text"],
+.variant-form input[type="number"],
+.variant-form select {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #cbd5e0;
+  border-radius: 6px;
+  font-size: 1rem;
+  background: #f7fafc;
+}
+.variant-list-section {
+  margin-top: 18px;
+}
+.variant-list-section h4 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+.variant-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+}
+.variant-table th, .variant-table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid #e5e7eb;
+  text-align: center;
+}
+.variant-table th {
+  background: #f3f4f6;
+  font-weight: 600;
+}
+.variant-table img {
+  width: 40px;
+  height: 40px;
+  object-fit: cover;
+  border-radius: 6px;
+  border: 1px solid #e5e7eb;
+}
