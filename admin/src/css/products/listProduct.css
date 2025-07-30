@@ -127,3 +127,41 @@
 .product-table-scroll:hover::-webkit-scrollbar-thumb {
   background: #94a3b8;
 }
+
+.action-btn.variant {
+  background: #f3f4f6;
+  color: #2563eb;
+  margin-left: 4px;
+}
+.action-btn.variant:hover {
+  background: #dbeafe;
+}
+.variant-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+  margin-top: 8px;
+}
+.variant-table th, .variant-table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid #e5e7eb;
+  text-align: center;
+}
+.variant-table th {
+  background: #f3f4f6;
+  font-weight: 600;
+}
+.variant-table img {
+  width: 40px;
+  height: 40px;
+  object-fit: cover;
+  border-radius: 6px;
+  border: 1px solid #e5e7eb;
+}
+.variant-table-cell {
+  background: #f9fafb;
+  padding: 0;
+}
