@@ -11,7 +11,11 @@ export default interface User {
   avata_url?: string;
   address?: string;
   token_device?: string;
-  is_blocked: boolean;
+   ban: {
+    isBanned: boolean;
+    bannedUntil?: string | null;
+    reason?: string;
+  };
   createdAt: string;
   updatedAt: string;
 }

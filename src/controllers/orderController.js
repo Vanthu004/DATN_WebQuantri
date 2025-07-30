@@ -418,7 +418,9 @@ exports.createOrderWithDetails = async (req, res) => {
     const yyyy = now.getFullYear();
     const dateStr = dd + mm + yyyy;
     const regex = new RegExp(`^ORDER(\\d{3})${dateStr}$`);
-    const lastOrder = await Order.findOne({ order_code: { $regex: regex } }).sort({ order_code: -1 });
+    const lastOrder = await Order.findOne({
+      order_code: { $regex: regex },
+    }).sort({ order_code: -1 });
     let nextNumber = 1;
     if (lastOrder) {
       const match = lastOrder.order_code.match(/^ORDER(\d{3})/);
@@ -429,7 +431,9 @@ exports.createOrderWithDetails = async (req, res) => {
     const order_code = `ORDER${String(nextNumber).padStart(3, "0")}${dateStr}`;
 
     // Tạo Order
-    const order = await Order.create([{ ...orderData, order_code }], { session });
+    const order = await Order.create([{ ...orderData, order_code }], {
+      session,
+    });
     const orderId = order[0]._id;
 
     // Tạo các OrderDetail
@@ -485,6 +489,12 @@ exports.createOrderWithDetails = async (req, res) => {
       total += (variant ? variant.price : product.price) * item.quantity;
       const detail = await OrderDetail.create([detailData], { session });
       details.push(detail[0]);
+      // Bổ sung: Tăng sold_quantity cho sản phẩm
+      await Product.findByIdAndUpdate(
+        item.product_id,
+        { $inc: { sold_quantity: item.quantity } },
+        { session }
+      );
     }
 
     // Cập nhật tổng tiền cho Order
@@ -509,5 +519,31 @@ exports.createOrderWithDetails = async (req, res) => {
       success: false,
       error: "Lỗi server khi tạo đơn hàng" 
     });
+  }
+};
+
+// Hủy đơn hàng
+exports.cancelOrder = async (req, res) => {
+  try {
+    const orderId = req.params.id;
+    const { reason } = req.body;
+
+    const order = await Order.findById(orderId);
+    if (!order)
+      return res.status(404).json({ message: "Không tìm thấy đơn hàng" });
+
+    // Nếu đã hoàn thành thì không cho hủy
+    if (order.status === "Hoàn thành")
+      return res
+        .status(400)
+        .json({ message: "Đơn hàng đã hoàn thành, không thể hủy" });
+
+    order.status = "Đã hủy";
+    order.cancel_reason = reason;
+    await order.save();
+
+    res.json({ message: "Đã hủy đơn hàng thành công", order });
+  } catch (error) {
+    res.status(500).json({ message: "Lỗi server", error: error.message });
   }
 };

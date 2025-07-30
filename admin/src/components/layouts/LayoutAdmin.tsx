@@ -5,6 +5,7 @@ import {
   FaProductHunt,
   FaList,
   FaShoppingCart,
+  FaBook, // Thêm biểu tượng cho Guides
 } from "react-icons/fa";
 import { MdOutlineNotificationsActive } from "react-icons/md";
 import { RiDiscountPercentFill } from "react-icons/ri";
@@ -13,8 +14,6 @@ import { AiFillSetting } from "react-icons/ai";
 import "../../css/layouts/layoutAdmin.css";
 import logo from '../../assets/LogoSwear.png';
 import { useOrderNotify } from "../../contexts/OrderNotifyContext";
-
-
 
 const menuItems = [
   {
@@ -72,6 +71,11 @@ const menuItems = [
     icon: <AiFillSetting />,
     label: "Cài đặt",
   },
+  {
+    path: "/guides",
+    icon: <FaBook />, // Biểu tượng cho Hướng dẫn sử dụng
+    label: "Hướng dẫn sử dụng",
+  },
 ];
 
 const LayoutAdmin = () => {
@@ -89,7 +93,7 @@ const LayoutAdmin = () => {
       {/* Header */}
       <header className="layout-header">
         <Link to="/" className="logo-section">
-          <img src = {logo} alt="SwearLogo" />
+          <img src={logo} alt="SwearLogo" />
         </Link>
         <div className="header-actions">
           <button className="logout-btn" onClick={handleLogout}>

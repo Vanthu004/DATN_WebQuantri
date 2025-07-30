@@ -14,7 +14,7 @@ const paymentSchema = new Schema(
     },
     payment_method: {
       type: String,
-      enum: ["COD", "Banking"],
+      enum: ["COD", "Banking","ZALOPAY"],
       required: true,
     },
     transaction_code: {
@@ -23,13 +23,15 @@ const paymentSchema = new Schema(
     },
     payment_status: {
       type: String,
-      enum: [
-        "Chưa thanh toán",
-        "Đã thanh toán",
-        "Chờ hoàn tiền",
-        "Đã hoàn tiền",
-      ],
-      default: "Chưa thanh toán",
+      // enum: [
+      //   "Chưa thanh toán",
+      //   "Đã thanh toán",
+      //   "Chờ hoàn tiền",
+      //   "Đã hoàn tiền",
+      // ],
+      // default: "Chưa thanh toán",
+      enum: ["pending", "success", "failed"], // Thêm "success" và "failed"
+      default: "pending"
     },
     amount_paid: {
       type: Number,

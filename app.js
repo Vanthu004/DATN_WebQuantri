@@ -1,3 +1,4 @@
+// app.js
 require("dotenv").config();
 const express = require("express");
 const mongoose = require("mongoose");
@@ -29,6 +30,8 @@ const categoryTypeRouter = require("./src/routers/categoryTypeRouter");
 const uploadRouter = require("./src/routers/uploadRouter");
 const voucherRouter = require("./src/routers/voucherRoutes");
 const notificationRouter = require("./src/routers/notificationRoutes");
+const refundRoutes = require("./src/routers/refundRequestRoutes");
+
 
 // Thêm router cho size và color
 const sizeRouter = require("./src/routers/sizeRouter");
@@ -63,6 +66,8 @@ app.use("/api/statistics", statisticApi);
 app.use("/api/favorites", favoriteRouter);
 app.use("/api/sizes", sizeRouter);
 app.use("/api/colors", colorRouter);
+app.use("/api/vouchers", voucherRouter);
+
 
 app.use("/api/uploads", uploadRouter);
 
@@ -76,7 +81,7 @@ app.use('/api/category-types', categoryTypeRouter);
 app.use("/api", uploadRouter);
 app.use('/api/vouchers', voucherRouter);
 // Route gốc hiển thị toàn bộ giỏ hàng + sản phẩm
-
+app.use("/api/refund-requests", refundRoutes);
 
 app.use("/api", uploadRouter);
 app.use('/api/vouchers', voucherRouter);
