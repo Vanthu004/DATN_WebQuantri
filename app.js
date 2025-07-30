@@ -33,6 +33,10 @@ const notificationRouter = require("./src/routers/notificationRoutes");
 const refundRoutes = require("./src/routers/refundRequestRoutes");
 
 
+// Thêm router cho size và color
+const sizeRouter = require("./src/routers/sizeRouter");
+const colorRouter = require("./src/routers/colorRouter");
+
 // ====== Kiểm tra biến môi trường bắt buộc ======
 if (!process.env.JWT_SECRET) {
   console.error("❌ Lỗi: JWT_SECRET không được định nghĩa trong file .env");
@@ -60,7 +64,10 @@ app.use("/api/cart", cartApi);
 app.use("/api/cart-items", cartItemApi);
 app.use("/api/statistics", statisticApi);
 app.use("/api/favorites", favoriteRouter);
+app.use("/api/sizes", sizeRouter);
+app.use("/api/colors", colorRouter);
 app.use("/api/vouchers", voucherRouter);
+
 
 app.use("/api/uploads", uploadRouter);
 
@@ -72,7 +79,7 @@ app.post("/api/reset-password", authController.resetPassword);
 app.use('/api/category-types', categoryTypeRouter);
 
 app.use("/api", uploadRouter);
-app.use("/api/vouchers", voucherRouter);
+app.use('/api/vouchers', voucherRouter);
 // Route gốc hiển thị toàn bộ giỏ hàng + sản phẩm
 app.use("/api/refund-requests", refundRoutes);
 
