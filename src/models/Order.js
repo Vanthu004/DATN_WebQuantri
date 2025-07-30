@@ -93,7 +93,7 @@ const orderSchema = new mongoose.Schema(
     },
     cancelled_at: {
       type: Date
-    }
+    },
     cancel_reason: { type: String, default: null },
 
   },

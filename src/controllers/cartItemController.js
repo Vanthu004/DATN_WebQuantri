@@ -2,6 +2,11 @@ const CartItem = require("../models/cartItem");
 const Product = require("../models/product");
 const ProductVariant = require("../models/productVariant");
 const Cart = require("../models/cart");
+const mongoose = require("mongoose");
+
+function isValidObjectId(id) {
+  return mongoose.Types.ObjectId.isValid(id) && String(new mongoose.Types.ObjectId(id)) === id;
+}
 
 /* Thêm sản phẩm vào giỏ hàng (hỗ trợ biến thể) */
 exports.addItem = async (req, res) => {
@@ -9,10 +14,10 @@ exports.addItem = async (req, res) => {
     const { cart_id, product_id, product_variant_id, quantity = 1 } = req.body;
 
     // Validation
-    if (!cart_id || !product_id) {
+    if (!cart_id || !isValidObjectId(cart_id) || !product_id) {
       return res.status(400).json({ 
         success: false,
-        msg: "Thiếu thông tin cart_id hoặc product_id" 
+        msg: "Thiếu thông tin cart_id hoặc product_id hoặc cart_id không hợp lệ" 
       });
     }
 
@@ -184,10 +189,10 @@ exports.getItemsByCart = async (req, res) => {
   try {
     const { cartId } = req.params;
     
-    if (!cartId) {
-      return res.status(400).json({ 
+    if (!cartId || !isValidObjectId(cartId)) {
+      return res.status(400).json({
         success: false,
-        msg: "Thiếu cart_id" 
+        msg: "cart_id không hợp lệ"
       });
     }
 
@@ -351,10 +356,10 @@ exports.clearCart = async (req, res) => {
   try {
     const { cartId } = req.params;
 
-    if (!cartId) {
-      return res.status(400).json({ 
+    if (!cartId || !isValidObjectId(cartId)) {
+      return res.status(400).json({
         success: false,
-        msg: "Thiếu cart_id" 
+        msg: "cart_id không hợp lệ"
       });
     }
 

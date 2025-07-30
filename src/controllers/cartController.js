@@ -4,6 +4,11 @@ const Order = require("../models/Order");
 const OrderDetail = require("../models/OrderDetail");
 const Product = require("../models/product");
 const ProductVariant = require("../models/productVariant");
+const mongoose = require("mongoose");
+
+function isValidObjectId(id) {
+  return mongoose.Types.ObjectId.isValid(id) && String(new mongoose.Types.ObjectId(id)) === id;
+}
 
 /* Tạo giỏ hàng mới (user -> cart rỗng) */
 exports.createCart = async (req, res) => {
@@ -112,10 +117,10 @@ exports.getCartById = async (req, res) => {
   try {
     const { id } = req.params;
 
-    if (!id) {
-      return res.status(400).json({ 
+    if (!id || !isValidObjectId(id)) {
+      return res.status(400).json({
         success: false,
-        msg: "Thiếu cart_id" 
+        msg: "cart_id không hợp lệ"
       });
     }
 
@@ -200,10 +205,10 @@ exports.updateCartStatus = async (req, res) => {
     const { id } = req.params;
     const { status, note } = req.body;
 
-    if (!id) {
-      return res.status(400).json({ 
+    if (!id || !isValidObjectId(id)) {
+      return res.status(400).json({
         success: false,
-        msg: "Thiếu cart_id" 
+        msg: "cart_id không hợp lệ"
       });
     }
 
@@ -251,10 +256,10 @@ exports.deleteCart = async (req, res) => {
   try {
     const { id } = req.params;
 
-    if (!id) {
-      return res.status(400).json({ 
+    if (!id || !isValidObjectId(id)) {
+      return res.status(400).json({
         success: false,
-        msg: "Thiếu cart_id" 
+        msg: "cart_id không hợp lệ"
       });
     }
 
@@ -293,10 +298,10 @@ exports.createOrderFromCart = async (req, res) => {
     const { shippingmethod_id, paymentmethod_id, shipping_address, note } = req.body;
     const cartId = req.params.id;
 
-    if (!cartId) {
-      return res.status(400).json({ 
+    if (!cartId || !isValidObjectId(cartId)) {
+      return res.status(400).json({
         success: false,
-        msg: "Thiếu cart_id" 
+        msg: "cart_id không hợp lệ"
       });
     }
 
