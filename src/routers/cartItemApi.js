@@ -14,4 +14,7 @@ router.put("/:id", ciCtrl.updateQuantity);
 // Xoá item
 router.delete("/:id", ciCtrl.deleteItem);
 
+// Xóa tất cả items trong cart
+router.delete("/cart/:cartId/clear", ciCtrl.clearCart);
+
 module.exports = router;

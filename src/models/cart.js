@@ -17,20 +17,17 @@ const cartSchema = new mongoose.Schema({
     type: String,
     trim: true
   },
-  created_at: {
-    type: Date,
-    default: Date.now
-  },
-  updated_at: {
-    type: Date,
-    default: Date.now
-  }
-}, {
+},
+ {
   timestamps: true,
   toJSON: { virtuals: true },
   toObject: { virtuals: true }
 });
-
+cartSchema.virtual('items', {
+  ref: 'CartItem',
+  localField: '_id',
+  foreignField: 'cart_id'
+});
 // Virtual field để lấy số lượng items trong giỏ
 cartSchema.virtual('item_count').get(function() {
   // Sẽ được populate từ CartItem
