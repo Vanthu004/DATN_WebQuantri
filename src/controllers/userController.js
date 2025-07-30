@@ -7,6 +7,7 @@ const nodemailer = require('nodemailer');
 const multer = require('multer');
 const path = require('path');
 const crypto = require('crypto');
+const mongoose = require("mongoose")
 const createError = require("http-errors");
 const { S3Client, PutObjectCommand } = require("@aws-sdk/client-s3");
 // Hàm tạo transporter email
