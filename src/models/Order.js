@@ -7,23 +7,7 @@ const orderSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
-    products: [
-      {
-        productId: {
-          type: mongoose.Schema.Types.ObjectId,
-          ref: "Product",
-          required: true,
-        },
-        quantity: {
-          type: Number,
-          required: true,
-        },
-        price: {
-          type: Number,
-          required: true,
-        },
-      },
-    ],
+    // Loại bỏ trường products vì không sử dụng
     status: {
       type: String,
       enum: [
@@ -39,7 +23,13 @@ const orderSchema = new mongoose.Schema(
     total_price: {
       type: Number,
       required: true,
-      min: 0
+      min: 0,
+      validate: {
+        validator: function(v) {
+          return v >= 0;
+        },
+        message: 'Tổng tiền phải lớn hơn hoặc bằng 0'
+      }
     },
     shippingmethod_id: {
       type: mongoose.Schema.Types.ObjectId,
@@ -58,7 +48,8 @@ const orderSchema = new mongoose.Schema(
     shipping_address: {
       type: String,
       required: true,
-      trim: true
+      trim: true,
+      minlength: [10, 'Địa chỉ giao hàng phải có ít nhất 10 ký tự']
     },
     order_code: {
       type: String,
@@ -68,7 +59,8 @@ const orderSchema = new mongoose.Schema(
     },
     note: { 
       type: String, 
-      trim: true 
+      trim: true,
+      maxlength: [500, 'Ghi chú không được quá 500 ký tự']
     },
     // Thông tin bổ sung
     payment_status: {
@@ -94,7 +86,11 @@ const orderSchema = new mongoose.Schema(
     cancelled_at: {
       type: Date
     },
-    cancel_reason: { type: String, default: null },
+    cancel_reason: { 
+      type: String, 
+      default: null,
+      maxlength: [200, 'Lý do hủy không được quá 200 ký tự']
+    },
 
   },
   { 

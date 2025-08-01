@@ -284,6 +284,31 @@ exports.getProductById = async (req, res) => {
       .lean();
     }
 
+    // Gom nhóm variants theo color
+    let colorGroups = [];
+    if (variants.length > 0) {
+      const groupedVariants = {};
+      variants.forEach(variant => {
+        const color = variant.attributes.color;
+        const colorId = color._id.toString();
+        if (!groupedVariants[colorId]) {
+          groupedVariants[colorId] = {
+            color: color,
+            sizes: []
+          };
+        }
+        groupedVariants[colorId].sizes.push({
+          size: variant.attributes.size,
+          variant_id: variant._id,
+          price: variant.price,
+          stock_quantity: variant.stock_quantity,
+          sku: variant.sku,
+          image_url: variant.image_url
+        });
+      });
+      colorGroups = Object.values(groupedVariants);
+    }
+
     // Lấy reviews nếu có
     const Review = require('../models/review');
     const reviews = await Review.find({ product_id: product._id })
@@ -308,7 +333,7 @@ exports.getProductById = async (req, res) => {
     // Đảm bảo các trường cần thiết
     const result = {
       ...product,
-      variants,
+      colorGroups, // <-- Trả về nhóm màu, mỗi nhóm chứa các size
       reviews: reviews,
       rating: parseFloat(rating),
       ratingCount: ratingCount,
@@ -616,22 +641,76 @@ exports.getProductForFrontend = async (req, res) => {
 
 /* Cập nhật sản phẩm */
 exports.updateProduct = async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+  
   try {
-    const { images, image_url, ...rest } = req.body;
+    const { images, image_url, variants, ...rest } = req.body;
+    const productId = req.params.id;
+
+    // Kiểm tra sản phẩm có tồn tại không
+    const existingProduct = await Product.findById(productId);
+    if (!existingProduct || existingProduct.is_deleted) {
+      return res.status(404).json({ msg: "Không tìm thấy sản phẩm" });
+    }
+
+    // Cập nhật thông tin cơ bản của sản phẩm
     const updated = await Product.findByIdAndUpdate(
-      req.params.id,
+      productId,
       {
         ...rest,
         images: images || [],
         image_url: image_url || "",
       },
-      { new: true }
+      { new: true, session }
     ).populate(["category_id", "images"]);
-    if (!updated || updated.is_deleted)
-      return res.status(404).json({ msg: "Không tìm thấy sản phẩm" });
+
+    // Nếu có cập nhật variants, xử lý đồng bộ
+    if (variants !== undefined) {
+      // Import ProductVariant nếu cần
+      const ProductVariant = require('../models/productVariant');
+      
+      // Helper function để cập nhật thông tin product từ variants
+      async function updateProductFromVariants(productId) {
+        try {
+          const variants = await ProductVariant.find({ 
+            product_id: productId,
+            is_active: true 
+          }).populate('attributes.size').populate('attributes.color');
+
+          const hasVariants = variants.length > 0;
+          const prices = variants.map(v => v.price).filter(p => p > 0);
+          const minPrice = prices.length > 0 ? Math.min(...prices) : 0;
+          const maxPrice = prices.length > 0 ? Math.max(...prices) : 0;
+          
+          // Lấy danh sách size và color duy nhất
+          const availableSizes = [...new Set(variants.map(v => v.attributes.size._id).filter(Boolean))];
+          const availableColors = [...new Set(variants.map(v => v.attributes.color._id).filter(Boolean))];
+
+          await Product.findByIdAndUpdate(productId, {
+            has_variants: hasVariants,
+            min_price: minPrice,
+            max_price: maxPrice,
+            total_variants: variants.length,
+            available_sizes: availableSizes,
+            available_colors: availableColors
+          }, { session });
+        } catch (error) {
+          console.error('Error updating product from variants:', error);
+        }
+      }
+
+      // Cập nhật thông tin product từ variants hiện tại
+      await updateProductFromVariants(productId);
+    }
+
+    await session.commitTransaction();
     res.json(updated);
   } catch (err) {
+    await session.abortTransaction();
     res.status(400).json({ error: err.message });
+  } finally {
+    session.endSession();
   }
 };
 

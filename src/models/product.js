@@ -92,12 +92,25 @@ const productSchema = new mongoose.Schema(
 
 // Virtual field để tính tổng stock từ variants
 productSchema.virtual('total_stock').get(function() {
+  // Nếu có variants, sẽ được tính trong aggregation
+  // Nếu không có variants, trả về stock_quantity của product
   return this.stock_quantity;
 });
 
 // Virtual field để lấy ảnh chính
 productSchema.virtual('main_image').get(function() {
   return this.image_url || (this.images && this.images.length > 0 ? this.images[0] : '');
+});
+
+// Virtual field để lấy giá hiển thị
+productSchema.virtual('display_price').get(function() {
+  if (this.has_variants && this.min_price > 0 && this.max_price > 0) {
+    if (this.min_price === this.max_price) {
+      return this.min_price;
+    }
+    return `${this.min_price} - ${this.max_price}`;
+  }
+  return this.price;
 });
 
 // Index để tối ưu query
