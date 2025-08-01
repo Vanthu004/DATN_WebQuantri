@@ -60,6 +60,26 @@ productVariantSchema.virtual('variant_key').get(function() {
   return `${this.attributes?.size?._id || ''}-${this.attributes?.color?._id || ''}`;
 });
 
+// Virtual field để kiểm tra còn hàng không
+productVariantSchema.virtual('in_stock').get(function() {
+  return this.stock_quantity > 0 && this.is_active;
+});
+
+// Pre-save middleware để validate
+productVariantSchema.pre('save', function(next) {
+  // Kiểm tra giá phải dương
+  if (this.price <= 0) {
+    return next(new Error('Price must be greater than 0'));
+  }
+  
+  // Kiểm tra stock không âm
+  if (this.stock_quantity < 0) {
+    return next(new Error('Stock quantity cannot be negative'));
+  }
+  
+  next();
+});
+
 // Đảm bảo không trùng size + color cho 1 product
 productVariantSchema.index(
   { product_id: 1, 'attributes.size': 1, 'attributes.color': 1 },

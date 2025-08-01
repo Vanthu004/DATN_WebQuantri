@@ -2,9 +2,14 @@ const Order = require("../models/Order");
 const OrderDetail = require("../models/OrderDetail");
 const Product = require("../models/product");
 const ProductVariant = require("../models/productVariant");
+const ShippingMethod = require("../models/ShippingMethod");
+const PaymentMethod = require("../models/PaymentMethod");
 
 /* Tạo đơn hàng mới */
 exports.createOrder = async (req, res) => {
+  const session = await Order.startSession();
+  session.startTransaction();
+  
   try {
     const { user_id, total_price, shippingmethod_id, paymentmethod_id, shipping_address, note } = req.body;
 
@@ -20,6 +25,24 @@ exports.createOrder = async (req, res) => {
       return res.status(400).json({ 
         success: false,
         msg: "Tổng tiền phải lớn hơn 0" 
+      });
+    }
+
+    // Validate shipping method
+    const shippingMethod = await ShippingMethod.findById(shippingmethod_id);
+    if (!shippingMethod) {
+      return res.status(400).json({
+        success: false,
+        msg: "Phương thức vận chuyển không hợp lệ"
+      });
+    }
+
+    // Validate payment method
+    const paymentMethod = await PaymentMethod.findById(paymentmethod_id);
+    if (!paymentMethod) {
+      return res.status(400).json({
+        success: false,
+        msg: "Phương thức thanh toán không hợp lệ"
       });
     }
 
@@ -46,7 +69,7 @@ exports.createOrder = async (req, res) => {
     const order_code = `ORDER${String(nextNumber).padStart(3, "0")}${dateStr}`;
 
     // Tạo đơn hàng mới với order_code tự sinh
-    const order = await Order.create({
+    const order = await Order.create([{
       user_id,
       total_price,
       shippingmethod_id,
@@ -54,14 +77,19 @@ exports.createOrder = async (req, res) => {
       shipping_address,
       note,
       order_code,
-    });
+    }], { session });
+
+    await session.commitTransaction();
+    session.endSession();
 
     res.status(201).json({
       success: true,
       msg: "Tạo đơn hàng thành công",
-      data: order
+      data: order[0]
     });
   } catch (err) {
+    await session.abortTransaction();
+    session.endSession();
     console.error("Error creating order:", err);
     res.status(500).json({ 
       success: false,
@@ -82,27 +110,53 @@ exports.getAllOrders = async (req, res) => {
 
     const skip = (page - 1) * limit;
     
+    // Xử lý sort parameter để tránh lỗi
+    let sortOption = "-createdAt"; // default
+    if (sort) {
+      // Loại bỏ phần :1 nếu có (ví dụ: -createdAt:1 -> -createdAt)
+      sortOption = sort.split(':')[0];
+      
+      // Validate sort field
+      const allowedSortFields = ['createdAt', '-createdAt', 'updatedAt', '-updatedAt', 'total_price', '-total_price', 'order_code', '-order_code'];
+      if (!allowedSortFields.includes(sortOption)) {
+        sortOption = "-createdAt"; // fallback to default
+      }
+    }
+    
+    console.log('Query:', query);
+    console.log('Sort option:', sortOption);
+    
     const orders = await Order.find(query)
       .populate("user_id", "name email phone")
       .populate("shippingmethod_id", "name price")
       .populate("paymentmethod_id", "name")
-      .sort(sort)
+      .sort(sortOption)
       .skip(skip)
       .limit(parseInt(limit));
+
+    console.log('Found orders:', orders.length);
 
     // Tính toán item_count và has_variants cho mỗi order
     const ordersWithDetails = await Promise.all(
       orders.map(async (order) => {
-        const orderDetails = await OrderDetail.find({ 
-          order_id: order._id, 
-          status: "active" 
-        });
-        
-        const orderObj = order.toObject();
-        orderObj.item_count = orderDetails.length;
-        orderObj.has_variants = orderDetails.some(detail => detail.product_variant_id);
-        
-        return orderObj;
+        try {
+          const orderDetails = await OrderDetail.find({ 
+            order_id: order._id, 
+            status: "active" 
+          });
+          
+          const orderObj = order.toObject();
+          orderObj.item_count = orderDetails.length;
+          orderObj.has_variants = orderDetails.some(detail => detail.product_variant_id);
+          
+          return orderObj;
+        } catch (detailError) {
+          console.error('Error processing order details for order:', order._id, detailError);
+          const orderObj = order.toObject();
+          orderObj.item_count = 0;
+          orderObj.has_variants = false;
+          return orderObj;
+        }
       })
     );
 
@@ -122,9 +176,11 @@ exports.getAllOrders = async (req, res) => {
     });
   } catch (err) {
     console.error("Error getting all orders:", err);
+    console.error("Error stack:", err.stack);
     res.status(500).json({ 
       success: false,
-      error: "Lỗi server khi lấy danh sách đơn hàng" 
+      error: "Lỗi server khi lấy danh sách đơn hàng",
+      details: err.message
     });
   }
 };

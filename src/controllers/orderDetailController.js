@@ -5,6 +5,9 @@ const Order = require("../models/Order");
 
 /* Thêm chi tiết đơn hàng (hỗ trợ biến thể) */
 exports.createOrderDetail = async (req, res) => {
+  const session = await OrderDetail.startSession();
+  session.startTransaction();
+  
   try {
     const { order_id, product_id, product_variant_id, quantity, price_each } = req.body;
 
@@ -32,6 +35,14 @@ exports.createOrderDetail = async (req, res) => {
       });
     }
 
+    // Kiểm tra trạng thái đơn hàng
+    if (order.status === "Đã hủy" || order.status === "Hoàn thành") {
+      return res.status(400).json({
+        success: false,
+        msg: "Không thể thêm sản phẩm vào đơn hàng đã hủy hoặc hoàn thành"
+      });
+    }
+
     let product = null;
     let variant = null;
     let variantInfo = null;
@@ -46,6 +57,15 @@ exports.createOrderDetail = async (req, res) => {
           msg: "Không tìm thấy biến thể sản phẩm" 
         });
       }
+      
+      // Kiểm tra stock của variant
+      if (variant.stock < quantity) {
+        return res.status(400).json({
+          success: false,
+          msg: `Chỉ còn ${variant.stock} sản phẩm trong kho`
+        });
+      }
+      
       product = await Product.findById(variant.product_id);
       
       // Tạo variant info
@@ -62,6 +82,14 @@ exports.createOrderDetail = async (req, res) => {
       };
     } else {
       product = await Product.findById(product_id);
+      
+      // Kiểm tra stock của product
+      if (product.stock < quantity) {
+        return res.status(400).json({
+          success: false,
+          msg: `Chỉ còn ${product.stock} sản phẩm trong kho`
+        });
+      }
     }
     
     if (!product) {
@@ -84,13 +112,31 @@ exports.createOrderDetail = async (req, res) => {
       variant_info: variantInfo
     };
 
-    const detail = await OrderDetail.create(detailData);
+    const detail = await OrderDetail.create([detailData], { session });
+    
+    // Cập nhật stock
+    if (variant) {
+      await ProductVariant.findByIdAndUpdate(
+        product_variant_id,
+        { $inc: { stock: -quantity } },
+        { session }
+      );
+    } else {
+      await Product.findByIdAndUpdate(
+        product_id,
+        { $inc: { stock: -quantity, sold_quantity: quantity } },
+        { session }
+      );
+    }
     
     // Sau khi tạo, cập nhật lại tổng tiền cho Order
-    await updateOrderTotalPrice(detail.order_id);
+    await updateOrderTotalPrice(detail[0].order_id, session);
+    
+    await session.commitTransaction();
+    session.endSession();
     
     // Populate khi trả về
-    const populated = await OrderDetail.findById(detail._id)
+    const populated = await OrderDetail.findById(detail[0]._id)
       .populate({
         path: 'product_variant_id',
         populate: [
@@ -106,6 +152,8 @@ exports.createOrderDetail = async (req, res) => {
       data: populated
     });
   } catch (err) {
+    await session.abortTransaction();
+    session.endSession();
     console.error("Error creating order detail:", err);
     res.status(500).json({ 
       success: false,
@@ -412,14 +460,16 @@ exports.getOrderDetailFullById = async (req, res) => {
 };
 
 // Hàm cập nhật tổng tiền cho Order
-async function updateOrderTotalPrice(orderId) {
+async function updateOrderTotalPrice(orderId, session = null) {
   try {
     const details = await OrderDetail.find({ 
       order_id: orderId,
       status: "active"
     });
     const total = details.reduce((sum, d) => sum + (d.price_each * d.quantity), 0);
-    await Order.findByIdAndUpdate(orderId, { total_price: total });
+    
+    const updateOptions = session ? { session } : {};
+    await Order.findByIdAndUpdate(orderId, { total_price: total }, updateOptions);
   } catch (error) {
     console.error("Error updating order total price:", error);
   }

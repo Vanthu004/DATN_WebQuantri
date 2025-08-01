@@ -20,6 +20,15 @@ interface VariantForm {
   image_url: string;
 }
 
+// Thêm interface cho form size detail
+interface SizeDetailForm {
+  size: string;
+  price: number;
+  stock_quantity: number;
+  sku: string;
+  image_url: string;
+}
+
 const AddProduct = () => {
   const [form, setForm] = useState({
     name: "",
@@ -55,6 +64,21 @@ const AddProduct = () => {
 
   const [sizes, setSizes] = useState<Size[]>([]);
   const [colors, setColors] = useState<Color[]>([]);
+
+  // Thêm các state mới để chọn màu trước và chọn nhiều size cho màu đó
+  const [selectedColor, setSelectedColor] = useState<string>("");
+  const [selectedSizes, setSelectedSizes] = useState<string[]>([]);
+
+  // Thêm state cho form chi tiết từng size
+  const [sizeDetails, setSizeDetails] = useState<SizeDetailForm[]>([]);
+
+  // Thêm state cho validation errors
+  const [validationErrors, setValidationErrors] = useState<{[key: string]: string}>({});
+
+  // Thêm state cho ảnh màu sắc
+  const [colorImageFile, setColorImageFile] = useState<File | null>(null);
+  const [colorImagePreview, setColorImagePreview] = useState<string>("");
+  const [colorImageUrl, setColorImageUrl] = useState<string>("");
 
   useEffect(() => {
     getAllCategories().then((data) => {
@@ -248,6 +272,180 @@ const AddProduct = () => {
     return colors.find(c => c._id === colorId)?.name || colorId;
   };
 
+  // Xử lý upload ảnh cho màu sắc
+  const handleColorImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      const file = e.target.files[0];
+      setColorImageFile(file);
+      setColorImagePreview(URL.createObjectURL(file));
+      setColorImageUrl(""); // Reset URL khi chọn file
+    }
+  };
+
+  // Xử lý nhập URL ảnh cho màu sắc
+  const handleColorImageUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setColorImageUrl(e.target.value);
+    setColorImageFile(null);
+    setColorImagePreview("");
+  };
+
+  // Khi chọn màu, reset selectedSizes và sizeDetails
+  const handleColorSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setSelectedColor(e.target.value);
+    setSelectedSizes([]);
+    setSizeDetails([]);
+    // Reset ảnh màu khi chọn màu mới
+    setColorImageFile(null);
+    setColorImagePreview("");
+    setColorImageUrl("");
+  };
+
+  // Khi chọn/bỏ chọn size
+  const handleSizeToggle = (sizeId: string) => {
+    setSelectedSizes((prev) => {
+      const newSelectedSizes = prev.includes(sizeId) 
+        ? prev.filter((id) => id !== sizeId) 
+        : [...prev, sizeId];
+      
+      // Cập nhật sizeDetails tương ứng - sử dụng Set để tránh trùng lặp
+      setSizeDetails((prevDetails) => {
+        if (prev.includes(sizeId)) {
+          // Bỏ chọn size
+          return prevDetails.filter(detail => detail.size !== sizeId);
+        } else {
+          // Chọn thêm size - kiểm tra không trùng lặp
+          const existingSize = prevDetails.find(detail => detail.size === sizeId);
+          if (existingSize) {
+            return prevDetails; // Không thêm nếu đã tồn tại
+          }
+          return [...prevDetails, {
+            size: sizeId,
+            price: 0,
+            stock_quantity: 0,
+            sku: "",
+            image_url: ""
+          }];
+        }
+      });
+      
+      return newSelectedSizes;
+    });
+  };
+
+  // Xóa size khỏi danh sách đã chọn
+  const handleRemoveSize = (sizeId: string) => {
+    setSelectedSizes((prev) => prev.filter(id => id !== sizeId));
+    setSizeDetails((prev) => prev.filter(detail => detail.size !== sizeId));
+  };
+
+  // Tự động sinh SKU
+  const generateSKU = (sizeId: string) => {
+    const sizeName = sizes.find(s => s._id === sizeId)?.name || sizeId;
+    const colorName = colors.find(c => c._id === selectedColor)?.name || selectedColor;
+    const productCode = form.name.substring(0, 3).toUpperCase() || "PRO";
+    const colorCode = colorName.substring(0, 2).toUpperCase() || "CL";
+    
+    return `${productCode}-${colorCode}-${sizeName}`;
+  };
+
+  // Cập nhật thông tin chi tiết của size
+  const handleSizeDetailChange = (sizeId: string, field: keyof SizeDetailForm, value: string | number) => {
+    setSizeDetails((prev) =>
+      prev.map(detail =>
+        detail.size === sizeId
+          ? { ...detail, [field]: value }
+          : detail
+      )
+    );
+    
+    // Clear validation error khi user nhập
+    if (validationErrors[`${sizeId}-${field}`]) {
+      setValidationErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[`${sizeId}-${field}`];
+        return newErrors;
+      });
+    }
+  };
+
+  // Validate form
+  const validateSizeDetails = () => {
+    const errors: {[key: string]: string} = {};
+    
+    sizeDetails.forEach(detail => {
+      if (detail.price <= 0) {
+        errors[`${detail.size}-price`] = "Giá phải lớn hơn 0";
+      }
+      if (detail.stock_quantity < 0) {
+        errors[`${detail.size}-stock_quantity`] = "Số lượng kho không được âm";
+      }
+      if (!detail.sku.trim()) {
+        errors[`${detail.size}-sku`] = "SKU không được để trống";
+      }
+    });
+    
+    setValidationErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  // Thêm nhiều biến thể cùng màu với các size đã chọn
+  const handleAddVariantsByColor = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedColor || selectedSizes.length === 0) {
+      toast.error("Vui lòng chọn màu và ít nhất một size!");
+      return;
+    }
+    
+    // Kiểm tra trùng lặp
+    const duplicates = selectedSizes.filter(sizeId =>
+      variants.some(v => v.color === selectedColor && v.size === sizeId)
+    );
+    if (duplicates.length > 0) {
+      toast.error("Một số biến thể đã tồn tại!");
+      return;
+    }
+    
+    // Validate form
+    if (!validateSizeDetails()) {
+      toast.error("Vui lòng kiểm tra lại thông tin!");
+      return;
+    }
+    
+    // Upload ảnh màu sắc nếu có
+    let finalColorImageUrl = colorImageUrl;
+    if (colorImageFile) {
+      try {
+        const uploadRes = await uploadImage(colorImageFile);
+        finalColorImageUrl = uploadRes.url;
+      } catch (error) {
+        toast.error("Lỗi upload ảnh màu sắc!");
+        return;
+      }
+    }
+    
+    // Thêm từng biến thể với thông tin chi tiết và ảnh màu chung
+    setVariants((prev) => [
+      ...prev,
+      ...sizeDetails.map(detail => ({
+        size: detail.size,
+        color: selectedColor,
+        price: detail.price,
+        stock_quantity: detail.stock_quantity,
+        sku: detail.sku,
+        image_url: detail.image_url || finalColorImageUrl // Sử dụng ảnh riêng nếu có, không thì dùng ảnh màu chung
+      }))
+    ]);
+    
+    // Reset form
+    setSelectedSizes([]);
+    setSizeDetails([]);
+    setValidationErrors({});
+    setColorImageFile(null);
+    setColorImagePreview("");
+    setColorImageUrl("");
+    toast.success("Đã thêm biến thể cho màu này!");
+  };
+
   return (
     <div className="form-container">
       <h2>Thêm sản phẩm</h2>
@@ -371,55 +569,248 @@ const AddProduct = () => {
           <div className="variant-form-section">
             <div className="variant-form">
               <div>
-                <label>Size:</label>
-                <select name="size" value={variantForm.size} onChange={handleVariantChange} required>
-                  <option value="">-- Chọn size --</option>
-                  {sizes.map((s) => (
-                    <option key={s._id} value={s._id}>{s.name}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
                 <label>Màu sắc:</label>
-                <select name="color" value={variantForm.color} onChange={handleVariantChange} required>
+                <select name="color" value={selectedColor} onChange={handleColorSelect} required>
                   <option value="">-- Chọn màu --</option>
                   {colors.map((c) => (
                     <option key={c._id} value={c._id}>{c.name}</option>
                   ))}
                 </select>
               </div>
-              <div>
-                <label>Giá:</label>
-                <input type="number" name="price" value={variantForm.price} onChange={handleVariantChange} min={0} required />
-              </div>
-              <div>
-                <label>Số lượng kho:</label>
-                <input type="number" name="stock_quantity" value={variantForm.stock_quantity} onChange={handleVariantChange} min={0} required />
-              </div>
-              <div>
-                <label>SKU:</label>
-                <input type="text" name="sku" value={variantForm.sku} onChange={handleVariantChange} required />
-              </div>
-              <div>
-                <label>Ảnh biến thể:</label>
-                <input type="file" accept="image/*" onChange={handleVariantImageChange} />
-                {variantImagePreview && (
-                  <div className="image-preview-container">
-                    <img src={variantImagePreview} alt="Preview" />
+              {selectedColor && (
+                <div>
+                  <label>Chọn size cho màu này:</label>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
+                    {sizes.map((s) => {
+                      const isChecked = selectedSizes.includes(s._id);
+                      const isDisabled = variants.some(v => v.color === selectedColor && v.size === s._id);
+                      return (
+                        <label key={s._id} style={{ opacity: isDisabled ? 0.5 : 1 }}>
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            disabled={isDisabled}
+                            onChange={() => handleSizeToggle(s._id)}
+                          />
+                          {s.name}
+                        </label>
+                      );
+                    })}
                   </div>
-                )}
-                <span>Hoặc nhập link ảnh:</span>
-                <input 
-                  type="text" 
-                  name="image_url" 
-                  value={variantForm.image_url} 
-                  onChange={handleVariantChange}
-                  placeholder="Link ảnh biến thể"
-                  disabled={!!variantImageFile}
-                />
-              </div>
-              <button type="button" className="add-variant-btn" onClick={handleAddVariant}>
-                Thêm vào danh sách biến thể
+                  
+                  {/* Section upload ảnh cho màu sắc */}
+                  <div style={{ marginBottom: 16, padding: 16, backgroundColor: '#f9f9f9', borderRadius: 8 }}>
+                    <h4 style={{ margin: '0 0 12px 0', color: '#333' }}>
+                      Ảnh đại diện cho màu {colors.find(c => c._id === selectedColor)?.name}
+                    </h4>
+                    <p style={{ margin: '0 0 12px 0', fontSize: '14px', color: '#666' }}>
+                      Ảnh này sẽ được sử dụng cho tất cả size của màu này (trừ khi size có ảnh riêng)
+                    </p>
+                    
+                    <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
+                      <div style={{ flex: 1 }}>
+                        <label style={{ display: 'block', marginBottom: 8, fontWeight: 'bold' }}>
+                          Upload ảnh màu:
+                        </label>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleColorImageChange}
+                          style={{ width: '100%', padding: 8 }}
+                        />
+                      </div>
+                      
+                      <div style={{ flex: 1 }}>
+                        <label style={{ display: 'block', marginBottom: 8, fontWeight: 'bold' }}>
+                          Hoặc nhập link ảnh:
+                        </label>
+                        <input
+                          type="text"
+                          value={colorImageUrl}
+                          onChange={handleColorImageUrlChange}
+                          placeholder="Dán link ảnh màu sắc"
+                          style={{ 
+                            width: '100%', 
+                            padding: 8,
+                            border: '1px solid #ddd',
+                            borderRadius: 4
+                          }}
+                          disabled={!!colorImageFile}
+                        />
+                      </div>
+                    </div>
+                    
+                    {/* Preview ảnh màu */}
+                    {(colorImagePreview || colorImageUrl) && (
+                      <div style={{ marginTop: 12 }}>
+                        <label style={{ display: 'block', marginBottom: 8, fontWeight: 'bold' }}>
+                          Preview ảnh màu:
+                        </label>
+                        <img 
+                          src={colorImagePreview || colorImageUrl} 
+                          alt="Color preview" 
+                          style={{ 
+                            width: 80, 
+                            height: 80, 
+                            objectFit: 'cover', 
+                            border: '2px solid #ddd',
+                            borderRadius: 8
+                          }}
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                          }}
+                        />
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Hiển thị số lượng biến thể đã chọn */}
+                  {selectedSizes.length > 0 && (
+                    <div style={{ marginBottom: 16, color: '#666', fontSize: '14px' }}>
+                      Đã chọn {selectedSizes.length} size cho màu {colors.find(c => c._id === selectedColor)?.name}
+                    </div>
+                  )}
+                  
+                  {/* Form chi tiết cho từng size đã chọn */}
+                  {sizeDetails.length > 0 && (
+                    <div style={{ marginTop: 16 }}>
+                      <h4>Thông tin chi tiết cho từng size:</h4>
+                      <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: 8 }}>
+                        <thead>
+                          <tr style={{ backgroundColor: '#f5f5f5' }}>
+                            <th style={{ padding: 8, border: '1px solid #ddd' }}>Size</th>
+                            <th style={{ padding: 8, border: '1px solid #ddd' }}>Giá</th>
+                            <th style={{ padding: 8, border: '1px solid #ddd' }}>Kho</th>
+                            <th style={{ padding: 8, border: '1px solid #ddd' }}>SKU</th>
+                            <th style={{ padding: 8, border: '1px solid #ddd' }}>Ảnh riêng (tùy chọn)</th>
+                            <th style={{ padding: 8, border: '1px solid #ddd' }}>Thao tác</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {sizeDetails.map((detail) => {
+                            const sizeName = sizes.find(s => s._id === detail.size)?.name || detail.size;
+                            return (
+                              <tr key={detail.size}>
+                                <td style={{ padding: 8, border: '1px solid #ddd' }}>{sizeName}</td>
+                                <td style={{ padding: 8, border: '1px solid #ddd' }}>
+                                  <input
+                                    type="number"
+                                    value={detail.price}
+                                    onChange={(e) => handleSizeDetailChange(detail.size, 'price', Number(e.target.value))}
+                                    min={0}
+                                    style={{ 
+                                      width: '100%', 
+                                      padding: 4,
+                                      border: validationErrors[`${detail.size}-price`] ? '1px solid red' : '1px solid #ddd'
+                                    }}
+                                  />
+                                  {validationErrors[`${detail.size}-price`] && (
+                                    <div style={{ color: 'red', fontSize: '12px', marginTop: 2 }}>
+                                      {validationErrors[`${detail.size}-price`]}
+                                    </div>
+                                  )}
+                                </td>
+                                <td style={{ padding: 8, border: '1px solid #ddd' }}>
+                                  <input
+                                    type="number"
+                                    value={detail.stock_quantity}
+                                    onChange={(e) => handleSizeDetailChange(detail.size, 'stock_quantity', Number(e.target.value))}
+                                    min={0}
+                                    style={{ 
+                                      width: '100%', 
+                                      padding: 4,
+                                      border: validationErrors[`${detail.size}-stock_quantity`] ? '1px solid red' : '1px solid #ddd'
+                                    }}
+                                  />
+                                  {validationErrors[`${detail.size}-stock_quantity`] && (
+                                    <div style={{ color: 'red', fontSize: '12px', marginTop: 2 }}>
+                                      {validationErrors[`${detail.size}-stock_quantity`]}
+                                    </div>
+                                  )}
+                                </td>
+                                <td style={{ padding: 8, border: '1px solid #ddd' }}>
+                                  <div style={{ display: 'flex', gap: 4 }}>
+                                    <input
+                                      type="text"
+                                      value={detail.sku}
+                                      onChange={(e) => handleSizeDetailChange(detail.size, 'sku', e.target.value)}
+                                      placeholder="Nhập SKU"
+                                      style={{ 
+                                        flex: 1,
+                                        padding: 4,
+                                        border: validationErrors[`${detail.size}-sku`] ? '1px solid red' : '1px solid #ddd'
+                                      }}
+                                      required
+                                    />
+                                    <button
+                                      type="button"
+                                      onClick={() => handleSizeDetailChange(detail.size, 'sku', generateSKU(detail.size))}
+                                      style={{ padding: '4px 8px', fontSize: '12px' }}
+                                      title="Tự động sinh SKU"
+                                    >
+                                      Auto
+                                    </button>
+                                  </div>
+                                  {validationErrors[`${detail.size}-sku`] && (
+                                    <div style={{ color: 'red', fontSize: '12px', marginTop: 2 }}>
+                                      {validationErrors[`${detail.size}-sku`]}
+                                    </div>
+                                  )}
+                                </td>
+                                <td style={{ padding: 8, border: '1px solid #ddd' }}>
+                                  <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                                    <input
+                                      type="text"
+                                      value={detail.image_url}
+                                      onChange={(e) => handleSizeDetailChange(detail.size, 'image_url', e.target.value)}
+                                      placeholder="Link ảnh riêng (tùy chọn)"
+                                      style={{ width: '100%', padding: 4 }}
+                                    />
+                                    {detail.image_url && (
+                                      <img 
+                                        src={detail.image_url} 
+                                        alt="Preview" 
+                                        style={{ width: 40, height: 40, objectFit: 'cover', border: '1px solid #ddd' }}
+                                        onError={(e) => {
+                                          e.currentTarget.style.display = 'none';
+                                        }}
+                                      />
+                                    )}
+                                    {!detail.image_url && (colorImagePreview || colorImageUrl) && (
+                                      <div style={{ fontSize: '12px', color: '#666' }}>
+                                        Sẽ dùng ảnh màu chung
+                                      </div>
+                                    )}
+                                  </div>
+                                </td>
+                                <td style={{ padding: 8, border: '1px solid #ddd' }}>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleRemoveSize(detail.size)}
+                                    style={{ 
+                                      padding: '4px 8px', 
+                                      backgroundColor: '#ff4444', 
+                                      color: 'white', 
+                                      border: 'none',
+                                      borderRadius: '4px',
+                                      cursor: 'pointer'
+                                    }}
+                                    title="Xóa size này"
+                                  >
+                                    Xóa
+                                  </button>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              )}
+              <button type="button" className="add-variant-btn" onClick={handleAddVariantsByColor}>
+                Thêm biến thể cho màu này
               </button>
             </div>
           </div>
@@ -427,43 +818,40 @@ const AddProduct = () => {
         
         {variants.length > 0 && (
           <div className="variant-list-section">
-            <h4>Danh sách biến thể đã thêm:</h4>
-            <table className="variant-table">
-              <thead>
-                <tr>
-                  <th>Size</th>
-                  <th>Màu</th>
-                  <th>Giá</th>
-                  <th>Kho</th>
-                  <th>SKU</th>
-                  <th>Ảnh</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody>
-                {variants.map((v, idx) => (
-                  <tr key={idx}>
-                    <td>{getSizeName(v.size)}</td>
-                    <td>{getColorName(v.color)}</td>
-                    <td>{v.price?.toLocaleString() || "0"}</td>
-                    <td>{v.stock_quantity || "0"}</td>
-                    <td>{v.sku}</td>
-                    <td>
-                      {v.image_url ? (
-                        <img src={v.image_url} alt="variant" style={{ width: 40, height: 40, objectFit: "cover" }} />
-                      ) : (
-                        <span className="text-gray-400">No image</span>
-                      )}
-                    </td>
-                    <td>
-                      <button type="button" className="delete-image-btn" onClick={() => handleRemoveVariant(idx)}>
-                        Xóa
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            <h4>Danh sách biến thể đã thêm (theo nhóm màu):</h4>
+            {colors.map((color) => {
+              const colorVariants = variants.filter(v => v.color === color._id);
+              if (colorVariants.length === 0) return null;
+              return (
+                <div key={color._id} style={{ marginBottom: 16 }}>
+                  <strong>{color.name}</strong>
+                  <table className="variant-table">
+                    <thead>
+                      <tr>
+                        <th>Size</th>
+                        <th>Giá</th>
+                        <th>Kho</th>
+                        <th>SKU</th>
+                        <th>Ảnh</th>
+                        <th></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {colorVariants.map((v, idx) => (
+                        <tr key={idx}>
+                          <td>{getSizeName(v.size)}</td>
+                          <td>{v.price?.toLocaleString() || "0"}</td>
+                          <td>{v.stock_quantity || "0"}</td>
+                          <td>{v.sku}</td>
+                          <td>{v.image_url ? (<img src={v.image_url} alt="variant" style={{ width: 40 }} />) : null}</td>
+                          <td><button type="button" onClick={() => handleRemoveVariant(idx)}>Xóa</button></td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              );
+            })}
           </div>
         )}
 
