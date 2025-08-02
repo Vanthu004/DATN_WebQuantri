@@ -6,6 +6,7 @@ const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
 const multer = require('multer');
 const path = require('path');
+const { validationResult } = require("express-validator");
 const crypto = require('crypto');
 const mongoose = require("mongoose")
 const createError = require("http-errors");
@@ -55,7 +56,7 @@ const sendVerificationEmail = async (email, otp) => {
     return true;
   } catch (error) {
     console.error("❌ Lỗi gửi email:", error.message);
-    
+
     // Xử lý các lỗi cụ thể
     if (error.code === 'EAUTH') {
       console.error("🔐 Lỗi xác thực email. Vui lòng kiểm tra:");
@@ -67,7 +68,7 @@ const sendVerificationEmail = async (email, otp) => {
     } else {
       console.error("📧 Lỗi gửi email khác:", error);
     }
-    
+
     return false;
   }
 };
@@ -157,7 +158,7 @@ exports.createUser = async (req, res) => {
 
     // Gửi email xác nhận
     const emailSent = await sendVerificationEmail(email, verificationOtp);
-    
+
     if (!emailSent) {
       console.warn("⚠️ Không thể gửi email xác nhận, nhưng user vẫn được tạo thành công");
     }
@@ -173,11 +174,11 @@ exports.createUser = async (req, res) => {
     const populated = await User.findById(user._id)
       .select("-password")
       .populate("avatar");
-    
-    const responseMessage = emailSent 
+
+    const responseMessage = emailSent
       ? "Tạo user thành công và đã gửi email xác nhận"
       : "Tạo user thành công nhưng không thể gửi email xác nhận. Vui lòng kiểm tra cấu hình email.";
-    
+
     res.status(201).json({
       message: responseMessage,
       user: populated,
@@ -423,6 +424,10 @@ exports.changePassword = async (req, res) => {
 exports.blockUser = async (req, res, next) => {
   try {
     const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      throw createError(400, "ID người dùng không hợp lệ");
+    }
+
     const { isBanned, bannedUntil, reason } = req.body;
 
     const banData = {
@@ -431,11 +436,7 @@ exports.blockUser = async (req, res, next) => {
       reason: isBanned ? reason || "" : "",
     };
 
-    const user = await User.findByIdAndUpdate(
-      id,
-      { ban: banData },
-      { new: true }
-    )
+    const user = await User.findByIdAndUpdate(id, { ban: banData }, { new: true })
       .select("-password")
       .populate("avatar");
 
@@ -443,15 +444,29 @@ exports.blockUser = async (req, res, next) => {
       throw createError(404, "Không tìm thấy người dùng");
     }
 
+    if (banData.isBanned) {
+      const io = req.app.get("io");
+      if (io) {
+        io.to(id).emit("banned", {
+          message: `Tài khoản của bạn đã bị khóa${
+            banData.bannedUntil ? ` đến ${new Date(banData.bannedUntil).toLocaleString("vi-VN")}` : " vĩnh viễn"
+          }${banData.reason ? ` vì: ${banData.reason}` : ""}`,
+        });
+        console.log(`WebSocket: Sent banned event to user ${id}`);
+      } else {
+        console.warn("WebSocket: io not initialized");
+      }
+    }
+
     res.status(200).json({
       message: isBanned ? "Đã khóa (ban) tài khoản người dùng" : "Đã mở khóa (unban) tài khoản người dùng",
       user,
     });
   } catch (error) {
+    console.error("Block user error:", error);
     next(error);
   }
 };
-
 
 // Xóa user (xóa thật)
 exports.deleteUser = async (req, res) => {
@@ -566,10 +581,10 @@ exports.updateAvatar = async (req, res) => {
     // Cập nhật user với avatar mới
     const user = await User.findByIdAndUpdate(
       userId,
-      { 
+      {
         avatar: uploadId,
 
-        avata_url: upload.url 
+        avata_url: upload.url
       },
       { new: true, runValidators: true }
     )
@@ -595,19 +610,30 @@ exports.getCurrentUser = async (req, res, next) => {
   try {
     const userId = req.user?.userId;
     if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
-      return res.status(401).json({ message: "ID người dùng không hợp lệ" });
+      throw createError(401, "ID người dùng không hợp lệ");
     }
 
     const user = await User.findById(userId)
       .select("-password")
       .populate("avatar");
+
     if (!user) {
-      return res.status(404).json({ message: "Không tìm thấy người dùng" });
+      throw createError(404, "Không tìm thấy người dùng");
+    }
+
+    const now = new Date();
+    if (user.ban?.isBanned && user.ban.bannedUntil && new Date(user.ban.bannedUntil) > now) {
+      throw createError(
+        403,
+        `Tài khoản của bạn đã bị khóa đến ${new Date(user.ban.bannedUntil).toLocaleString("vi-VN")}${
+          user.ban.reason ? ` vì: ${user.ban.reason}` : ""
+        }`
+      );
     }
 
     res.status(200).json(user);
   } catch (error) {
     console.error("Get current user error:", error);
-    res.status(500).json({ message: "Lỗi server", error: error.message });
+    next(error);
   }
 };
