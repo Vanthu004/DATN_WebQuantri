@@ -42,6 +42,16 @@ const menuItems = [
     label: "Danh mục",
   },
   {
+    path: "/sizes",
+    icon: <FaList />,
+    label: "Kích thước",
+  },
+  {
+    path: "/colors",
+    icon: <FaList />,
+    label: "Màu sắc",
+  },
+  {
     path: "/vouchers",
     icon: <RiDiscountPercentFill />,
     label: "Vouchers",

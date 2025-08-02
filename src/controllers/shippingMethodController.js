@@ -1,4 +1,4 @@
-const ShippingMethod = require("../models/shippingMethod");
+const ShippingMethod = require("../models/ShippingMethod");
 
 /* Tạo phương thức vận chuyển mới */
 exports.createShippingMethod = async (req, res) => {
