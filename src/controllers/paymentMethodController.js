@@ -1,4 +1,4 @@
-const PaymentMethod = require("../models/paymentMethod");
+const PaymentMethod = require("../models/PaymentMethod");
 
 /* Tạo phương thức thanh toán */
 exports.createPaymentMethod = async (req, res) => {
