@@ -1,0 +1,2 @@
+{"level":"error","message":"Supabase insert error: Could not find the 'sender_avatar_url' column of 'messages' in the schema cache","timestamp":"2025-08-03T13:37:03.267Z"}
+{"level":"error","message":"Supabase insert error: Could not find the 'sender_avatar_url' column of 'messages' in the schema cache","timestamp":"2025-08-03T13:56:25.201Z"}
