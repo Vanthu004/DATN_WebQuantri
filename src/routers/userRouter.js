@@ -1,13 +1,15 @@
 // src/routers/userRouter.js
+// src/routers/userRouter.js
 const express = require("express");
 const router = express.Router();
 const userController = require("../controllers/userController");
 const authMiddleware = require("../middlewares/authMiddleware");
 const authController = require("../controllers/authController");
-const upload = require("../middlewares/uploadMiddleware");
+const upload = require('../middlewares/uploadMiddleware');
 
 // Supabase routes
 router.get("/supabase-token", authMiddleware, userController.getSupabaseToken);
+
 
 // Public routes
 router.post("/register", userController.createUser);
@@ -34,5 +36,8 @@ router.get("/:id", authMiddleware, userController.getUserById);
 router.put("/:id", authMiddleware, userController.updateUser);
 router.delete("/:id", authMiddleware, userController.deleteUser);
 router.patch("/:id/block", authMiddleware, userController.blockUser);
+
+
+
 
 module.exports = router;
