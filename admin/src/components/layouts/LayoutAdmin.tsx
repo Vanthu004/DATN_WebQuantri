@@ -5,7 +5,8 @@ import {
   FaProductHunt,
   FaList,
   FaShoppingCart,
-  FaBook, // Thêm biểu tượng cho Guides
+  FaBook,
+  FaComment, // Thêm biểu tượng cho Support
 } from "react-icons/fa";
 import { MdOutlineNotificationsActive } from "react-icons/md";
 import { RiDiscountPercentFill } from "react-icons/ri";
@@ -73,8 +74,13 @@ const menuItems = [
   },
   {
     path: "/guides",
-    icon: <FaBook />, // Biểu tượng cho Hướng dẫn sử dụng
+    icon: <FaBook />,
     label: "Hướng dẫn sử dụng",
+  },
+  {
+    path: "/support",
+    icon: <FaComment />,
+    label: "Hỗ trợ người dùng",
   },
 ];
 
@@ -118,7 +124,6 @@ const LayoutAdmin = () => {
                   >
                     {item.icon}
                     <span>{item.label}</span>
-                    {/* Hiển thị badge nếu là menu Thông báo và có số mới > 0 */}
                     {item.path === "/notify" && newOrderCount > 0 && (
                       <span className="menu-badge">{newOrderCount}</span>
                     )}

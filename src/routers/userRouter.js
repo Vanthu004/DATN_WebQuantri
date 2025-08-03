@@ -28,6 +28,7 @@ router.get("/", authMiddleware, userController.getAllUsers);
 router.get("/all", userController.getAllUsers);
 router.get("/avatar/:id", userController.getAvatar);
 router.get("/messages", authMiddleware, userController.getMessages);
+router.get("/messages/conversations", authMiddleware, userController.getConversations);
 router.get("/:id", authMiddleware, userController.getUserById);
 router.put("/:id", authMiddleware, userController.updateUser);
 router.delete("/:id", authMiddleware, userController.deleteUser);
@@ -35,6 +36,7 @@ router.patch("/:id/block", authMiddleware, userController.blockUser);
 
 router.post('/upload-image', authMiddleware, upload.single('image'), userController.uploadImage);
 router.post('/send-message', authMiddleware, userController.sendMessage);
+
 
 
 module.exports = router;

@@ -916,3 +916,89 @@ exports.getMessages = async (req, res) => {
     res.status(500).json({ message: 'Lỗi server', error: error.message });
   }
 };
+
+// Lấy tin nhắn
+exports.getConversations = async (req, res) => {
+  try {
+    const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
+    const adminId = req.user.userId; // Từ JWT (authMiddleware)
+
+    // Lấy tất cả tin nhắn liên quan đến admin từ Supabase
+    const { data: messages, error: messagesError } = await supabase
+      .from('messages')
+      .select('id, content, image_url, created_at, sender_id, receiver_id')
+      .or(`sender_id.eq.${adminId},receiver_id.eq.${adminId}`)
+      .order('created_at', { ascending: false });
+
+    if (messagesError) {
+      throw new Error(messagesError.message);
+    }
+
+    // Lấy danh sách user duy nhất (không phải admin)
+    const userIds = new Set(messages.map((msg) =>
+      msg.sender_id === adminId ? msg.receiver_id : msg.sender_id
+    ));
+
+    // Lấy thông tin user từ MongoDB và tin nhắn mới nhất từ Supabase
+    const users = await Promise.all(
+      Array.from(userIds).map(async (userId) => {
+        try {
+          // Lấy user từ MongoDB
+          const user = await User.findById(userId);
+          if (!user || !['user', 'customer'].includes(user.role)) {
+            return null;
+          }
+
+          // Lấy tin nhắn mới nhất từ Supabase
+          const { data: latestMessage, error: messageError } = await supabase
+            .from('messages')
+            .select('id, content, image_url, created_at, sender_id, receiver_id')
+            .or(`sender_id.eq.${userId},receiver_id.eq.${userId}`)
+            .or(`sender_id.eq.${adminId},receiver_id.eq.${adminId}`)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .single();
+
+          if (messageError) {
+            throw new Error(messageError.message);
+          }
+
+          return {
+            _id: user._id.toString(),
+            name: user.name,
+            avata_url: user.avata_url || '',
+            role: user.role,
+            ban: user.ban || { isBanned: false, bannedUntil: null, reason: '' },
+            gender: user.gender || 'other',
+            email_verified: user.email_verified || false,
+            createdAt: user.createdAt,
+            updatedAt: user.updatedAt,
+            latestMessage: latestMessage
+              ? {
+                  _id: latestMessage.id,
+                  text: latestMessage.content,
+                  image: latestMessage.image_url,
+                  createdAt: latestMessage.created_at,
+                  user: {
+                    _id: userId,
+                    name: user.name,
+                    avatar: user.avata_url || ''
+                  }
+                }
+              : undefined
+          };
+        } catch (error) {
+          console.error(`Lỗi khi lấy dữ liệu cho user ${userId}:`, error);
+          return null;
+        }
+      })
+    );
+
+    // Lọc bỏ null
+    const filteredUsers = users.filter(user => user !== null);
+
+    res.status(200).json({ message: 'Lấy danh sách cuộc trò chuyện thành công', data: filteredUsers });
+  } catch (error) {
+    res.status(500).json({ message: 'Lỗi server', error: error.message });
+  }
+};

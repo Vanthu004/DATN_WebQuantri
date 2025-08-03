@@ -24,15 +24,14 @@ import Vouchers from "./pages/vouchers/Vouchers";
 import AddVoucher from "./pages/vouchers/AddVoucher";
 import EditVoucher from "./pages/vouchers/UpdateVoucher";
 import Comments from "./pages/comments/Comments";
-
 import ListSizes from "./pages/sizes/ListSizes";
 import AddSize from "./pages/sizes/AddSize";
 import UpdateSize from "./pages/sizes/UpdateSize";
 import ListColors from "./pages/colors/ListColors";
 import AddColor from "./pages/colors/AddColor";
 import UpdateColor from "./pages/colors/UpdateColor";
-import Guides from "./pages/guides/Guides"; // Import trang mới
-
+import Guides from "./pages/guides/Guides";
+import Support from "./pages/support/Support"; // Thêm import cho Support
 
 function App() {
   return (
@@ -45,44 +44,37 @@ function App() {
             <Route path="/notify" element={<Notify />} />
             <Route path="/vouchers" element={<Vouchers />} />
             <Route path="/addvouchers" element={<AddVoucher />} />
-            <Route path="//updatevouchers/:voucher_id" element={<EditVoucher />} />
-
+            <Route path="/updatevouchers/:voucher_id" element={<EditVoucher />} />
             <Route path="/comments" element={<Comments />} />
-
             {/* Product Path */}
             <Route path="/products" element={<ListProduct />} />
             <Route path="/products/add" element={<AddProduct />} />
             <Route path="/products/update/:id" element={<UpdateProduct />} />
-
             {/* Category Path */}
             <Route path="/categories/types" element={<ManageCategoryType />} />
             <Route path="/categories" element={<ListCategory />} />
             <Route path="/categories/add" element={<AddCategory />} />
             <Route path="/categories/update/:id" element={<UpdateCategory />} />
-
             {/* Size Path */}
             <Route path="/sizes" element={<ListSizes />} />
             <Route path="/sizes/add" element={<AddSize />} />
             <Route path="/sizes/update/:id" element={<UpdateSize />} />
-
             {/* Color Path */}
             <Route path="/colors" element={<ListColors />} />
             <Route path="/colors/add" element={<AddColor />} />
             <Route path="/colors/update/:id" element={<UpdateColor />} />
-
             {/* Products by Category Type */}
             <Route path="/products/category-type/:type" element={<ProductsByCategoryType />} />
-
             {/* User Path */}
             <Route path="/users" element={<ListUser />} />
-
             {/* Order Path */}
             <Route path="/orders" element={<OrderPage />} />
             <Route path="/orders/:id" element={<OrderDetail />} />
             <Route path="/setting" element={<Setting />} />
-
             {/* Thêm route mới cho Guides */}
             <Route path="/guides" element={<Guides />} />
+            {/* Thêm route mới cho Support */}
+            <Route path="/support" element={<Support />} />
           </Route>
         </Route>
         {/* Public path */}
