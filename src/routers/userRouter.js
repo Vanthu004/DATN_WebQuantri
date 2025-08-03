@@ -1,15 +1,14 @@
 // src/routers/userRouter.js
-// src/routers/userRouter.js
 const express = require("express");
 const router = express.Router();
 const userController = require("../controllers/userController");
 const authMiddleware = require("../middlewares/authMiddleware");
 const authController = require("../controllers/authController");
-const upload = require("../middlewares/uploadMiddleware");
+const upload = require('../middlewares/uploadMiddleware');
 
 // Supabase routes
-router.get('/supabase-token', authMiddleware, userController.getSupabaseToken);
-router.get('/admins', authMiddleware, userController.getAdmins);
+router.get("/supabase-token", authMiddleware, userController.getSupabaseToken);
+
 
 // Public routes
 router.post("/register", userController.createUser);
@@ -36,5 +35,14 @@ router.get("/:id", authMiddleware, userController.getUserById);
 router.put("/:id", authMiddleware, userController.updateUser);
 router.delete("/:id", authMiddleware, userController.deleteUser);
 router.patch("/:id/block", authMiddleware, userController.blockUser);
+// Cập nhật role cho user (cấp quyền)
+router.patch("/:id/role", authMiddleware, userController.updateUserRole);
+
+<<<<<<< HEAD
+module.exports = router;
+=======
+
+
 
 module.exports = router;
+>>>>>>> 06654fd (supabase connected)
