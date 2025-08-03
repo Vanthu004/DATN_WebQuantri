@@ -31,7 +31,8 @@ import ListColors from "./pages/colors/ListColors";
 import AddColor from "./pages/colors/AddColor";
 import UpdateColor from "./pages/colors/UpdateColor";
 import Guides from "./pages/guides/Guides";
-import Support from "./pages/support/Support"; // Thêm import cho Support
+import Support from "./pages/support/Support";
+import Chat from "./pages/support/Chat";
 
 function App() {
   return (
@@ -45,7 +46,10 @@ function App() {
             <Route path="/notify" element={<Notify />} />
             <Route path="/vouchers" element={<Vouchers />} />
             <Route path="/addvouchers" element={<AddVoucher />} />
-            <Route path="/updatevouchers/:voucher_id" element={<EditVoucher />} />
+            <Route
+              path="/updatevouchers/:voucher_id"
+              element={<EditVoucher />}
+            />
             <Route path="/comments" element={<Comments />} />
             {/* Product Path */}
             <Route path="/products" element={<ListProduct />} />
@@ -65,7 +69,10 @@ function App() {
             <Route path="/colors/add" element={<AddColor />} />
             <Route path="/colors/update/:id" element={<UpdateColor />} />
             {/* Products by Category Type */}
-            <Route path="/products/category-type/:type" element={<ProductsByCategoryType />} />
+            <Route
+              path="/products/category-type/:type"
+              element={<ProductsByCategoryType />}
+            />
             {/* User Path */}
             <Route path="/users" element={<ListUser />} />
             {/* Order Path */}
@@ -76,6 +83,7 @@ function App() {
             <Route path="/guides" element={<Guides />} />
             {/* Thêm route mới cho Support */}
             <Route path="/support" element={<Support />} />
+            <Route path="/support/:userId" element={<Chat />} />
           </Route>
         </Route>
         {/* Public path */}

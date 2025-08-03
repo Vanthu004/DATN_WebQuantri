@@ -1,4 +1,3 @@
-// src/models/user.js
 const mongoose = require("mongoose");
 
 const userSchema = new mongoose.Schema(
@@ -9,7 +8,6 @@ const userSchema = new mongoose.Schema(
       unique: true,
       trim: true,
       lowercase: true,
-      lowercase: true,
     },
     password: {
       type: String,
@@ -18,7 +16,6 @@ const userSchema = new mongoose.Schema(
     name: {
       type: String,
       required: true,
-      trim: true,
       trim: true,
     },
     role: {
@@ -30,15 +27,12 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: false,
       trim: true,
-      trim: true,
     },
     avatar: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Upload",
       required: false,
-      required: false,
     },
-    avatar_url: {
     avatar_url: {
       type: String,
       default: "",
@@ -46,7 +40,6 @@ const userSchema = new mongoose.Schema(
     address: {
       type: String,
       default: "",
-      trim: true,
       trim: true,
     },
     token_device: {
@@ -61,12 +54,10 @@ const userSchema = new mongoose.Schema(
       bannedUntil: {
         type: Date,
         default: null,
-        default: null,
       },
       reason: {
         type: String,
         default: "",
-        trim: true,
         trim: true,
       },
     },
@@ -74,23 +65,17 @@ const userSchema = new mongoose.Schema(
       type: String,
       enum: ["male", "female", "other"],
       default: "other",
-      enum: ["male", "female", "other"],
-      default: "other",
     },
     birthdate: {
-      type: Date,
-      required: false,
       type: Date,
       required: false,
     },
     email_verified: {
       type: Boolean,
       default: false,
-      default: false,
     },
     email_verification_otp: {
       type: String,
-      default: null,
       default: null,
     },
     email_verification_expires: {
@@ -98,13 +83,6 @@ const userSchema = new mongoose.Schema(
       default: null,
     },
   },
-  {
-    timestamps: true,
-    indexes: [
-      { key: { email: 1 }, unique: true },
-      { key: { phone_number: 1 }, sparse: true },
-    ],
-  }
   {
     timestamps: true,
     indexes: [
