@@ -10,7 +10,6 @@ const upload = require('../middlewares/uploadMiddleware');
 // Supabase routes
 router.get("/supabase-token", authMiddleware, userController.getSupabaseToken);
 
-
 // Public routes
 router.post("/register", userController.createUser);
 router.post("/login", userController.login);
@@ -27,17 +26,16 @@ router.put("/change-password", authMiddleware, userController.changePassword);
 
 // Protected routes with parameters (require authentication)
 router.get("/", authMiddleware, userController.getAllUsers);
-router.get("/avatar/:id", authMiddleware, userController.getAvatar);
+router.get("/all", userController.getAllUsers);
+router.get("/avatar/:id", userController.getAvatar);
 router.get("/messages", authMiddleware, userController.getMessages);
-router.post('/messages', authMiddleware, userController.sendMessage);
-router.get("/messages/conversations", authMiddleware, userController.getConversations);
-router.post("/upload-image", authMiddleware, upload.single("image"), userController.uploadImage);
 router.get("/:id", authMiddleware, userController.getUserById);
 router.put("/:id", authMiddleware, userController.updateUser);
 router.delete("/:id", authMiddleware, userController.deleteUser);
 router.patch("/:id/block", authMiddleware, userController.blockUser);
 
-
+router.post('/upload-image', authMiddleware, upload.single('image'), userController.uploadImage);
+router.post('/send-message', authMiddleware, userController.sendMessage);
 
 
 module.exports = router;

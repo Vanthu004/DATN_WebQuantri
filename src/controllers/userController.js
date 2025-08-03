@@ -13,6 +13,7 @@ const createError = require("http-errors");
 const { S3Client, PutObjectCommand } = require("@aws-sdk/client-s3");
 const { createClient } = require('@supabase/supabase-js');
 const cloudinary = require('cloudinary').v2;
+const streamifier = require('streamifier');
 
 
 
@@ -822,6 +823,7 @@ exports.getSupabaseToken = async (req, res) => {
     res.status(500).json({ message: 'Lỗi server', error: error.message });
   }
 };
+
 // Upload ảnh lên Cloudinary
 exports.uploadImage = async (req, res) => {
   try {
@@ -841,11 +843,28 @@ exports.uploadImage = async (req, res) => {
       return res.status(400).json({ message: 'Vui lòng cung cấp file ảnh' });
     }
 
-    // Upload ảnh lên Cloudinary
-    const result = await cloudinary.uploader.upload_stream({
-      folder: 'sportshop_chat',
+    console.log('File buffer:', req.file.buffer.length, 'bytes');
+    console.log('Cloudinary config:', {
+      cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
       upload_preset: process.env.CLOUDINARY_UPLOAD_PRESET
-    }).end(req.file.buffer);
+    });
+
+    // Upload ảnh lên Cloudinary
+    const result = await new Promise((resolve, reject) => {
+      const stream = cloudinary.uploader.upload_stream(
+        {
+          folder: 'swear_chat', // Sửa thành folder đúng
+          upload_preset: process.env.CLOUDINARY_UPLOAD_PRESET
+        },
+        (error, result) => {
+          if (error) reject(error);
+          else resolve(result);
+        }
+      );
+      streamifier.createReadStream(req.file.buffer).pipe(stream);
+    });
+
+    console.log('Cloudinary response:', result);
 
     res.status(200).json({
       message: 'Upload ảnh thành công',
@@ -856,11 +875,9 @@ exports.uploadImage = async (req, res) => {
     res.status(500).json({ message: 'Lỗi upload ảnh', error: error.message });
   }
 };
-
-
-// gửi tin nhắn
-// userController.js
-exports.getMessages = async (req, res) => {
+// Tạo tin nhắn
+exports.sendMessage = async (req, res) => {
+  console.log('Running sendMessage version: 2025-08-04');
   try {
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -878,41 +895,86 @@ exports.getMessages = async (req, res) => {
       return res.status(404).json({ message: 'Không tìm thấy người dùng' });
     }
 
+    const { receiver_id, content, image_url } = req.body;
+    if (!receiver_id || (!content && !image_url)) {
+      return res.status(400).json({ message: 'Vui lòng cung cấp receiver_id và nội dung hoặc ảnh' });
+    }
+
+    if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      console.error('Missing Supabase configuration:', {
+        SUPABASE_URL: process.env.SUPABASE_URL,
+        SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY
+      });
+      return res.status(500).json({ message: 'Lỗi cấu hình Supabase' });
+    }
+
+    // Sử dụng service_role key cho admin access
+    const supabase = createClient(
+      process.env.SUPABASE_URL,
+      process.env.SUPABASE_SERVICE_ROLE_KEY
+    );
+
+    const { data, error } = await supabase
+      .from('messages')
+      .insert({
+        sender_id: decoded.userId,
+        receiver_id,
+        content: content || null,
+        image_url: image_url || null
+      })
+      .select();
+
+    if (error) {
+      console.error('Supabase insert error:', error);
+      return res.status(500).json({ message: 'Lỗi gửi tin nhắn', error: error.message });
+    }
+
+    res.status(201).json({
+      message: 'Gửi tin nhắn thành công',
+      data
+    });
+  } catch (error) {
+    console.error('Send message error:', error);
+    res.status(500).json({ message: 'Lỗi server', error: error.message });
+  }
+};
+
+// Lấy tin nhắn
+exports.getMessages = async (req, res) => {
+  console.log('Running getMessages version: 2025-08-04');
+  try {
+    if (!req.user?.userId) {
+      return res.status(401).json({ message: 'Không có thông tin người dùng từ middleware' });
+    }
+
+    const user = await User.findById(req.user.userId);
+    if (!user) {
+      console.error('User not found for ID:', req.user.userId);
+      return res.status(404).json({ message: 'Không tìm thấy người dùng' });
+    }
+
     const { receiver_id } = req.query;
     if (!receiver_id) {
       return res.status(400).json({ message: 'Vui lòng cung cấp receiver_id' });
     }
 
+    if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      console.error('Missing Supabase configuration:', {
+        SUPABASE_URL: process.env.SUPABASE_URL,
+        SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY
+      });
+      return res.status(500).json({ message: 'Lỗi cấu hình Supabase' });
+    }
+
     const supabase = createClient(
       process.env.SUPABASE_URL,
-      process.env.SUPABASE_ANON_KEY
-    );
-
-    const supabaseToken = jwt.sign(
-      {
-        sub: decoded.userId,
-        email: user.email,
-        role: user.role,
-        aud: 'authenticated',
-        exp: Math.floor(Date.now() / 1000) + 60 * 60
-      },
       process.env.SUPABASE_SERVICE_ROLE_KEY
     );
-
-    const { error: sessionError } = await supabase.auth.setSession({
-      access_token: supabaseToken,
-      refresh_token: ''
-    });
-
-    if (sessionError) {
-      console.error('Supabase session error:', sessionError);
-      return res.status(500).json({ message: 'Lỗi đăng nhập Supabase', error: sessionError.message });
-    }
 
     const { data, error } = await supabase
       .from('messages')
       .select('*')
-      .or(`sender_id.eq.${decoded.userId},receiver_id.eq.${decoded.userId}`)
+      .or(`sender_id.eq.${req.user.userId},receiver_id.eq.${req.user.userId}`)
       .eq('receiver_id', receiver_id)
       .order('created_at', { ascending: false });
 
@@ -921,7 +983,6 @@ exports.getMessages = async (req, res) => {
       return res.status(500).json({ message: 'Lỗi lấy tin nhắn', error: error.message });
     }
 
-    // Định dạng tin nhắn cho GiftedChat
     const messages = data.map(message => ({
       _id: message.id,
       text: message.content || '',
@@ -929,8 +990,8 @@ exports.getMessages = async (req, res) => {
       createdAt: new Date(message.created_at),
       user: {
         _id: message.sender_id,
-        name: message.sender_id === decoded.userId ? user.name : 'Other User',
-        avatar: message.sender_id === decoded.userId ? user.avata_url : ''
+        name: message.sender_id === req.user.userId ? user.name : 'Other User',
+        avatar: message.sender_id === req.user.userId ? user.avata_url : ''
       }
     }));
 
