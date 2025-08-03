@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import User from "../../interfaces/user";
 import { toast } from "react-toastify";
 import "../../css/users/listUser.css";
@@ -8,6 +9,7 @@ import { blockUser } from "../../services/user";
 
 
 const ListUser = () => {
+  const navigate = useNavigate();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
@@ -103,7 +105,38 @@ const ListUser = () => {
 
   return (
     <div className="user-list-container">
-      <h2 className="user-list-title">Danh sách người dùng</h2>
+      <div className="user-list-header">
+        <h2 className="user-list-title">Danh sách người dùng</h2>
+        <div className="user-list-actions">
+          <button 
+            className="user-action-btn manage-roles"
+            onClick={() => navigate('/users/manage')}
+          >
+            👑 Quản lý quyền
+          </button>
+        </div>
+      </div>
+      
+      {/* Thống kê nhanh */}
+      <div className="user-stats">
+        <div className="stat-item">
+          <span className="stat-number">{users.length}</span>
+          <span className="stat-label">Tổng người dùng</span>
+        </div>
+        <div className="stat-item">
+          <span className="stat-number">{users.filter(u => u.role === 'admin').length}</span>
+          <span className="stat-label">Admin</span>
+        </div>
+        <div className="stat-item">
+          <span className="stat-number">{users.filter(u => u.role === 'customer').length}</span>
+          <span className="stat-label">Khách hàng</span>
+        </div>
+        <div className="stat-item">
+          <span className="stat-number">{users.filter(u => u.ban?.isBanned).length}</span>
+          <span className="stat-label">Bị khóa</span>
+        </div>
+      </div>
+      
       <div className="user-list-table-wrap">
         <table className="user-list-table">
           <thead>

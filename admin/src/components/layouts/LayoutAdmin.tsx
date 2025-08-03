@@ -1,11 +1,12 @@
 import { Link, Outlet, useNavigate, useLocation } from "react-router-dom";
 import {
-  FaTachometerAlt,
   FaUser,
   FaProductHunt,
   FaList,
   FaShoppingCart,
   FaBook, // Thêm biểu tượng cho Guides
+  FaChartBar, // Thêm biểu tượng cho Thống kê
+  FaWarehouse, // Thêm biểu tượng cho Kho hàng
 } from "react-icons/fa";
 import { MdOutlineNotificationsActive } from "react-icons/md";
 import { RiDiscountPercentFill } from "react-icons/ri";
@@ -18,8 +19,13 @@ import { useOrderNotify } from "../../contexts/OrderNotifyContext";
 const menuItems = [
   {
     path: "/",
-    icon: <FaTachometerAlt />,
-    label: "Bảng điều khiển",
+    icon: <FaChartBar />,
+    label: "Thống kê",
+  },
+  {
+    path: "/inventory",
+    icon: <FaWarehouse />,
+    label: "Kho hàng",
   },
   {
     path: "/notify",

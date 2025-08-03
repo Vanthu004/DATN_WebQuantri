@@ -20,9 +20,13 @@ const Login = () => {
     e.preventDefault();
     setError("");
     try {
-      const res = (await LoginService(form)) as { token?: string };
+      const res = (await LoginService(form)) as { token?: string; user?: unknown };
       if (res && res.token) {
         localStorage.setItem("token", res.token);
+        // Lưu thông tin user để sử dụng cho role management
+        if (res.user) {
+          localStorage.setItem("user", JSON.stringify(res.user));
+        }
         toast.success("Đăng nhập thành công");
         navigate("/");
       } else {
