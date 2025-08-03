@@ -11,6 +11,23 @@ const crypto = require('crypto');
 const mongoose = require("mongoose")
 const createError = require("http-errors");
 const { S3Client, PutObjectCommand } = require("@aws-sdk/client-s3");
+const { createClient } = require('@supabase/supabase-js');
+const cloudinary = require('cloudinary').v2;
+
+
+
+// Khởi tạo Supabase client
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
+
+// Cấu hình Cloudinary
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET
+});
 // Hàm tạo transporter email
 const createEmailTransporter = () => {
   // Kiểm tra các biến môi trường cần thiết
@@ -635,5 +652,206 @@ exports.getCurrentUser = async (req, res, next) => {
   } catch (error) {
     console.error("Get current user error:", error);
     next(error);
+  }
+};
+
+// Lấy Supabase token
+exports.getSupabaseToken = async (req, res) => {
+  console.log('Running getSupabaseToken version: 2025-08-03');
+  console.log('req.user:', req.user);
+  try {
+    const authHeader = req.headers.authorization;
+    console.log('Authorization header:', authHeader);
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ message: 'Header Authorization không hợp lệ' });
+    }
+
+    const token = authHeader.split(' ')[1];
+    console.log('Token:', token);
+    if (!token) {
+      return res.status(401).json({ message: 'Chưa đăng nhập' });
+    }
+
+    let decoded;
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET);
+      console.log('Decoded JWT:', decoded);
+    } catch (error) {
+      console.error('JWT verification error:', error);
+      if (error.name === 'TokenExpiredError') {
+        return res.status(401).json({ message: 'Token đã hết hạn' });
+      }
+      return res.status(401).json({ message: 'Token không hợp lệ' });
+    }
+
+    if (!decoded.userId) {
+      return res.status(400).json({ message: 'Token không chứa userId' });
+    }
+
+    const user = await User.findById(decoded.userId).populate('avatar');
+    if (!user) {
+      console.error('User not found for ID:', decoded.userId);
+      return res.status(404).json({ message: 'Không tìm thấy người dùng' });
+    }
+
+    console.log('User found:', user);
+
+    if (user.ban?.isBanned) {
+      if (!user.ban.bannedUntil || user.ban.bannedUntil > new Date()) {
+        return res.status(403).json({
+          message: `Tài khoản của bạn đã bị khóa` +
+            (user.ban.bannedUntil ? ` đến ${user.ban.bannedUntil.toLocaleString('vi-VN')}` : ' vĩnh viễn') +
+            (user.ban.reason ? ` vì: ${user.ban.reason}` : '')
+        });
+      }
+    }
+
+    // Tạo JWT thủ công
+    const supabaseToken = jwt.sign(
+      {
+        sub: decoded.userId,
+        email: user.email,
+        role: user.role,
+        aud: 'authenticated',
+        exp: Math.floor(Date.now() / 1000) + 60 * 60 // Hết hạn sau 1 giờ
+      },
+      process.env.SUPABASE_SERVICE_ROLE_KEY
+    );
+
+    res.status(200).json({
+      message: 'Tạo token Supabase thành công',
+      supabaseToken,
+      user: {
+        id: user._id,
+        email: user.email,
+        role: user.role,
+        name: user.name,
+        avata_url: user.avata_url
+      }
+    });
+  } catch (error) {
+    console.error('Supabase token error:', error);
+    res.status(500).json({ message: 'Lỗi server', error: error.message });
+  }
+};
+// Upload ảnh lên Cloudinary
+exports.uploadImage = async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ message: 'Header Authorization không hợp lệ' });
+    }
+
+    const token = authHeader.split(' ')[1];
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    if (!decoded.userId || !mongoose.Types.ObjectId.isValid(decoded.userId)) {
+      return res.status(401).json({ message: 'Token không chứa userId hợp lệ' });
+    }
+
+    // Kiểm tra file upload
+    if (!req.file) {
+      return res.status(400).json({ message: 'Vui lòng cung cấp file ảnh' });
+    }
+
+    // Upload ảnh lên Cloudinary
+    const result = await cloudinary.uploader.upload_stream({
+      folder: 'sportshop_chat',
+      upload_preset: process.env.CLOUDINARY_UPLOAD_PRESET
+    }).end(req.file.buffer);
+
+    res.status(200).json({
+      message: 'Upload ảnh thành công',
+      image_url: result.secure_url
+    });
+  } catch (error) {
+    console.error('Cloudinary upload error:', error);
+    res.status(500).json({ message: 'Lỗi upload ảnh', error: error.message });
+  }
+};
+
+
+// gửi tin nhắn
+// userController.js
+exports.getMessages = async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ message: 'Header Authorization không hợp lệ' });
+    }
+
+    const token = authHeader.split(' ')[1];
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    if (!decoded.userId) {
+      return res.status(401).json({ message: 'Token không chứa userId hợp lệ' });
+    }
+
+    const user = await User.findById(decoded.userId);
+    if (!user) {
+      return res.status(404).json({ message: 'Không tìm thấy người dùng' });
+    }
+
+    const { receiver_id } = req.query;
+    if (!receiver_id) {
+      return res.status(400).json({ message: 'Vui lòng cung cấp receiver_id' });
+    }
+
+    const supabase = createClient(
+      process.env.SUPABASE_URL,
+      process.env.SUPABASE_ANON_KEY
+    );
+
+    const supabaseToken = jwt.sign(
+      {
+        sub: decoded.userId,
+        email: user.email,
+        role: user.role,
+        aud: 'authenticated',
+        exp: Math.floor(Date.now() / 1000) + 60 * 60
+      },
+      process.env.SUPABASE_SERVICE_ROLE_KEY
+    );
+
+    const { error: sessionError } = await supabase.auth.setSession({
+      access_token: supabaseToken,
+      refresh_token: ''
+    });
+
+    if (sessionError) {
+      console.error('Supabase session error:', sessionError);
+      return res.status(500).json({ message: 'Lỗi đăng nhập Supabase', error: sessionError.message });
+    }
+
+    const { data, error } = await supabase
+      .from('messages')
+      .select('*')
+      .or(`sender_id.eq.${decoded.userId},receiver_id.eq.${decoded.userId}`)
+      .eq('receiver_id', receiver_id)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Supabase fetch error:', error);
+      return res.status(500).json({ message: 'Lỗi lấy tin nhắn', error: error.message });
+    }
+
+    // Định dạng tin nhắn cho GiftedChat
+    const messages = data.map(message => ({
+      _id: message.id,
+      text: message.content || '',
+      image: message.image_url || null,
+      createdAt: new Date(message.created_at),
+      user: {
+        _id: message.sender_id,
+        name: message.sender_id === decoded.userId ? user.name : 'Other User',
+        avatar: message.sender_id === decoded.userId ? user.avata_url : ''
+      }
+    }));
+
+    res.status(200).json({
+      message: 'Lấy tin nhắn thành công',
+      messages
+    });
+  } catch (error) {
+    console.error('Get messages error:', error);
+    res.status(500).json({ message: 'Lỗi server', error: error.message });
   }
 };
