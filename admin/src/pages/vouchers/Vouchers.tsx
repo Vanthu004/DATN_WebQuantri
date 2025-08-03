@@ -6,6 +6,7 @@ import {
   deleteVoucherByVoucherId,
 } from "../../services/voucher";
 import { VoucherData } from "../../services/voucher";
+import "../../css/vouchers/listVoucher.css";
 
 const ListVoucher = () => {
   const navigate = useNavigate();
@@ -22,15 +23,15 @@ const ListVoucher = () => {
       const data = await getAllVouchers();
       if (Array.isArray(data)) {
         // Nhóm theo voucher_id và chỉ lấy một voucher đại diện
-const uniqueMap = new Map<string, VoucherData>();
-data.forEach((voucher) => {
-  // Nếu voucher_id tồn tại, ưu tiên lấy voucher_id làm key
-  const key = voucher.voucher_id || voucher._id!;
-  if (!uniqueMap.has(key)) {
-    uniqueMap.set(key, voucher);
-  }
-});
-setVouchers(Array.from(uniqueMap.values()));
+        const uniqueMap = new Map<string, VoucherData>();
+        data.forEach((voucher) => {
+          // Nếu voucher_id tồn tại, ưu tiên lấy voucher_id làm key
+          const key = voucher.voucher_id || voucher._id!;
+          if (!uniqueMap.has(key)) {
+            uniqueMap.set(key, voucher);
+          }
+        });
+        setVouchers(Array.from(uniqueMap.values()));
       } else {
         setVouchers([]);
       }
@@ -57,70 +58,123 @@ setVouchers(Array.from(uniqueMap.values()));
   const formatDate = (date: string) =>
     date ? new Date(date).toLocaleString("vi-VN") : "--";
 
+  const getVoucherStatus = (expiryDate: string) => {
+    if (!expiryDate) return "unknown";
+    const now = new Date();
+    const expiry = new Date(expiryDate);
+    const diffTime = expiry.getTime() - now.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays < 0) return "expired";
+    if (diffDays <= 7) return "warning";
+    return "active";
+  };
+
   return (
-    <div className="w-full">
-      <div className="flex items-center mb-4">
-        <h2 className="text-xl font-bold">Danh sách voucher</h2>
+    <div className="voucher-container">
+      {/* Header */}
+      <div className="voucher-header">
+        <h2 className="voucher-title">🎫 Danh sách Voucher</h2>
         <button
-          className="ml-auto bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg shadow transition"
+          className="add-voucher-btn"
           onClick={() => navigate("/addvouchers")}
         >
-          Thêm voucher
+          ➕ Thêm Voucher
         </button>
       </div>
 
+      {/* Loading State */}
       {loading ? (
-        <div className="text-center py-6 text-gray-500">Đang tải dữ liệu...</div>
+        <div className="loading-container">
+          <div className="loading-spinner">⏳</div>
+          <div className="loading-text">Đang tải dữ liệu...</div>
+        </div>
       ) : vouchers.length === 0 ? (
-        <div className="text-center py-8 text-gray-500 text-lg">
-          Không có voucher nào.
+        <div className="empty-container">
+          <div className="empty-icon">🎫</div>
+          <div className="empty-text">Không có voucher nào</div>
+          <div className="empty-subtext">Hãy tạo voucher đầu tiên để bắt đầu</div>
         </div>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="min-w-full bg-white rounded-lg shadow border border-gray-200">
-            <thead className="bg-gray-100">
+        <div className="table-container">
+          <table className="voucher-table">
+            <thead>
               <tr>
-                <th className="px-4 py-2 border-b">#</th>
-                <th className="px-4 py-2 border-b">Mã voucher</th>
-                <th className="px-4 py-2 border-b">Loại</th>
-                <th className="px-4 py-2 border-b">Giảm giá</th>
-                <th className="px-4 py-2 border-b">Lượt dùng</th>
-                <th className="px-4 py-2 border-b">HSD</th>
-                <th className="px-4 py-2 border-b">Thao tác</th>
+                <th>#</th>
+                <th>Mã Voucher</th>
+                <th>Loại</th>
+                <th>Giảm Giá</th>
+                <th>Lượt Dùng</th>
+                <th>Hạn Sử Dụng</th>
+                <th>Trạng Thái</th>
+                <th>Thao Tác</th>
               </tr>
             </thead>
             <tbody>
-              {vouchers.map((voucher, index) => (
-                <tr key={voucher._id} className="hover:bg-gray-50">
-                  <td className="px-4 py-2 border-b">{index + 1}</td>
-                  <td className="px-4 py-2 border-b">{voucher.voucher_id || voucher._id}</td>
-                  <td className="px-4 py-2 border-b">
-                    {voucher.User_id ? "Cá nhân" : "Dùng chung"}
-                  </td>
-                  <td className="px-4 py-2 border-b">{voucher.discount_value.toLocaleString()}%</td>
-                  <td className="px-4 py-2 border-b">{voucher.usage_limit}</td>
-                  <td className="px-4 py-2 border-b">{formatDate(voucher.expiry_date)}</td>
-                  <td className="px-4 py-2 border-b">
-                    <button
-                      className="action-btn edit"
-                      onClick={() =>
-                        navigate(`/updatevouchers/${voucher.voucher_id || voucher._id}`)
-                      }
-                    >
-                      Sửa
-                    </button>
-                    {" | "}
-                    <button
-                      className="action-btn delete"
-                      onClick={() =>
-                        handleDelete(voucher.voucher_id || voucher._id!)
-                      }
-                    >
-                      Xóa
-                    </button>
-                  </td>
-                </tr>
-              ))}
+              {vouchers.map((voucher, index) => {
+                const status = getVoucherStatus(voucher.expiry_date);
+                return (
+                  <tr key={voucher._id}>
+                    <td className="row-number">{index + 1}</td>
+                    <td>
+                      <span className="voucher-id">
+                        {voucher.voucher_id || voucher._id}
+                      </span>
+                    </td>
+                    <td>
+                      <span className={`voucher-type ${voucher.User_id ? 'personal' : 'public'}`}>
+                        {voucher.User_id ? "Cá nhân" : "Dùng chung"}
+                      </span>
+                    </td>
+                    <td>
+                      <span className="discount-value">
+                        {voucher.discount_value.toLocaleString()}%
+                      </span>
+                    </td>
+                    <td className="usage-limit">
+                      {voucher.usage_limit}
+                    </td>
+                    <td className="expiry-date">
+                      {formatDate(voucher.expiry_date)}
+                    </td>
+                    <td>
+                      <div style={{ display: 'flex', alignItems: 'center' }}>
+                        <span className={`status-indicator status-${status}`}></span>
+                        <span style={{ 
+                          color: status === 'expired' ? '#ef4444' : 
+                                 status === 'warning' ? '#f59e0b' : '#10b981',
+                          fontSize: '12px',
+                          fontWeight: '600'
+                        }}>
+                          {status === 'expired' ? 'Hết hạn' : 
+                           status === 'warning' ? 'Sắp hết hạn' : 'Còn hiệu lực'}
+                        </span>
+                      </div>
+                    </td>
+                    <td>
+                      <div className="action-buttons">
+                        <button
+                          className="action-btn edit"
+                          onClick={() =>
+                            navigate(`/updatevouchers/${voucher.voucher_id || voucher._id}`)
+                          }
+                        >
+                          ✏️ Sửa
+                        </button>
+                        <span className="action-separator">|</span>
+                        <button
+                          className="action-btn delete"
+                          onClick={() =>
+                            handleDelete(voucher.voucher_id || voucher._id!)
+                          }
+                        >
+                          🗑️ Xóa
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

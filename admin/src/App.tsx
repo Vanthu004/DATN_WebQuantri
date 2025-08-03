@@ -34,11 +34,12 @@ import ListColors from "./pages/colors/ListColors";
 import AddColor from "./pages/colors/AddColor";
 import UpdateColor from "./pages/colors/UpdateColor";
 import Guides from "./pages/guides/Guides"; // Import trang mới
+import { OrderNotifyProvider } from "./contexts/OrderNotifyContext";
 
 
 function App() {
   return (
-    <>
+    <OrderNotifyProvider>
       <Routes>
         {/* Private routes */}
         <Route element={<PrivateRouter />}>
@@ -96,7 +97,7 @@ function App() {
         <Route path="*" element={<PageNotFound />} />
       </Routes>
       <ToastContainer position="top-right" autoClose={3000} />
-    </>
+    </OrderNotifyProvider>
   );
 }
 

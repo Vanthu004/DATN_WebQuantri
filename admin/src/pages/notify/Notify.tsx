@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../../css/notify/notify.css";
 import { useOrderNotify } from "../../contexts/OrderNotifyContext";
@@ -10,20 +10,15 @@ interface Order {
   user_id?: { name?: string; email?: string };
   createdAt?: string;
   status?: string;
-  // ... các trường khác nếu cần
 }
 
 const Notify = () => {
-  const [show, setShow] = useState(false);
-  const [latestOrder, setLatestOrder] = useState<Order | null>(null);
   const [recentOrders, setRecentOrders] = useState<Order[]>([]);
-  const [lastCheckedOrderId, setLastCheckedOrderId] = useState<string | null>(null);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const navigate = useNavigate();
-  const { setNewOrderCount } = useOrderNotify();
+  const { newOrderCount, resetOrderChecking } = useOrderNotify();
 
   useEffect(() => {
-    const fetchLatestOrders = async () => {
+    const fetchRecentOrders = async () => {
       try {
         const res = await fetch("http://localhost:3000/api/orders");
         if (!res.ok) {
@@ -32,7 +27,6 @@ const Notify = () => {
         }
         
         const data = await res.json();
-        console.log('Fetched orders:', data); // Debug log
         
         if (Array.isArray(data) && data.length > 0) {
           // Sắp xếp theo thời gian tạo mới nhất
@@ -43,51 +37,14 @@ const Notify = () => {
           // Lấy 5 đơn hàng mới nhất
           const lastOrders = sortedOrders.slice(0, 5);
           setRecentOrders(lastOrders);
-
-          const newest = lastOrders[0];
-          console.log('Latest order:', newest); // Debug log
-          console.log('Last checked order ID:', lastCheckedOrderId); // Debug log
-          
-          // Kiểm tra nếu có đơn hàng mới
-          if (newest && lastCheckedOrderId && newest._id !== lastCheckedOrderId) {
-            console.log('New order detected!'); // Debug log
-            setShow(true);
-            setTimeout(() => setShow(false), 4000);
-          }
-          
-          // Cập nhật ID đơn hàng cuối cùng đã kiểm tra
-          if (newest) {
-            setLatestOrder(newest);
-            setLastCheckedOrderId(newest._id);
-          }
-
-          // Đếm số đơn hàng chờ xử lý
-          const pendingOrders = data.filter((order: Order) => order.status === "Chờ xử lý");
-          setNewOrderCount(pendingOrders.length);
         }
       } catch (error) {
         console.error('Error fetching orders:', error);
       }
     };
 
-    // Chạy ngay lập tức
-    fetchLatestOrders();
-    
-    // Thiết lập interval để kiểm tra mỗi 5 giây
-    intervalRef.current = setInterval(fetchLatestOrders, 5000);
-
-    return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-      }
-    };
-  }, [setNewOrderCount]); // Chỉ phụ thuộc vào setNewOrderCount
-
-  const handleToastClick = () => {
-    if (latestOrder) {
-      navigate(`/orders/${latestOrder._id}`);
-    }
-  };
+    fetchRecentOrders();
+  }, []);
 
   const handleOrderClick = (id: string) => {
     navigate(`/orders/${id}`);
@@ -98,33 +55,24 @@ const Notify = () => {
     return new Date(dateString).toLocaleString('vi-VN');
   };
 
+  const handleManualRefresh = () => {
+    resetOrderChecking();
+    window.location.reload();
+  };
+
   return (
     <div className="p-6">
-      {/* Toast Notification */}
-      {show && latestOrder && (
-        <div className="notify-toast" onClick={handleToastClick} style={{ cursor: "pointer" }}>
-          <span>
-            🔔 Đơn hàng mới: <b>{latestOrder.order_code}</b>
-            {latestOrder.user_id?.name && <> - Khách: {latestOrder.user_id.name}</>}
-            {" - "}Tổng: {latestOrder.total_price?.toLocaleString()}đ
-          </span>
-          <div style={{ fontSize: 12, color: "#eee" }}>(Bấm để xem chi tiết)</div>
-        </div>
-      )}
-
       {/* Header */}
       <div className="mb-6">
         <h2 className="text-2xl font-bold mb-2">Thông báo đơn hàng</h2>
         <p className="text-gray-600">Danh sách các đơn hàng mới nhất</p>
-      </div>
-
-      {/* Debug Info (có thể xóa sau khi test xong) */}
-      <div className="mb-4 p-3 bg-gray-100 rounded text-sm">
-        <p><strong>Debug Info:</strong></p>
-        <p>Latest Order ID: {latestOrder?._id || 'None'}</p>
-        <p>Last Checked ID: {lastCheckedOrderId || 'None'}</p>
-        <p>Total Orders: {recentOrders.length}</p>
-        <p>Auto-refresh: 5 seconds</p>
+        {newOrderCount > 0 && (
+          <div className="mt-2 p-3 bg-yellow-100 border border-yellow-300 rounded-lg">
+            <p className="text-yellow-800 font-medium">
+              🔔 Có {newOrderCount} đơn hàng chờ xử lý
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Latest Orders Section */}
@@ -304,10 +252,7 @@ const Notify = () => {
       {/* Action Buttons */}
       <div className="flex justify-center space-x-4">
         <button 
-          onClick={() => {
-            setLastCheckedOrderId(null); // Reset để force check lại
-            window.location.reload();
-          }}
+          onClick={handleManualRefresh}
           className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center"
         >
           🔄 Làm mới thủ công
