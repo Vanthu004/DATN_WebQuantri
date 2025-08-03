@@ -1,4 +1,4 @@
-const Chat = () => {
+const Dashboard = () => {
   return (
     <div>
       <p className="text-2xl text-blue-500">Welcome to the Dashboard!</p>
@@ -6,4 +6,4 @@ const Chat = () => {
   );
 };
 
-export default Chat;
+export default Dashboard;
