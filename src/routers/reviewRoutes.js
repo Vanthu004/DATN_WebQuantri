@@ -6,7 +6,10 @@ const reviewController = require("../controllers/reviewController");
 router.post("/", reviewController.createReview);
 router.get("/", reviewController.getReviews);
 
-// ✅ Đặt trước để tránh bị route /:id bắt nhầm
+// ✅ Thêm route lấy theo product_id (đặt trước /:id)
+router.get("/product/:id", reviewController.getReviewsByProductId);
+
+// ✅ Route lấy theo user_id
 router.get("/user/:user_id", reviewController.getReviewsByUserId);
 
 router.get("/:id", reviewController.getReviewById);

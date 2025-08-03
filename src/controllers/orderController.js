@@ -11,10 +11,10 @@ exports.createOrder = async (req, res) => {
   session.startTransaction();
   
   try {
-    const { user_id, total_price, shippingmethod_id, paymentmethod_id, shipping_address, note } = req.body;
+    const { user_id, total_price, shippingmethod_id, paymentmethod_id, voucher_id, shipping_address, note } = req.body;
 
     // Validation
-    if (!user_id || !total_price || !shippingmethod_id || !paymentmethod_id || !shipping_address) {
+    if (!user_id || !total_price || !shippingmethod_id || !paymentmethod_id || !voucher_id || !shipping_address) {
       return res.status(400).json({ 
         success: false,
         msg: "Thiếu thông tin bắt buộc" 
@@ -74,6 +74,7 @@ exports.createOrder = async (req, res) => {
       total_price,
       shippingmethod_id,
       paymentmethod_id,
+      voucher_id,
       shipping_address,
       note,
       order_code,
@@ -128,8 +129,9 @@ exports.getAllOrders = async (req, res) => {
     
     const orders = await Order.find(query)
       .populate("user_id", "name email phone")
-      .populate("shippingmethod_id", "name price")
+      .populate("shippingmethod_id", "name fee")
       .populate("paymentmethod_id", "name")
+      .populate("voucher_id", "name discount_value")
       .sort(sortOption)
       .skip(skip)
       .limit(parseInt(limit));
@@ -199,8 +201,9 @@ exports.getOrderById = async (req, res) => {
 
     const order = await Order.findById(id)
       .populate("user_id", "name email phone address")
-      .populate("shippingmethod_id", "name price description")
-      .populate("paymentmethod_id", "name description");
+      .populate("shippingmethod_id", "name fee description")
+      .populate("paymentmethod_id", "name description")
+      .populate("voucher_id", "name discount_value");
 
     if (!order) {
       return res.status(404).json({ 
@@ -251,8 +254,9 @@ exports.getOrdersByUser = async (req, res) => {
     const skip = (page - 1) * limit;
     
     const orders = await Order.find(query)
-      .populate("shippingmethod_id", "name price")
+      .populate("shippingmethod_id", "name fee")
       .populate("paymentmethod_id", "name")
+      .populate("voucher_id", "name discount_value")
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(parseInt(limit));
@@ -467,6 +471,13 @@ exports.createOrderWithDetails = async (req, res) => {
       });
     }
 
+    if (typeof orderData.total_price !== "number" || orderData.total_price < 0) {
+      return res.status(400).json({
+        success: false,
+        msg: "Thiếu hoặc sai định dạng tổng tiền đơn hàng (total_price)"
+      });
+    }
+
     // Tạo order_code tự động
     const now = new Date();
     const dd = String(now.getDate()).padStart(2, "0");
@@ -486,16 +497,15 @@ exports.createOrderWithDetails = async (req, res) => {
     }
     const order_code = `ORDER${String(nextNumber).padStart(3, "0")}${dateStr}`;
 
-    // Tạo Order
+    // Tạo Order, dùng total_price do client gửi lên
     const order = await Order.create([{ ...orderData, order_code }], {
       session,
     });
     const orderId = order[0]._id;
 
     // Tạo các OrderDetail
-    let total = 0;
     const details = [];
-    
+
     for (const item of orderDetails) {
       let product = null;
       let variant = null;
@@ -509,8 +519,7 @@ exports.createOrderWithDetails = async (req, res) => {
           throw new Error("Không tìm thấy biến thể sản phẩm");
         }
         product = await Product.findById(variant.product_id);
-        
-        // Tạo variant info
+
         variantInfo = {
           size: variant.attributes.size ? {
             _id: variant.attributes.size._id,
@@ -525,7 +534,7 @@ exports.createOrderWithDetails = async (req, res) => {
       } else {
         product = await Product.findById(item.product_id);
       }
-      
+
       if (!product) {
         throw new Error("Không tìm thấy sản phẩm");
       }
@@ -541,11 +550,11 @@ exports.createOrderWithDetails = async (req, res) => {
         product_image: variant ? variant.image_url : product.image_url,
         variant_info: variantInfo
       };
-      
-      total += (variant ? variant.price : product.price) * item.quantity;
+
       const detail = await OrderDetail.create([detailData], { session });
       details.push(detail[0]);
-      // Bổ sung: Tăng sold_quantity cho sản phẩm
+
+      // Tăng sold_quantity cho sản phẩm
       await Product.findByIdAndUpdate(
         item.product_id,
         { $inc: { sold_quantity: item.quantity } },
@@ -553,8 +562,7 @@ exports.createOrderWithDetails = async (req, res) => {
       );
     }
 
-    // Cập nhật tổng tiền cho Order
-    await Order.findByIdAndUpdate(orderId, { total_price: total }, { session });
+    // Không cập nhật lại total_price nữa, dùng giá client gửi
 
     await session.commitTransaction();
     session.endSession();
@@ -563,7 +571,7 @@ exports.createOrderWithDetails = async (req, res) => {
       success: true,
       msg: "Tạo đơn hàng thành công",
       data: {
-        order: { ...order[0].toObject(), total_price: total },
+        order: order[0], // giữ nguyên total_price đã lưu
         orderDetails: details,
       }
     });
@@ -571,12 +579,13 @@ exports.createOrderWithDetails = async (req, res) => {
     await session.abortTransaction();
     session.endSession();
     console.error("Error creating order with details:", err);
-    res.status(500).json({ 
+    res.status(500).json({
       success: false,
-      error: "Lỗi server khi tạo đơn hàng" 
+      error: "Lỗi server khi tạo đơn hàng"
     });
   }
 };
+
 
 // Hủy đơn hàng
 exports.cancelOrder = async (req, res) => {
