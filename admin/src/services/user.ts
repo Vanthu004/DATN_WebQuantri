@@ -21,13 +21,30 @@ export const updateUser = async (
     phone_number?: string;
     address?: string;
     avatar?: string;
-  }
+    role?: "admin" | "customer" | "user";
+  },
+  token?: string
 ) => {
-  return api.put(`/users/${id}`, user);
+  const headers = token ? { Authorization: `Bearer ${token}` } : {};
+  return api.put(`/users/${id}`, user, { headers });
 };
+
+// Hàm cập nhật role cho user
+export const updateUserRole = async (
+  id: string,
+  role: "admin" | "customer" | "user",
+  token: string
+) => {
+  return api.patch(`/users/${id}/role`, { role }, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+};
+
 // Hàm lấy danh sách toàn bộ user
 export const getAllUsers = async () => {
-  const res = await api.get("/users/all");
+  const token = localStorage.getItem('token');
+  const headers = token ? { Authorization: `Bearer ${token}` } : {};
+  const res = await api.get("/users/all", { headers });
   return res.data; // giả sử API trả về mảng user
 };
 

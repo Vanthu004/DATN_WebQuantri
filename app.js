@@ -33,6 +33,7 @@ const productVariantApi = require("./src/routers/productVariantApi");
 const cartApi = require("./src/routers/cartApi");
 const cartItemApi = require("./src/routers/cartItemApi");
 const statisticApi = require("./src/routers/statisticApi");
+const salesStatisticsRouter = require("./src/routers/salesStatisticsRouter");
 const favoriteRouter = require("./src/routers/favoriteProductRouter");
 const authController = require("./src/controllers/authController");
 const addressRouter = require("./src/routers/addressRouter");
@@ -70,6 +71,7 @@ app.use("/api/product-variants", productVariantApi);
 app.use("/api/cart", cartApi);
 app.use("/api/cart-items", cartItemApi);
 app.use("/api/statistics", statisticApi);
+app.use("/api/sales-statistics", salesStatisticsRouter);
 app.use("/api/favorites", favoriteRouter);
 app.use("/api/sizes", sizeRouter);
 app.use("/api/colors", colorRouter);
@@ -98,7 +100,18 @@ io.on("connection", (socket) => {
 // ====== Kết nối MongoDB ======
 mongoose
   .connect(process.env.MONGODB_URI)
-  .then(() => console.log("✅ Đã kết nối MongoDB Atlas"))
+  .then(() => {
+    console.log("✅ Đã kết nối MongoDB Atlas");
+    
+    // Khởi động cron jobs cho thống kê doanh thu
+    try {
+      const { startCronJobs } = require('./src/cron/salesStatisticsCron');
+      startCronJobs();
+      console.log("✅ Đã khởi động cron jobs thống kê doanh thu");
+    } catch (error) {
+      console.error("❌ Lỗi khởi động cron jobs:", error);
+    }
+  })
   .catch((err) => console.error("❌ Lỗi kết nối MongoDB:", err));
 
 // ====== Middleware xử lý lỗi ======

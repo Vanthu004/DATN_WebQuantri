@@ -173,7 +173,6 @@ const ListProduct = () => {
           <thead>
             <tr className="bg-gray-100">
               <th className="px-4 py-2 border-b">#</th>
-              <th className="px-4 py-2 border-b">ID</th>
               <th className="px-4 py-2 border-b">Name</th>
               <th className="px-4 py-2 border-b">Description</th>
               <th className="px-4 py-2 border-b">Price</th>
@@ -197,7 +196,6 @@ const ListProduct = () => {
                 <React.Fragment key={product._id}>
                   <tr key={product._id} className="hover:bg-gray-50">
                     <td className="px-4 py-2 border-b">{index + 1}</td>
-                    <td className="px-4 py-2 border-b">{product._id || "--"}</td>
                     <td className="px-4 py-2 border-b">{renderProductName(product)}</td>
                     <td className="px-4 py-2 border-b">{renderProductDescription(product)}</td>
                     <td className="px-4 py-2 border-b">{getPriceDisplay(product)}</td>
