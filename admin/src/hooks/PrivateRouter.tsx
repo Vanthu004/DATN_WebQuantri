@@ -1,3 +1,4 @@
+// admin/src/hooks/PrivateRouter.tsx
 import React from "react";
 import { Navigate, Outlet } from "react-router-dom";
 

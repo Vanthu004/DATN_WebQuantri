@@ -1,34 +1,26 @@
 import { Link, Outlet, useNavigate, useLocation } from "react-router-dom";
 import {
+  FaTachometerAlt,
   FaUser,
   FaProductHunt,
   FaList,
   FaShoppingCart,
-  FaBook, // Thêm biểu tượng cho Guides
-  FaChartBar, // Thêm biểu tượng cho Thống kê
-  FaWarehouse, // Thêm biểu tượng cho Kho hàng
+  FaBook,
+  FaComment, // Thêm biểu tượng cho Support
 } from "react-icons/fa";
 import { MdOutlineNotificationsActive } from "react-icons/md";
 import { RiDiscountPercentFill } from "react-icons/ri";
 import { BiSolidCommentDetail } from "react-icons/bi";
 import { AiFillSetting } from "react-icons/ai";
 import "../../css/layouts/layoutAdmin.css";
-import "../../css/notify/orderToast.css";
 import logo from '../../assets/LogoSwear.png';
 import { useOrderNotify } from "../../contexts/OrderNotifyContext";
-import { useOrderNotification } from "../../hooks/useOrderNotification";
-import OrderToast from "../OrderToast";
 
 const menuItems = [
   {
     path: "/",
-    icon: <FaChartBar />,
-    label: "Thống kê",
-  },
-  {
-    path: "/inventory",
-    icon: <FaWarehouse />,
-    label: "Kho hàng",
+    icon: <FaTachometerAlt />,
+    label: "Bảng điều khiển",
   },
   {
     path: "/notify",
@@ -82,42 +74,28 @@ const menuItems = [
   },
   {
     path: "/guides",
-    icon: <FaBook />, // Biểu tượng cho Hướng dẫn sử dụng
+    icon: <FaBook />,
     label: "Hướng dẫn sử dụng",
+  },
+  {
+    path: "/support",
+    icon: <FaComment />,
+    label: "Hỗ trợ người dùng",
   },
 ];
 
 const LayoutAdmin = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { newOrderCount, latestOrder, showToast, setShowToast } = useOrderNotify();
-  
-  // Khởi tạo hook để kiểm tra đơn hàng mới
-  useOrderNotification();
+  const { newOrderCount } = useOrderNotify();
 
   const handleLogout = () => {
     localStorage.removeItem("token");
     navigate("/login");
   };
 
-  const handleViewOrder = (orderId: string) => {
-    navigate(`/orders/${orderId}`);
-  };
-
-  const handleCloseToast = () => {
-    setShowToast(false);
-  };
-
   return (
     <div className="layout-container">
-      {/* Order Toast Notification */}
-      <OrderToast
-        order={latestOrder}
-        isVisible={showToast}
-        onClose={handleCloseToast}
-        onViewOrder={handleViewOrder}
-      />
-
       {/* Header */}
       <header className="layout-header">
         <Link to="/" className="logo-section">
@@ -146,7 +124,6 @@ const LayoutAdmin = () => {
                   >
                     {item.icon}
                     <span>{item.label}</span>
-                    {/* Hiển thị badge nếu là menu Thông báo và có số mới > 0 */}
                     {item.path === "/notify" && newOrderCount > 0 && (
                       <span className="menu-badge">{newOrderCount}</span>
                     )}
