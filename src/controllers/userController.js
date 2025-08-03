@@ -285,7 +285,28 @@ exports.updateProfile = async (req, res) => {
 // Cập nhật user
 exports.updateUser = async (req, res) => {
   try {
-    const { password, avatar, avata_url, ...updateData } = req.body;
+    const { password, avatar, avata_url, role, ...updateData } = req.body;
+
+    // Kiểm tra quyền - chỉ admin mới được cập nhật role
+    if (role && req.user.role !== 'admin') {
+      return res.status(403).json({ 
+        message: "Bạn không có quyền thay đổi role của người dùng" 
+      });
+    }
+
+    // Validate role nếu có
+    if (role && !['admin', 'customer', 'user'].includes(role)) {
+      return res.status(400).json({ 
+        message: "Role không hợp lệ. Role phải là: admin, customer, hoặc user" 
+      });
+    }
+
+    // Không cho phép admin tự hạ cấp chính mình
+    if (role && req.params.id === req.user.userId && role !== 'admin') {
+      return res.status(400).json({ 
+        message: "Bạn không thể hạ cấp chính mình" 
+      });
+    }
 
     // Nếu có password thì mã hóa
     if (password) {
@@ -297,6 +318,7 @@ exports.updateUser = async (req, res) => {
       {
         $set: {
           ...updateData,
+          role: role || undefined,
           avatar: avatar || null,
           avata_url: avata_url || "",
         },
@@ -310,7 +332,11 @@ exports.updateUser = async (req, res) => {
       return res.status(404).json({ message: "Không tìm thấy user" });
     }
 
-    res.status(200).json({ message: "Cập nhật user thành công", user });
+    res.status(200).json({ 
+      message: "Cập nhật user thành công", 
+      user,
+      roleUpdated: !!role 
+    });
   } catch (error) {
     res.status(500).json({ message: "Lỗi server", error: error.message });
   }
@@ -416,6 +442,20 @@ exports.blockUser = async (req, res, next) => {
     const { id } = req.params;
     const { isBanned, bannedUntil, reason } = req.body;
 
+    // Kiểm tra quyền - chỉ admin mới được ban user
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ 
+        message: "Bạn không có quyền khóa/mở khóa người dùng" 
+      });
+    }
+
+    // Không cho phép admin tự ban chính mình
+    if (id === req.user.userId) {
+      return res.status(400).json({ 
+        message: "Bạn không thể khóa chính mình" 
+      });
+    }
+
     const banData = {
       isBanned: isBanned === true,
       bannedUntil: isBanned ? bannedUntil || null : null,
@@ -440,6 +480,56 @@ exports.blockUser = async (req, res, next) => {
     });
   } catch (error) {
     next(error);
+  }
+};
+
+// Cập nhật role cho user (chức năng cấp quyền)
+exports.updateUserRole = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { role } = req.body;
+
+    // Kiểm tra quyền - chỉ admin mới được cập nhật role
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ 
+        message: "Bạn không có quyền thay đổi role của người dùng" 
+      });
+    }
+
+    // Validate role
+    if (!role || !['admin', 'customer', 'user'].includes(role)) {
+      return res.status(400).json({ 
+        message: "Role không hợp lệ. Role phải là: admin, customer, hoặc user" 
+      });
+    }
+
+    // Không cho phép admin tự hạ cấp chính mình
+    if (id === req.user.userId && role !== 'admin') {
+      return res.status(400).json({ 
+        message: "Bạn không thể hạ cấp chính mình" 
+      });
+    }
+
+    const user = await User.findByIdAndUpdate(
+      id,
+      { role },
+      { new: true, runValidators: true }
+    )
+      .select("-password")
+      .populate("avatar");
+
+    if (!user) {
+      return res.status(404).json({ message: "Không tìm thấy người dùng" });
+    }
+
+    res.status(200).json({
+      message: `Đã cập nhật role của người dùng thành ${role}`,
+      user,
+      previousRole: user.role,
+      newRole: role
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Lỗi server", error: error.message });
   }
 };
 

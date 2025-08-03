@@ -49,6 +49,21 @@ const productSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    revenue: {
+      type: Number,
+      default: 0,
+    },
+    last_sold_at: {
+      type: Date,
+      default: null
+    },
+    // Thống kê theo thời gian
+    sales_stats: {
+      daily: { type: Number, default: 0 },
+      weekly: { type: Number, default: 0 },
+      monthly: { type: Number, default: 0 },
+      yearly: { type: Number, default: 0 }
+    },
     views: {
       type: Number,
       default: 0

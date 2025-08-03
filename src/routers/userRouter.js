@@ -28,4 +28,7 @@ router.delete("/:id", authMiddleware, userController.deleteUser);
 // Ban/unban user
 router.patch("/:id/block", authMiddleware, userController.blockUser);
 
+// Cập nhật role cho user (cấp quyền)
+router.patch("/:id/role", authMiddleware, userController.updateUserRole);
+
 module.exports = router;
