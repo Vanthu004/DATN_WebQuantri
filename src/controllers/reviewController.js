@@ -41,7 +41,7 @@ exports.createReview = async (req, res) => {
   }
 };
 
-// ✅ Lấy tất cả review hoặc theo product_id
+// ✅ Lấy tất cả review hoặc theo product_id (bằng query param)
 exports.getReviews = async (req, res) => {
   try {
     const filter = {};
@@ -105,6 +105,27 @@ exports.getReviewsByUserId = async (req, res) => {
     res.status(200).json(reviews);
   } catch (error) {
     console.error("Lỗi khi lấy review theo user_id:", error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// ✅ Lấy tất cả review theo product_id (dùng trong URL)
+exports.getReviewsByProductId = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "product_id không hợp lệ" });
+    }
+
+    const reviews = await Review.find({ product_id: new ObjectId(id) })
+      .sort({ create_date: -1 })
+      .populate({ path: "user_id", select: "name avata_url" })
+      .populate({ path: "product_id", select: "name image_url" });
+
+    res.status(200).json(reviews);
+  } catch (error) {
+    console.error("Lỗi khi lấy review theo product_id:", error);
     res.status(500).json({ message: error.message });
   }
 };
