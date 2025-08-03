@@ -3,6 +3,7 @@ const Product = require("../models/product");
 const Category = require("../models/category");
 const CategoryType = require("../models/categoryType");
 const mongoose = require('mongoose');
+const ProductVariant = require('../models/productVariant');
 
 // Escape regex function
 function escapeRegex(text) {
@@ -40,6 +41,9 @@ exports.searchProducts = async (req, res) => {
 
 /* Tạo sản phẩm mới */
 exports.createProduct = async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+  
   try {
     // Tìm product_id lớn nhất hiện tại
     const lastProduct = await Product.findOne({}).sort({ product_id: -1 });
@@ -51,78 +55,188 @@ exports.createProduct = async (req, res) => {
       }
     }
     const product_id = `P${nextId.toString().padStart(3, "0")}`;
+    
     // Lưu ý: images là mảng ObjectId Upload, image_url là url cũ
-    const { images, image_url, ...rest } = req.body;
-    const product = await Product.create({
+    const { images, image_url, variants, ...rest } = req.body;
+    
+    // Tính toán giá min/max và các thuộc tính khác
+    let minPrice = rest.price || 0;
+    let maxPrice = rest.price || 0;
+    let hasVariants = false;
+    let availableSizes = [];
+    let availableColors = [];
+    
+    if (Array.isArray(variants) && variants.length > 0) {
+      hasVariants = true;
+      const prices = variants.map(v => v.price).filter(p => p > 0);
+      if (prices.length > 0) {
+        minPrice = Math.min(...prices);
+        maxPrice = Math.max(...prices);
+      }
+      
+      // Lấy danh sách size và color duy nhất
+      availableSizes = [...new Set(variants.map(v => v.attributes?.size).filter(Boolean))];
+      availableColors = [...new Set(variants.map(v => v.attributes?.color).filter(Boolean))];
+    }
+    
+    const product = await Product.create([{
       ...rest,
       product_id,
       images: images || [],
       image_url: image_url || "",
-    });
-    const populated = await Product.findById(product._id).populate([
-      "category_id",
-      "images",
-    ]);
-    res.status(201).json(populated);
+      has_variants: hasVariants,
+      min_price: minPrice,
+      max_price: maxPrice,
+      total_variants: variants?.length || 0,
+      available_sizes: availableSizes,
+      available_colors: availableColors
+    }], { session });
+    
+    const createdProduct = product[0];
+    
+    // Nếu có biến thể, tạo luôn các biến thể với product_id là _id sản phẩm vừa tạo
+    let insertedVariants = [];
+    if (Array.isArray(variants) && variants.length > 0) {
+      const variantPayload = variants.map((v, index) => ({
+        ...v,
+        product_id: createdProduct._id,
+        sort_order: index
+      }));
+      insertedVariants = await ProductVariant.insertMany(variantPayload, { 
+        session, 
+        ordered: false 
+      });
+    }
+    
+    await session.commitTransaction();
+    
+    // Populate và trả về kết quả
+    const populated = await Product.findById(createdProduct._id)
+      .populate([
+        "category_id",
+        "images",
+        "available_sizes",
+        "available_colors"
+      ])
+      .lean();
+      
+    // Populate variants nếu có
+    if (insertedVariants.length > 0) {
+      const populatedVariants = await ProductVariant.find({
+        _id: { $in: insertedVariants.map(v => v._id) }
+      })
+      .populate('attributes.size')
+      .populate('attributes.color')
+      .lean();
+      
+      return res.status(201).json({ 
+        ...populated, 
+        variants: populatedVariants 
+      });
+    }
+    
+    res.status(201).json({ ...populated, variants: [] });
   } catch (err) {
+    await session.abortTransaction();
     res.status(400).json({ error: err.message });
+  } finally {
+    session.endSession();
   }
 };
 
 /* Lấy tất cả sản phẩm (chỉ lấy chưa bị xóa) */
 exports.getAllProducts = async (req, res) => {
   const filter = req.query.showDeleted === "true" ? {} : { is_deleted: false };
+  const includeVariants = req.query.includeVariants === "true";
+  
   try {
     const list = await Product.find(filter)
       .populate('category_id', 'name image_url')
       .populate('images')
+      .populate('available_sizes', 'name')
+      .populate('available_colors', 'name')
       .lean();
 
-    // Nếu cần thêm reviews và rating cho từng sản phẩm
-    const includeReviews = req.query.includeReviews === "true";
-    
-    if (includeReviews) {
-      const Review = require('../models/review');
-      const productsWithReviews = await Promise.all(
+    // Nếu cần lấy variants, sử dụng aggregation để tối ưu
+    if (includeVariants) {
+      const productsWithVariants = await Promise.all(
         list.map(async (product) => {
-          const reviews = await Review.find({ product_id: product._id })
-            .populate('user_id', 'name email avatar')
-            .lean();
-
-          let rating = 0;
-          let totalRating = 0;
-          let ratingCount = 0;
-
-          if (reviews.length > 0) {
-            reviews.forEach(review => {
-              if (review.rating && review.rating >= 1 && review.rating <= 5) {
-                totalRating += review.rating;
-                ratingCount++;
-              }
-            });
-            rating = ratingCount > 0 ? (totalRating / ratingCount).toFixed(1) : 0;
-          }
-
+          const variants = await ProductVariant.find({ 
+            product_id: product._id,
+            is_active: true 
+          })
+          .populate('attributes.size', 'name')
+          .populate('attributes.color', 'name')
+          .sort({ sort_order: 1 })
+          .lean();
+          
           return {
             ...product,
-            reviews: reviews,
-            rating: parseFloat(rating),
-            ratingCount: ratingCount,
-            stock: product.stock_quantity,
-            images: product.images || [],
-            image_url: product.image_url || "",
-            category: product.category_id ? {
-              _id: product.category_id._id,
-              name: product.category_id.name,
-              image_url: product.category_id.image_url
-            } : null
+            variants
           };
         })
       );
-      return res.json(productsWithReviews);
+      
+      // Xử lý reviews nếu cần
+      const includeReviews = req.query.includeReviews === "true";
+      if (includeReviews) {
+        const Review = require('../models/review');
+        const productsWithReviews = await Promise.all(
+          productsWithVariants.map(async (product) => {
+            const reviews = await Review.find({ product_id: product._id })
+              .populate('user_id', 'name email avatar')
+              .lean();
+
+            let rating = 0;
+            let totalRating = 0;
+            let ratingCount = 0;
+
+            if (reviews.length > 0) {
+              reviews.forEach(review => {
+                if (review.rating && review.rating >= 1 && review.rating <= 5) {
+                  totalRating += review.rating;
+                  ratingCount++;
+                }
+              });
+              rating = ratingCount > 0 ? (totalRating / ratingCount).toFixed(1) : 0;
+            }
+
+            return {
+              ...product,
+              reviews: reviews,
+              rating: parseFloat(rating),
+              ratingCount: ratingCount,
+              stock: product.stock_quantity,
+              images: product.images || [],
+              image_url: product.image_url || "",
+              category: product.category_id ? {
+                _id: product.category_id._id,
+                name: product.category_id.name,
+                image_url: product.category_id.image_url
+              } : null
+            };
+          })
+        );
+        return res.json(productsWithReviews);
+      }
+
+      // Trả về danh sách sản phẩm với biến thể
+      const result = productsWithVariants.map(product => ({
+        ...product,
+        stock: product.stock_quantity,
+        images: product.images || [],
+        image_url: product.image_url || "",
+        category: product.category_id ? {
+          _id: product.category_id._id,
+          name: product.category_id.name,
+          image_url: product.category_id.image_url
+        } : null
+      }));
+
+      return res.json(result);
     }
 
-    // Trả về danh sách sản phẩm với thông tin cơ bản
+    // Nếu không cần variants, trả về trực tiếp
     const result = list.map(product => ({
       ...product,
       stock: product.stock_quantity,
@@ -144,13 +258,55 @@ exports.getAllProducts = async (req, res) => {
 /* Lấy sản phẩm theo ID */
 exports.getProductById = async (req, res) => {
   try {
+    const includeVariants = req.query.includeVariants === "true";
+    
     const product = await Product.findById(req.params.id)
       .populate('category_id', 'name image_url')
       .populate('images')
+      .populate('available_sizes', 'name')
+      .populate('available_colors', 'name')
       .lean();
 
     if (!product || product.is_deleted) {
       return res.status(404).json({ msg: 'Không tìm thấy sản phẩm' });
+    }
+
+    // Lấy variants nếu cần
+    let variants = [];
+    if (includeVariants) {
+      variants = await ProductVariant.find({ 
+        product_id: product._id,
+        is_active: true 
+      })
+      .populate('attributes.size', 'name')
+      .populate('attributes.color', 'name')
+      .sort({ sort_order: 1 })
+      .lean();
+    }
+
+    // Gom nhóm variants theo color
+    let colorGroups = [];
+    if (variants.length > 0) {
+      const groupedVariants = {};
+      variants.forEach(variant => {
+        const color = variant.attributes.color;
+        const colorId = color._id.toString();
+        if (!groupedVariants[colorId]) {
+          groupedVariants[colorId] = {
+            color: color,
+            sizes: []
+          };
+        }
+        groupedVariants[colorId].sizes.push({
+          size: variant.attributes.size,
+          variant_id: variant._id,
+          price: variant.price,
+          stock_quantity: variant.stock_quantity,
+          sku: variant.sku,
+          image_url: variant.image_url
+        });
+      });
+      colorGroups = Object.values(groupedVariants);
     }
 
     // Lấy reviews nếu có
@@ -177,6 +333,7 @@ exports.getProductById = async (req, res) => {
     // Đảm bảo các trường cần thiết
     const result = {
       ...product,
+      colorGroups, // <-- Trả về nhóm màu, mỗi nhóm chứa các size
       reviews: reviews,
       rating: parseFloat(rating),
       ratingCount: ratingCount,
@@ -357,24 +514,203 @@ exports.getProductsByCategoryType = async (req, res) => {
   }
 };
 
+/* Lấy sản phẩm với thông tin tối ưu cho Frontend */
+exports.getProductForFrontend = async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // Sử dụng aggregation để lấy tất cả thông tin trong 1 query
+    const result = await Product.aggregate([
+      { $match: { _id: new mongoose.Types.ObjectId(id), is_deleted: false } },
+      {
+        $lookup: {
+          from: 'categories',
+          localField: 'category_id',
+          foreignField: '_id',
+          as: 'category'
+        }
+      },
+      {
+        $lookup: {
+          from: 'productvariants',
+          localField: '_id',
+          foreignField: 'product_id',
+          as: 'variants'
+        }
+      },
+      {
+        $lookup: {
+          from: 'reviews',
+          localField: '_id',
+          foreignField: 'product_id',
+          as: 'reviews'
+        }
+      },
+      {
+        $lookup: {
+          from: 'uploads',
+          localField: 'images',
+          foreignField: '_id',
+          as: 'product_images'
+        }
+      },
+      {
+        $addFields: {
+          category: { $arrayElemAt: ['$category', 0] },
+          main_image: {
+            $cond: {
+              if: { $ne: ['$image_url', ''] },
+              then: '$image_url',
+              else: { $arrayElemAt: ['$product_images.url', 0] }
+            }
+          },
+          total_stock: {
+            $add: [
+              '$stock_quantity',
+              { $sum: '$variants.stock_quantity' }
+            ]
+          }
+        }
+      },
+      {
+        $project: {
+          _id: 1,
+          product_id: 1,
+          name: 1,
+          price: 1,
+          description: 1,
+          stock_quantity: 1,
+          status: 1,
+          category: 1,
+          images: '$product_images',
+          image_url: 1,
+          main_image: 1,
+          sold_quantity: 1,
+          views: 1,
+          has_variants: 1,
+          min_price: 1,
+          max_price: 1,
+          total_variants: 1,
+          available_sizes: 1,
+          available_colors: 1,
+          total_stock: 1,
+          variants: 1,
+          reviews: 1,
+          createdAt: 1,
+          updatedAt: 1
+        }
+      }
+    ]);
+
+    if (result.length === 0) {
+      return res.status(404).json({ msg: 'Không tìm thấy sản phẩm' });
+    }
+
+    const product = result[0];
+
+    // Tính rating
+    let rating = 0;
+    let ratingCount = 0;
+    if (product.reviews && product.reviews.length > 0) {
+      const validReviews = product.reviews.filter(r => r.rating >= 1 && r.rating <= 5);
+      if (validReviews.length > 0) {
+        const totalRating = validReviews.reduce((sum, r) => sum + r.rating, 0);
+        rating = (totalRating / validReviews.length).toFixed(1);
+        ratingCount = validReviews.length;
+      }
+    }
+
+    // Format kết quả
+    const formattedProduct = {
+      ...product,
+      rating: parseFloat(rating),
+      ratingCount,
+      stock: product.stock_quantity,
+      category: product.category ? {
+        _id: product.category._id,
+        name: product.category.name,
+        image_url: product.category.image_url
+      } : null
+    };
+
+    res.json(formattedProduct);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
 /* Cập nhật sản phẩm */
 exports.updateProduct = async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+  
   try {
-    const { images, image_url, ...rest } = req.body;
+    const { images, image_url, variants, ...rest } = req.body;
+    const productId = req.params.id;
+
+    // Kiểm tra sản phẩm có tồn tại không
+    const existingProduct = await Product.findById(productId);
+    if (!existingProduct || existingProduct.is_deleted) {
+      return res.status(404).json({ msg: "Không tìm thấy sản phẩm" });
+    }
+
+    // Cập nhật thông tin cơ bản của sản phẩm
     const updated = await Product.findByIdAndUpdate(
-      req.params.id,
+      productId,
       {
         ...rest,
         images: images || [],
         image_url: image_url || "",
       },
-      { new: true }
+      { new: true, session }
     ).populate(["category_id", "images"]);
-    if (!updated || updated.is_deleted)
-      return res.status(404).json({ msg: "Không tìm thấy sản phẩm" });
+
+    // Nếu có cập nhật variants, xử lý đồng bộ
+    if (variants !== undefined) {
+      // Import ProductVariant nếu cần
+      const ProductVariant = require('../models/productVariant');
+      
+      // Helper function để cập nhật thông tin product từ variants
+      async function updateProductFromVariants(productId) {
+        try {
+          const variants = await ProductVariant.find({ 
+            product_id: productId,
+            is_active: true 
+          }).populate('attributes.size').populate('attributes.color');
+
+          const hasVariants = variants.length > 0;
+          const prices = variants.map(v => v.price).filter(p => p > 0);
+          const minPrice = prices.length > 0 ? Math.min(...prices) : 0;
+          const maxPrice = prices.length > 0 ? Math.max(...prices) : 0;
+          
+          // Lấy danh sách size và color duy nhất
+          const availableSizes = [...new Set(variants.map(v => v.attributes.size._id).filter(Boolean))];
+          const availableColors = [...new Set(variants.map(v => v.attributes.color._id).filter(Boolean))];
+
+          await Product.findByIdAndUpdate(productId, {
+            has_variants: hasVariants,
+            min_price: minPrice,
+            max_price: maxPrice,
+            total_variants: variants.length,
+            available_sizes: availableSizes,
+            available_colors: availableColors
+          }, { session });
+        } catch (error) {
+          console.error('Error updating product from variants:', error);
+        }
+      }
+
+      // Cập nhật thông tin product từ variants hiện tại
+      await updateProductFromVariants(productId);
+    }
+
+    await session.commitTransaction();
     res.json(updated);
   } catch (err) {
+    await session.abortTransaction();
     res.status(400).json({ error: err.message });
+  } finally {
+    session.endSession();
   }
 };
 
