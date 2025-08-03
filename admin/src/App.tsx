@@ -1,7 +1,7 @@
 import { Route, Routes } from "react-router-dom";
 import "./App.css";
 import PageNotFound from "./pages/PageNotFound";
-//import Dashboard from "./pages/statics/Dashboard";
+import Dashboard from "./pages/statics/Dashboard";
 import LayoutAdmin from "./components/layouts/LayoutAdmin";
 import ListProduct from "./pages/products/ListProduct";
 import ListCategory from "./pages/categories/ListCategory";
@@ -31,24 +31,21 @@ import ListColors from "./pages/colors/ListColors";
 import AddColor from "./pages/colors/AddColor";
 import UpdateColor from "./pages/colors/UpdateColor";
 import Guides from "./pages/guides/Guides";
-import Support from "./pages/support/Support";
-import Chat from "./pages/support/Chat";
+import Support from "./pages/support/Support"; // Thêm import cho Support
 
 function App() {
   return (
+    <>
     <>
       <Routes>
         {/* Private routes */}
         <Route element={<PrivateRouter />}>
           <Route element={<LayoutAdmin />}>
-           
+            <Route path="/" index element={<Dashboard />} />
             <Route path="/notify" element={<Notify />} />
             <Route path="/vouchers" element={<Vouchers />} />
             <Route path="/addvouchers" element={<AddVoucher />} />
-            <Route
-              path="/updatevouchers/:voucher_id"
-              element={<EditVoucher />}
-            />
+            <Route path="/updatevouchers/:voucher_id" element={<EditVoucher />} />
             <Route path="/comments" element={<Comments />} />
             {/* Product Path */}
             <Route path="/products" element={<ListProduct />} />
@@ -68,10 +65,7 @@ function App() {
             <Route path="/colors/add" element={<AddColor />} />
             <Route path="/colors/update/:id" element={<UpdateColor />} />
             {/* Products by Category Type */}
-            <Route
-              path="/products/category-type/:type"
-              element={<ProductsByCategoryType />}
-            />
+            <Route path="/products/category-type/:type" element={<ProductsByCategoryType />} />
             {/* User Path */}
             <Route path="/users" element={<ListUser />} />
             {/* Order Path */}
@@ -82,7 +76,6 @@ function App() {
             <Route path="/guides" element={<Guides />} />
             {/* Thêm route mới cho Support */}
             <Route path="/support" element={<Support />} />
-            <Route path="/chat/:userId" element={<Chat />} />
           </Route>
         </Route>
         {/* Public path */}
@@ -91,6 +84,7 @@ function App() {
         <Route path="*" element={<PageNotFound />} />
       </Routes>
       <ToastContainer position="top-right" autoClose={3000} />
+    </>
     </>
   );
 }
