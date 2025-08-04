@@ -6,15 +6,15 @@ const path = require('path');
 const BASE_URL = 'http://localhost:3000';
 const TEST_ADMIN = {
   email: 'thainqph36461@fpt.edu.vn',
-  password: 'Test1234@'
+  password: 'Test1234@',
 };
 const TEST_USER = {
   email: 'mixbro01@gmail.com',
-  password: 'Test1234@'
+  password: 'Test1234@',
 };
-const TEST_RECEIVER_ID = '688f1d65e627ed4c95147e5e'; // User ID
-const TEST_ADMIN_ID = '688f5625ee738af7ebb97067'; // Admin ID
-const TEST_IMAGE_PATH = 'C:/Users/quangthai/Desktop/DATN_WebQuantri/test.png'; // Đảm bảo file tồn tại
+const TEST_RECEIVER_ID = '688f1d65e627ed4c95147e5e';
+const TEST_ADMIN_ID = '688f5625ee738af7ebb97067';
+const TEST_IMAGE_PATH = 'C:/Users/quangthai/Desktop/DATN_WebQuantri/test.png';
 
 async function testBackend() {
   console.log('=== BẮT ĐẦU KIỂM TRA BACKEND ===');
@@ -28,7 +28,6 @@ async function testBackend() {
     console.log('JWT:', response.data.token);
     console.log('User:', response.data.user);
     adminToken = response.data.token;
-    console.log('JWT:', response.data.token); // Lấy userToken
   } catch (error) {
     console.error('❌ Lỗi đăng nhập admin:', error.response?.data || error.message);
     return;
@@ -43,17 +42,16 @@ async function testBackend() {
     console.log('JWT:', response.data.token);
     console.log('User:', response.data.user);
     userToken = response.data.token;
-    console.log('JWT:', response.data.token); // Lấy userToken
   } catch (error) {
     console.error('❌ Lỗi đăng nhập user:', error.response?.data || error.message);
     return;
   }
 
   // Bước 3: Lấy Supabase token (admin)
-  console.log('Bước 3: Kiểm tra lấy Supabase token admin (/api/users/supabase-token)');
+  console.log('Bước 3: Kiểm tra lấy Supabase token admin (/supabase-token)');
   try {
-    const response = await axios.get(`${BASE_URL}/api/users/supabase-token`, {
-      headers: { Authorization: `Bearer ${adminToken}` }
+    const response = await axios.get(`${BASE_URL}/supabase-token`, {
+      headers: { Authorization: `Bearer ${adminToken}` },
     });
     console.log('✅ Lấy Supabase token admin thành công');
     console.log('Supabase Token:', response.data.supabaseToken);
@@ -64,10 +62,10 @@ async function testBackend() {
   }
 
   // Bước 4: Lấy Supabase token (user)
-  console.log('Bước 4: Kiểm tra lấy Supabase token user (/api/users/supabase-token)');
+  console.log('Bước 4: Kiểm tra lấy Supabase token user (/supabase-token)');
   try {
-    const response = await axios.get(`${BASE_URL}/api/users/supabase-token`, {
-      headers: { Authorization: `Bearer ${userToken}` }
+    const response = await axios.get(`${BASE_URL}/supabase-token`, {
+      headers: { Authorization: `Bearer ${userToken}` },
     });
     console.log('✅ Lấy Supabase token user thành công');
     console.log('Supabase Token:', response.data.supabaseToken);
@@ -90,8 +88,8 @@ async function testBackend() {
     const response = await axios.post(`${BASE_URL}/api/users/upload-image`, form, {
       headers: {
         ...form.getHeaders(),
-        Authorization: `Bearer ${userToken}`
-      }
+        Authorization: `Bearer ${userToken}`,
+      },
     });
     console.log('✅ Upload ảnh thành công');
     console.log('Image URL:', response.data.image_url);
@@ -102,40 +100,36 @@ async function testBackend() {
   }
 
   // Bước 6: Gửi tin nhắn (user → admin, với ảnh)
-  console.log('Bước 6: Kiểm tra gửi tin nhắn user → admin với ảnh (/api/users/send-message)');
+  console.log('Bước 6: Kiểm tra gửi tin nhắn user → admin với ảnh (/api/users/messages)');
   try {
     const response = await axios.post(
-      `${BASE_URL}/api/users/messages`, // Sửa từ /api/users/send-message
+      `${BASE_URL}/api/users/messages`,
       {
         receiver_id: TEST_ADMIN_ID,
         content: 'Hello Admin, this is a test from user with image!',
-        image_url: imageUrl
+        image_url: imageUrl,
       },
       { headers: { Authorization: `Bearer ${userToken}` } }
     );
     console.log('✅ Gửi tin nhắn user → admin thành công');
-  console.log('Response:', response.data);
+    console.log('Response:', response.data);
   } catch (error) {
     console.error('❌ Lỗi gửi tin nhắn user → admin:', error.response?.data || error.message);
-  console.error('Status:', error.response?.status);
-  console.error('Headers:', error.response?.headers);
     return;
   }
 
   // Bước 7: Gửi tin nhắn (admin → user, không ảnh)
-  console.log('Bước 7: Kiểm tra gửi tin nhắn admin → user (/api/users/send-message)');
+  console.log('Bước 7: Kiểm tra gửi tin nhắn admin → user (/api/users/messages)');
   try {
-
     const response = await axios.post(
-      `${BASE_URL}/api/users/messages`, // Sửa từ /api/users/send-message
+      `${BASE_URL}/api/users/messages`,
       {
         receiver_id: TEST_RECEIVER_ID,
         content: 'Hello User, this is a reply from admin!',
-        image_url: null
+        image_url: null,
       },
       { headers: { Authorization: `Bearer ${adminToken}` } }
     );
-
     console.log('✅ Gửi tin nhắn admin → user thành công');
     console.log('Response:', response.data);
   } catch (error) {
