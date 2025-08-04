@@ -28,10 +28,9 @@ const logger = winston.createLogger({
 });
 
 // Khởi tạo Supabase client
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
 
 // Cấu hình Cloudinary
 cloudinary.config({
@@ -605,41 +604,58 @@ exports.getSupabaseToken = async (req, res) => {
 
     if (user.ban?.isBanned) {
       return res.status(403).json({
-        message: `Tài khoản của bạn đã bị khóa${user.ban.bannedUntil ? ` đến ${user.ban.bannedUntil.toLocaleString('vi-VN')}` : ' vĩnh viễn'}${user.ban.reason ? ` vì: ${user.ban.reason}` : ''}`
+        message: `Tài khoản của bạn đã bị khóa${user.ban.bannedUntil ? ` đến ${user.ban.bannedUntil.toLocaleString('vi-VN')}` : ' vĩnh viễn'}${user.ban.reason ? ` vì: ${user.ban.reason}` : ''}`,
       });
     }
 
-    const supabaseToken = jwt.sign(
-      {
-        sub: decoded.userId,
+    // Kiểm tra user trong Supabase
+    console.log('Checking Supabase user:', user.email);
+    let { data: supabaseUser, error: userError } = await supabase.auth.admin.getUserByEmail(user.email);
+    if (userError || !supabaseUser) {
+      console.log('Creating new Supabase user:', user.email);
+      const { data: newUser, error: createError } = await supabase.auth.admin.createUser({
         email: user.email,
-        role: user.role,
-        aud: 'authenticated',
-        exp: Math.floor(Date.now() / 1000) + 60 * 60
-      },
-      process.env.SUPABASE_SERVICE_ROLE_KEY
-    );
+        user_metadata: { id: decoded.userId, name: user.name },
+      });
+      if (createError) {
+        console.error('Create Supabase user error:', createError.message);
+        throw new Error(`Lỗi tạo user trong Supabase: ${createError.message}`);
+      }
+      supabaseUser = newUser;
+    }
+
+    // Tạo access_token và refresh_token
+    console.log('Generating Supabase token for user:', decoded.userId);
+    const { data: session, error: tokenError } = await supabase.auth.admin.signInWithEmail({
+      email: user.email,
+    });
+    if (tokenError) {
+      console.error('Supabase token error:', tokenError.message);
+      throw new Error(`Lỗi tạo token Supabase: ${tokenError.message}`);
+    }
 
     res.status(200).json({
       message: 'Tạo token Supabase thành công',
-      supabaseToken,
+      supabaseToken: {
+        access_token: session.session.access_token,
+        refresh_token: session.session.refresh_token,
+      },
       user: {
         id: user._id,
         email: user.email,
         role: user.role,
         name: user.name,
-        avatar_url: user.avatar_url
-      }
+        avatar_url: user.avatar_url,
+      },
     });
   } catch (error) {
-    logger.error(`Supabase token error: ${error.message}`);
+    console.error('Supabase token error:', error.message);
     if (error.name === 'TokenExpiredError') {
       return res.status(401).json({ message: 'Token đã hết hạn' });
     }
     res.status(500).json({ message: 'Lỗi server', error: error.message });
   }
 };
-
 // Upload ảnh lên Cloudinary
 exports.uploadImage = async (req, res) => {
   try {
