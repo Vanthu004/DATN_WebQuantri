@@ -22,4 +22,7 @@ router.post('/zalopay/check-status-order', paymentController.checkZaloPayOrderSt
 router.post('/zalopay/check-status', paymentController.checkZaloPayOrderStatus); // Thêm route này để tương thích với FE
 router.post('/zalopay/callback', paymentController.zaloPayCallback);
 
+// Tính toán voucher discount cho thanh toán online
+router.post('/calculate-voucher', paymentController.calculateVoucherForPayment);
+
 module.exports = router;

@@ -141,6 +141,7 @@ export const createOrderWithDetails = async (orderData: {
   total_price: number;
   shippingmethod_id: string;
   paymentmethod_id: string;
+  voucher_id?: string;
   shipping_address: string;
   note?: string;
   orderDetails: Array<{
@@ -155,6 +156,12 @@ export const createOrderWithDetails = async (orderData: {
   data: {
     order: Order;
     orderDetails: any[];
+    voucherInfo?: {
+      voucher_id: string;
+      discount_applied: number;
+      original_total: number;
+      final_total: number;
+    } | null;
   };
 }> => {
   try {

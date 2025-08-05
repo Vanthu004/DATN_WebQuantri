@@ -62,10 +62,14 @@ exports.deletePayment = async (req, res) => {
 
 // zalopayyyyy
 const zaloConfig = {
-  app_id: '2554',
-  key1: 'sdngKKJmqEMzvh5QQcdD2A9XBSKUNaYn',
-  key2: 'trMrHtvjo6myautxDUiAcYsVtaeQ8nhf',
-  endpoint: 'https://sb-openapi.zalopay.vn/v2/create',
+  // app_id: '2554',
+  // key1: 'sdngKKJmqEMzvh5QQcdD2A9XBSKUNaYn',
+  // key2: 'trMrHtvjo6myautxDUiAcYsVtaeQ8nhf',
+  // endpoint: 'https://sb-openapi.zalopay.vn/v2/create',
+  app_id: process.env.ZALOPAY_APP_ID,
+  key1: process.env.ZALOPAY_KEY1,
+  key2: process.env.ZALOPAY_KEY2,
+  endpoint: process.env.ZALOPAY_ENDPOINT,
 };
 
 // 1. Tạo đơn hàng ZaloPay
@@ -76,7 +80,6 @@ exports.createZaloPayOrder = async (req, res) => {
   // Lấy cart_id từ frontend và thêm vào embed_data
   const cartId = req.body.cart_id;
   const embed_data = { 
-    redirecturl: 'https://phongthuytaman.com',
     cart_id: cartId // Thêm cart_id vào embed_data để callback có thể lấy
   };
   
@@ -85,18 +88,18 @@ exports.createZaloPayOrder = async (req, res) => {
 
   // Lấy từng trường riêng biệt
   const productTotal = Number(req.body.product_total) || 0;
-  const tax = Number(req.body.tax) || 0;
+  const voucherDiscount = Number(req.body.voucher_discount) || 0;
   const shippingFee = Number(req.body.shipping_fee) || 0;
-  const amount = productTotal + tax + shippingFee;
+  const amount = productTotal - voucherDiscount + shippingFee;
 
   // Log chi tiết các giá trị
-  console.log("[ZaloPay] Tổng tiền chi tiết:", { productTotal, tax, shippingFee, amount });
+  console.log("[ZaloPay] Tổng tiền chi tiết:", { productTotal, voucherDiscount, shippingFee, amount });
   console.log("[ZaloPay] Cart ID:", cartId);
 
   // Kiểm tra dữ liệu đầu vào
   if (productTotal <= 0 || amount <= 0) {
-    console.log("[ZaloPay] Lỗi: Số tiền thanh toán không hợp lệ!", { productTotal, tax, shippingFee, amount });
-    return res.status(400).json({ error: "Số tiền thanh toán không hợp lệ! Vui lòng kiểm tra lại dữ liệu gửi lên.", detail: { productTotal, tax, shippingFee, amount } });
+    console.log("[ZaloPay] Lỗi: Số tiền thanh toán không hợp lệ!", { productTotal, voucherDiscount, shippingFee, amount });
+    return res.status(400).json({ error: "Số tiền thanh toán không hợp lệ! Vui lòng kiểm tra lại dữ liệu gửi lên.", detail: { productTotal, voucherDiscount, shippingFee, amount } });
   }
 
   const order = {
@@ -107,7 +110,7 @@ exports.createZaloPayOrder = async (req, res) => {
     item: JSON.stringify(items),
     embed_data: JSON.stringify(embed_data),
     amount: amount,
-    callback_url: 'https://54923993e779.ngrok-free.app/api/payments/zalopay/callback', // Đảm bảo đúng URL public
+    callback_url: 'https://1b22efdef50c.ngrok-free.app/api/payments/zalopay/callback', // Đảm bảo đúng URL public
     description: `Thanh toán ZaloPay cho đơn hàng #${transID}`,
     bank_code: '',
   };
@@ -141,7 +144,7 @@ exports.createZaloPayOrder = async (req, res) => {
       qr_url: result.data.order_url,
       total_amount: amount,
       product_total: productTotal,
-      tax,
+      voucher_discount: voucherDiscount,
       shipping_fee: shippingFee,
       app_trans_id: order.app_trans_id // trả về để kiểm tra trạng thái sau này
     });
@@ -263,5 +266,85 @@ exports.checkZaloPayOrderStatus = async (req, res) => {
   } catch (error) {
     console.log('Lỗi khi kiểm tra trạng thái ZaloPay:', error?.response?.data || error);
     return res.status(500).json({ error: 'Check ZaloPay order status failed', detail: error?.response?.data });
+  }
+};
+
+// Tính toán voucher discount cho thanh toán online
+exports.calculateVoucherForPayment = async (req, res) => {
+  try {
+    const { voucher_id, product_total } = req.body;
+
+    if (!product_total) {
+      return res.status(400).json({
+        success: false,
+        msg: "Thiếu product_total"
+      });
+    }
+
+    let voucherDiscount = 0;
+    let voucherInfo = null;
+
+    if (voucher_id) {
+      const Voucher = require("../models/Voucher");
+      const voucher = await Voucher.findById(voucher_id);
+      
+      if (!voucher) {
+        return res.status(400).json({
+          success: false,
+          msg: "Voucher không hợp lệ"
+        });
+      }
+
+      // Kiểm tra voucher có hợp lệ không
+      if (voucher.status !== 'active') {
+        return res.status(400).json({
+          success: false,
+          msg: "Voucher không còn hiệu lực"
+        });
+      }
+
+      if (new Date(voucher.expiry_date) < new Date()) {
+        return res.status(400).json({
+          success: false,
+          msg: "Voucher đã hết hạn"
+        });
+      }
+
+      if (voucher.usage_limit <= voucher.used_count) {
+        return res.status(400).json({
+          success: false,
+          msg: "Voucher đã hết lượt sử dụng"
+        });
+      }
+
+      // Tính toán discount
+      voucherDiscount = voucher.discount_value;
+      
+      voucherInfo = {
+        voucher_id: voucher_id,
+        discount_value: voucher.discount_value,
+        expiry_date: voucher.expiry_date,
+        usage_limit: voucher.usage_limit,
+        used_count: voucher.used_count
+      };
+    }
+
+    const finalTotal = Math.max(0, product_total - voucherDiscount);
+
+    res.json({
+      success: true,
+      data: {
+        product_total: product_total,
+        voucher_discount: voucherDiscount,
+        final_total: finalTotal,
+        voucher_info: voucherInfo
+      }
+    });
+  } catch (error) {
+    console.error("Error calculating voucher for payment:", error);
+    res.status(500).json({
+      success: false,
+      msg: "Lỗi server khi tính toán voucher"
+    });
   }
 };
