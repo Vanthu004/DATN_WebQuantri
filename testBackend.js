@@ -12,8 +12,8 @@ const TEST_USER = {
   email: 'mixbro01@gmail.com',
   password: 'Test1234@',
 };
-const TEST_RECEIVER_ID = '688f1d65e627ed4c95147e5e';
-const TEST_ADMIN_ID = '688f5625ee738af7ebb97067';
+const TEST_RECEIVER_ID = '6894843a1e517febc10c44ab';
+const TEST_ADMIN_ID = '6894840c1e517febc10c44a2';
 const TEST_IMAGE_PATH = 'C:/Users/quangthai/Desktop/DATN_WebQuantri/test.png';
 
 async function testBackend() {
@@ -47,10 +47,11 @@ async function testBackend() {
     return;
   }
 
+  // ... (các phần khác giữ nguyên)
   // Bước 3: Lấy Supabase token (admin)
-  console.log('Bước 3: Kiểm tra lấy Supabase token admin (/supabase-token)');
+  console.log('Bước 3: Kiểm tra lấy Supabase token admin (/api/users/supabase-token)');
   try {
-    const response = await axios.get(`${BASE_URL}/supabase-token`, {
+    const response = await axios.get(`${BASE_URL}/api/users/supabase-token`, {
       headers: { Authorization: `Bearer ${adminToken}` },
     });
     console.log('✅ Lấy Supabase token admin thành công');
@@ -62,9 +63,9 @@ async function testBackend() {
   }
 
   // Bước 4: Lấy Supabase token (user)
-  console.log('Bước 4: Kiểm tra lấy Supabase token user (/supabase-token)');
+  console.log('Bước 4: Kiểm tra lấy Supabase token user (/api/users/supabase-token)');
   try {
-    const response = await axios.get(`${BASE_URL}/supabase-token`, {
+    const response = await axios.get(`${BASE_URL}/api/users/supabase-token`, {
       headers: { Authorization: `Bearer ${userToken}` },
     });
     console.log('✅ Lấy Supabase token user thành công');
@@ -74,6 +75,7 @@ async function testBackend() {
     console.error('❌ Lỗi lấy Supabase token user:', error.response?.data || error.message);
     return;
   }
+  // ... (các bước khác giữ nguyên)
 
   // Bước 5: Upload ảnh
   console.log('Bước 5: Kiểm tra upload ảnh (/api/users/upload-image)');
