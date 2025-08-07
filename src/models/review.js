@@ -6,6 +6,7 @@ const reviewSchema = new Schema({
   product_id: { type: Schema.Types.ObjectId, ref: "Product", required: true },
   rating: { type: Number, required: true },
   comment: { type: String },
+   image_url: { type: String }, // ✅ thêm dòng này để lưu đường dẫn ảnh
   create_date: { type: Date, default: Date.now },
 });
 
