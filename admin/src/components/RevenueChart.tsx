@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import SalesStatisticsService, {
-  RevenueStatistics
-} from '../services/salesStatistics';
+  RevenueStatistics,
+} from "../services/salesStatistics";
 
 interface RevenueChartProps {
   className?: string;
@@ -11,21 +11,25 @@ export const RevenueChart: React.FC<RevenueChartProps> = ({ className }) => {
   const [data, setData] = useState<RevenueStatistics[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [type, setType] = useState<'daily' | 'weekly' | 'monthly' | 'yearly'>('daily');
+  const [type, setType] = useState<"daily" | "weekly" | "monthly" | "yearly">(
+    "daily"
+  );
   const [startDate, setStartDate] = useState<string>(() => {
     const date = new Date();
     date.setDate(date.getDate() - 30);
-    return date.toISOString().split('T')[0];
+    return date.toISOString().split("T")[0];
   });
-  const [endDate, setEndDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [endDate, setEndDate] = useState<string>(
+    new Date().toISOString().split("T")[0]
+  );
 
   const fetchData = async () => {
     try {
       setLoading(true);
       setError(null);
-      
+
       const params: {
-        type: 'daily' | 'weekly' | 'monthly' | 'yearly';
+        type: "daily" | "weekly" | "monthly" | "yearly";
         start_date?: string;
         end_date?: string;
       } = { type };
@@ -35,12 +39,14 @@ export const RevenueChart: React.FC<RevenueChartProps> = ({ className }) => {
       if (endDate) {
         params.end_date = endDate;
       }
-      
-      const response = await SalesStatisticsService.getRevenueStatistics(params);
+
+      const response = await SalesStatisticsService.getRevenueStatistics(
+        params
+      );
       setData(response.data);
     } catch (err) {
-      setError('Không thể tải dữ liệu thống kê');
-      console.error('Error fetching revenue data:', err);
+      setError("Không thể tải dữ liệu thống kê");
+      console.error("Error fetching revenue data:", err);
     } finally {
       setLoading(false);
     }
@@ -52,21 +58,26 @@ export const RevenueChart: React.FC<RevenueChartProps> = ({ className }) => {
 
   const exportData = () => {
     const csvContent = [
-      ['Ngày', 'Doanh thu', 'Số đơn hàng', 'Số sản phẩm bán'],
-      ...data.map(item => [
+      ["Ngày", "Doanh thu", "Số đơn hàng", "Số sản phẩm bán"],
+      ...data.map((item) => [
         item._id,
         item.revenue.toString(),
         item.order_count.toString(),
-        item.product_sold_count.toString()
-      ])
-    ].map(row => row.join(',')).join('\n');
+        item.product_sold_count.toString(),
+      ]),
+    ]
+      .map((row) => row.join(","))
+      .join("\n");
 
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
     const url = URL.createObjectURL(blob);
-    link.setAttribute('href', url);
-    link.setAttribute('download', `thong-ke-doanh-thu-${type}-${new Date().toISOString().split('T')[0]}.csv`);
-    link.style.visibility = 'hidden';
+    link.setAttribute("href", url);
+    link.setAttribute(
+      "download",
+      `thong-ke-doanh-thu-${type}-${new Date().toISOString().split("T")[0]}.csv`
+    );
+    link.style.visibility = "hidden";
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -95,7 +106,7 @@ export const RevenueChart: React.FC<RevenueChartProps> = ({ className }) => {
               <span className="mr-2">📈</span>
               Biểu đồ doanh thu
             </h3>
-            <button 
+            <button
               onClick={fetchData}
               className="px-3 py-1 border border-gray-300 rounded hover:bg-gray-50 text-sm"
             >
@@ -110,7 +121,10 @@ export const RevenueChart: React.FC<RevenueChartProps> = ({ className }) => {
 
   const totalRevenue = data.reduce((sum, item) => sum + item.revenue, 0);
   const totalOrders = data.reduce((sum, item) => sum + item.order_count, 0);
-  const totalProducts = data.reduce((sum, item) => sum + item.product_sold_count, 0);
+  const totalProducts = data.reduce(
+    (sum, item) => sum + item.product_sold_count,
+    0
+  );
 
   return (
     <div className={`bg-white rounded-lg shadow ${className}`}>
@@ -122,9 +136,13 @@ export const RevenueChart: React.FC<RevenueChartProps> = ({ className }) => {
             Biểu đồ doanh thu
           </h3>
           <div className="flex items-center space-x-2">
-            <select 
-              value={type} 
-              onChange={(e) => setType(e.target.value as 'daily' | 'weekly' | 'monthly' | 'yearly')}
+            <select
+              value={type}
+              onChange={(e) =>
+                setType(
+                  e.target.value as "daily" | "weekly" | "monthly" | "yearly"
+                )
+              }
               className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="daily">Theo ngày</option>
@@ -132,7 +150,7 @@ export const RevenueChart: React.FC<RevenueChartProps> = ({ className }) => {
               <option value="monthly">Theo tháng</option>
               <option value="yearly">Theo năm</option>
             </select>
-            <button 
+            <button
               onClick={exportData}
               className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50"
               title="Xuất CSV"
@@ -180,7 +198,9 @@ export const RevenueChart: React.FC<RevenueChartProps> = ({ className }) => {
             </p>
           </div>
           <div className="bg-purple-50 p-4 rounded-lg">
-            <p className="text-sm text-purple-600 font-medium">Sản phẩm bán ra</p>
+            <p className="text-sm text-purple-600 font-medium">
+              Sản phẩm bán ra
+            </p>
             <p className="text-2xl font-bold text-purple-900">
               {SalesStatisticsService.formatNumber(totalProducts)}
             </p>
@@ -192,24 +212,36 @@ export const RevenueChart: React.FC<RevenueChartProps> = ({ className }) => {
           <div className="text-4xl mb-4">📊</div>
           <p className="text-gray-500 mb-2">Biểu đồ doanh thu</p>
           <p className="text-sm text-gray-400">
-            {data.length} điểm dữ liệu từ {SalesStatisticsService.formatDate(data[0]?._id || '')} 
-            đến {SalesStatisticsService.formatDate(data[data.length - 1]?._id || '')}
+            {data.length} điểm dữ liệu từ{" "}
+            {SalesStatisticsService.formatDate(data[0]?._id || "")}
+            đến{" "}
+            {SalesStatisticsService.formatDate(
+              data[data.length - 1]?._id || ""
+            )}
           </p>
-          
+
           {/* Simple Bar Chart */}
           {data.length > 0 && (
             <div className="mt-6">
               <div className="flex items-end justify-between h-32 space-x-1">
                 {data.slice(-10).map((item, index) => {
-                  const maxRevenue = Math.max(...data.map(d => d.revenue));
-                  const height = maxRevenue > 0 ? (item.revenue / maxRevenue) * 100 : 0;
-                  
+                  const maxRevenue = Math.max(...data.map((d) => d.revenue));
+                  const height =
+                    maxRevenue > 0 ? (item.revenue / maxRevenue) * 100 : 0;
+
                   return (
-                    <div key={index} className="flex flex-col items-center flex-1">
-                      <div 
+                    <div
+                      key={index}
+                      className="flex flex-col items-center flex-1"
+                    >
+                      <div
                         className="bg-blue-500 rounded-t w-full transition-all duration-300 hover:bg-blue-600"
                         style={{ height: `${height}%` }}
-                        title={`${SalesStatisticsService.formatDate(item._id)}: ${SalesStatisticsService.formatCurrency(item.revenue)}`}
+                        title={`${SalesStatisticsService.formatDate(
+                          item._id
+                        )}: ${SalesStatisticsService.formatCurrency(
+                          item.revenue
+                        )}`}
                       />
                       <p className="text-xs text-gray-500 mt-1 rotate-45 origin-left">
                         {SalesStatisticsService.formatDate(item._id)}
@@ -239,12 +271,16 @@ export const RevenueChart: React.FC<RevenueChartProps> = ({ className }) => {
                 <tbody>
                   {data.slice(-10).map((item, index) => (
                     <tr key={index} className="border-b hover:bg-gray-50">
-                      <td className="py-2">{SalesStatisticsService.formatDate(item._id)}</td>
+                      <td className="py-2">
+                        {SalesStatisticsService.formatDate(item._id)}
+                      </td>
                       <td className="text-right py-2 font-medium">
                         {SalesStatisticsService.formatCurrency(item.revenue)}
                       </td>
                       <td className="text-right py-2">{item.order_count}</td>
-                      <td className="text-right py-2">{item.product_sold_count}</td>
+                      <td className="text-right py-2">
+                        {item.product_sold_count}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -257,4 +293,4 @@ export const RevenueChart: React.FC<RevenueChartProps> = ({ className }) => {
   );
 };
 
-export default RevenueChart; 
+export default RevenueChart;
