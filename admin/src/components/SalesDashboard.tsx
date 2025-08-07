@@ -1,27 +1,38 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import SalesStatisticsService, {
-  DashboardData
-} from '../services/salesStatistics';
+  DashboardData,
+} from "../services/salesStatistics";
+import { DateRangePicker } from "./DateRangePicker";
 
 interface SalesDashboardProps {
   className?: string;
 }
 
-export const SalesDashboard: React.FC<SalesDashboardProps> = ({ className }) => {
-  const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
+export const SalesDashboard: React.FC<SalesDashboardProps> = ({
+  className,
+}) => {
+  const [dashboardData, setDashboardData] = useState<DashboardData | null>(
+    null
+  );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [period, setPeriod] = useState<'7d' | '30d' | '90d'>('30d');
+  const [period, setPeriod] = useState<"7d" | "30d" | "90d">("30d");
+  const [startDate, setStartDate] = useState<string>("");
+  const [endDate, setEndDate] = useState<string>("");
 
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
       setError(null);
-      const response = await SalesStatisticsService.getDashboardStatistics({ period });
+      const response = await SalesStatisticsService.getDashboardStatistics({
+        period,
+        start_date: startDate,
+        end_date: endDate,
+      });
       setDashboardData(response.data);
     } catch (err) {
-      setError('Không thể tải dữ liệu thống kê');
-      console.error('Error fetching dashboard data:', err);
+      setError("Không thể tải dữ liệu thống kê");
+      console.error("Error fetching dashboard data:", err);
     } finally {
       setLoading(false);
     }
@@ -29,7 +40,12 @@ export const SalesDashboard: React.FC<SalesDashboardProps> = ({ className }) => 
 
   useEffect(() => {
     fetchDashboardData();
-  }, [period]);
+  }, [period, startDate, endDate]);
+
+  const handleDateChange = (newStartDate: string, newEndDate: string) => {
+    setStartDate(newStartDate);
+    setEndDate(newEndDate);
+  };
 
   if (loading) {
     return (
@@ -40,7 +56,10 @@ export const SalesDashboard: React.FC<SalesDashboardProps> = ({ className }) => 
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {[...Array(4)].map((_, i) => (
-            <div key={i} className="bg-white rounded-lg shadow p-6 animate-pulse">
+            <div
+              key={i}
+              className="bg-white rounded-lg shadow p-6 animate-pulse"
+            >
               <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
               <div className="h-8 bg-gray-200 rounded w-1/2"></div>
             </div>
@@ -55,7 +74,7 @@ export const SalesDashboard: React.FC<SalesDashboardProps> = ({ className }) => 
       <div className={`space-y-6 ${className}`}>
         <div className="flex items-center justify-between">
           <h2 className="text-2xl font-bold">Thống kê doanh thu</h2>
-          <button 
+          <button
             onClick={fetchDashboardData}
             className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
           >
@@ -71,7 +90,8 @@ export const SalesDashboard: React.FC<SalesDashboardProps> = ({ className }) => 
 
   if (!dashboardData) return null;
 
-  const { revenue, top_products, category_stats, customer_stats } = dashboardData;
+  const { revenue, top_products, category_stats, customer_stats } =
+    dashboardData;
 
   return (
     <div className={`space-y-6 ${className}`}>
@@ -84,16 +104,16 @@ export const SalesDashboard: React.FC<SalesDashboardProps> = ({ className }) => 
           </p>
         </div>
         <div className="flex items-center space-x-2">
-          <select 
-            value={period} 
-            onChange={(e) => setPeriod(e.target.value as '7d' | '30d' | '90d')}
+          <select
+            value={period}
+            onChange={(e) => setPeriod(e.target.value as "7d" | "30d" | "90d")}
             className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="7d">7 ngày</option>
             <option value="30d">30 ngày</option>
             <option value="90d">90 ngày</option>
           </select>
-          <button 
+          <button
             onClick={fetchDashboardData}
             className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50"
           >
@@ -102,11 +122,21 @@ export const SalesDashboard: React.FC<SalesDashboardProps> = ({ className }) => 
         </div>
       </div>
 
+      {/* Date Range Picker */}
+      <DateRangePicker
+        startDate={startDate}
+        endDate={endDate}
+        onDateChange={handleDateChange}
+        className="mb-6"
+      />
+
       {/* Revenue Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-white rounded-lg shadow p-6">
           <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-medium text-gray-600">Tổng doanh thu</h3>
+            <h3 className="text-sm font-medium text-gray-600">
+              Tổng doanh thu
+            </h3>
             <span className="text-gray-400">💰</span>
           </div>
           <div className="text-2xl font-bold">
@@ -126,7 +156,8 @@ export const SalesDashboard: React.FC<SalesDashboardProps> = ({ className }) => 
             {SalesStatisticsService.formatNumber(revenue.order_count)}
           </div>
           <p className="text-xs text-gray-500 mt-1">
-            Trung bình {SalesStatisticsService.formatCurrency(revenue.avg_order_value)}/đơn
+            Trung bình{" "}
+            {SalesStatisticsService.formatCurrency(revenue.avg_order_value)}/đơn
           </p>
         </div>
 
@@ -136,24 +167,28 @@ export const SalesDashboard: React.FC<SalesDashboardProps> = ({ className }) => 
             <span className="text-gray-400">👥</span>
           </div>
           <div className="text-2xl font-bold">
-            {SalesStatisticsService.formatNumber(customer_stats.total_customers)}
+            {SalesStatisticsService.formatNumber(
+              customer_stats.total_customers
+            )}
           </div>
           <p className="text-xs text-gray-500 mt-1">
-            Trung bình {SalesStatisticsService.formatCurrency(customer_stats.average_order_value)}/khách
+            Trung bình{" "}
+            {SalesStatisticsService.formatCurrency(
+              customer_stats.average_order_value
+            )}
+            /khách
           </p>
         </div>
 
         <div className="bg-white rounded-lg shadow p-6">
           <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-medium text-gray-600">Sản phẩm bán chạy</h3>
+            <h3 className="text-sm font-medium text-gray-600">
+              Sản phẩm bán chạy
+            </h3>
             <span className="text-gray-400">📈</span>
           </div>
-          <div className="text-2xl font-bold">
-            {top_products.length}
-          </div>
-          <p className="text-xs text-gray-500 mt-1">
-            Top sản phẩm
-          </p>
+          <div className="text-2xl font-bold">{top_products.length}</div>
+          <p className="text-xs text-gray-500 mt-1">Top sản phẩm</p>
         </div>
       </div>
 
@@ -166,15 +201,23 @@ export const SalesDashboard: React.FC<SalesDashboardProps> = ({ className }) => 
           </h3>
           <div className="space-y-4">
             {top_products.slice(0, 5).map((product, index) => (
-              <div key={product._id} className="flex items-center justify-between">
+              <div
+                key={product._id}
+                className="flex items-center justify-between"
+              >
                 <div className="flex items-center space-x-3">
                   <span className="w-6 h-6 bg-gray-100 rounded-full flex items-center justify-center text-xs font-medium">
                     {index + 1}
                   </span>
                   <div>
-                    <p className="font-medium text-sm">{product.product_name}</p>
+                    <p className="font-medium text-sm">
+                      {product.product_name}
+                    </p>
                     <p className="text-xs text-gray-500">
-                      {SalesStatisticsService.formatNumber(product.quantity_sold)} sản phẩm
+                      {SalesStatisticsService.formatNumber(
+                        product.quantity_sold
+                      )}{" "}
+                      sản phẩm
                     </p>
                   </div>
                 </div>
@@ -198,11 +241,19 @@ export const SalesDashboard: React.FC<SalesDashboardProps> = ({ className }) => 
           </h3>
           <div className="space-y-4">
             {category_stats.slice(0, 5).map((category) => (
-              <div key={category._id} className="flex items-center justify-between">
+              <div
+                key={category._id}
+                className="flex items-center justify-between"
+              >
                 <div>
-                  <p className="font-medium text-sm">{category.category_name}</p>
+                  <p className="font-medium text-sm">
+                    {category.category_name}
+                  </p>
                   <p className="text-xs text-gray-500">
-                    {SalesStatisticsService.formatNumber(category.quantity_sold)} sản phẩm
+                    {SalesStatisticsService.formatNumber(
+                      category.quantity_sold
+                    )}{" "}
+                    sản phẩm
                   </p>
                 </div>
                 <div className="text-right">
@@ -219,4 +270,4 @@ export const SalesDashboard: React.FC<SalesDashboardProps> = ({ className }) => 
   );
 };
 
-export default SalesDashboard; 
+export default SalesDashboard;

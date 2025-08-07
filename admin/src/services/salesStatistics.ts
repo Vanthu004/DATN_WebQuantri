@@ -84,7 +84,7 @@ export interface DateRangeStatistics {
 export interface DateRangeResponse {
   success: boolean;
   data: DateRangeStatistics[];
-  source: 'cached' | 'real-time';
+  source: "cached" | "real-time";
 }
 
 // Interface cho response generate daily statistics
@@ -98,51 +98,60 @@ export interface GenerateDailyStatisticsResponse {
 export class SalesStatisticsService {
   // Thống kê doanh thu theo thời gian
   static async getRevenueStatistics(params: {
-    type?: 'daily' | 'weekly' | 'monthly' | 'yearly';
+    type?: "daily" | "weekly" | "monthly" | "yearly";
     start_date?: string;
     end_date?: string;
     limit?: number;
   }): Promise<RevenueStatisticsResponse> {
     const queryParams = new URLSearchParams();
-    
-    if (params.type) queryParams.append('type', params.type);
-    if (params.start_date) queryParams.append('start_date', params.start_date);
-    if (params.end_date) queryParams.append('end_date', params.end_date);
-    if (params.limit) queryParams.append('limit', params.limit.toString());
-    
+
+    if (params.type) queryParams.append("type", params.type);
+    if (params.start_date) queryParams.append("start_date", params.start_date);
+    if (params.end_date) queryParams.append("end_date", params.end_date);
+    if (params.limit) queryParams.append("limit", params.limit.toString());
+
     const response = await api.get(`/sales-statistics/revenue?${queryParams}`);
     return response.data as RevenueStatisticsResponse;
   }
 
   // Thống kê sản phẩm bán chạy
   static async getTopSellingProducts(params: {
-    period?: '7d' | '30d' | '90d' | 'all';
+    period?: "7d" | "30d" | "90d" | "all";
     start_date?: string;
     end_date?: string;
     limit?: number;
     category_id?: string;
   }): Promise<TopSellingProductsResponse> {
     const queryParams = new URLSearchParams();
-    
-    if (params.period) queryParams.append('period', params.period);
-    if (params.start_date) queryParams.append('start_date', params.start_date);
-    if (params.end_date) queryParams.append('end_date', params.end_date);
-    if (params.limit) queryParams.append('limit', params.limit.toString());
-    if (params.category_id) queryParams.append('category_id', params.category_id);
-    
-    const response = await api.get(`/sales-statistics/top-products?${queryParams}`);
+
+    if (params.period) queryParams.append("period", params.period);
+    if (params.start_date) queryParams.append("start_date", params.start_date);
+    if (params.end_date) queryParams.append("end_date", params.end_date);
+    if (params.limit) queryParams.append("limit", params.limit.toString());
+    if (params.category_id)
+      queryParams.append("category_id", params.category_id);
+
+    const response = await api.get(
+      `/sales-statistics/top-products?${queryParams}`
+    );
     return response.data as TopSellingProductsResponse;
   }
 
   // Thống kê tổng quan dashboard
   static async getDashboardStatistics(params: {
-    period?: '7d' | '30d' | '90d';
+    period?: "7d" | "30d" | "90d";
+    start_date?: string;
+    end_date?: string;
   }): Promise<DashboardResponse> {
     const queryParams = new URLSearchParams();
-    
-    if (params.period) queryParams.append('period', params.period);
-    
-    const response = await api.get(`/sales-statistics/dashboard?${queryParams}`);
+
+    if (params.period) queryParams.append("period", params.period);
+    if (params.start_date) queryParams.append("start_date", params.start_date);
+    if (params.end_date) queryParams.append("end_date", params.end_date);
+
+    const response = await api.get(
+      `/sales-statistics/dashboard?${queryParams}`
+    );
     return response.data as DashboardResponse;
   }
 
@@ -150,60 +159,72 @@ export class SalesStatisticsService {
   static async getStatisticsByDateRange(params: {
     start_date: string;
     end_date: string;
-    type?: 'daily' | 'weekly' | 'monthly' | 'yearly';
+    type?: "daily" | "weekly" | "monthly" | "yearly";
   }): Promise<DateRangeResponse> {
     const queryParams = new URLSearchParams();
-    
-    queryParams.append('start_date', params.start_date);
-    queryParams.append('end_date', params.end_date);
-    if (params.type) queryParams.append('type', params.type);
-    
-    const response = await api.get(`/sales-statistics/date-range?${queryParams}`);
+
+    queryParams.append("start_date", params.start_date);
+    queryParams.append("end_date", params.end_date);
+    if (params.type) queryParams.append("type", params.type);
+
+    const response = await api.get(
+      `/sales-statistics/date-range?${queryParams}`
+    );
     return response.data as DateRangeResponse;
   }
 
   // Tạo thống kê theo ngày (cron job)
   static async generateDailyStatistics(): Promise<GenerateDailyStatisticsResponse> {
-    const response = await api.post('/sales-statistics/generate-daily');
+    const response = await api.post("/sales-statistics/generate-daily");
     return response.data as GenerateDailyStatisticsResponse;
   }
 
   // Helper methods
   static formatCurrency(amount: number): string {
-    return new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND'
+    return new Intl.NumberFormat("vi-VN", {
+      style: "currency",
+      currency: "VND",
     }).format(amount);
   }
 
   static formatNumber(num: number): string {
-    return new Intl.NumberFormat('vi-VN').format(num);
+    return new Intl.NumberFormat("vi-VN").format(num);
   }
 
   static formatDate(dateString: string): string {
-    return new Date(dateString).toLocaleDateString('vi-VN');
+    return new Date(dateString).toLocaleDateString("vi-VN");
   }
 
   static getPeriodLabel(period: string): string {
     switch (period) {
-      case '7d': return '7 ngày qua';
-      case '30d': return '30 ngày qua';
-      case '90d': return '90 ngày qua';
-      case 'all': return 'Tất cả';
-      default: return period;
+      case "7d":
+        return "7 ngày qua";
+      case "30d":
+        return "30 ngày qua";
+      case "90d":
+        return "90 ngày qua";
+      case "all":
+        return "Tất cả";
+      default:
+        return period;
     }
   }
 
   static getTypeLabel(type: string): string {
     switch (type) {
-      case 'daily': return 'Theo ngày';
-      case 'weekly': return 'Theo tuần';
-      case 'monthly': return 'Theo tháng';
-      case 'yearly': return 'Theo năm';
-      default: return type;
+      case "daily":
+        return "Theo ngày";
+      case "weekly":
+        return "Theo tuần";
+      case "monthly":
+        return "Theo tháng";
+      case "yearly":
+        return "Theo năm";
+      default:
+        return type;
     }
   }
 }
 
 // Export default instance
-export default SalesStatisticsService; 
+export default SalesStatisticsService;
