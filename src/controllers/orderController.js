@@ -131,7 +131,7 @@ exports.getAllOrders = async (req, res) => {
       .populate("user_id", "name email phone")
       .populate("shippingmethod_id", "name fee")
       .populate("paymentmethod_id", "name")
-      .populate("voucher_id", "name discount_value")
+      .populate("voucher_id", "name title discount_value")
       .sort(sortOption)
       .skip(skip)
       .limit(parseInt(limit));
@@ -203,7 +203,7 @@ exports.getOrderById = async (req, res) => {
       .populate("user_id", "name email phone address")
       .populate("shippingmethod_id", "name fee description")
       .populate("paymentmethod_id", "name description")
-      .populate("voucher_id", "name discount_value");
+      .populate("voucher_id", "name title discount_value");
 
     if (!order) {
       return res.status(404).json({ 
@@ -256,7 +256,7 @@ exports.getOrdersByUser = async (req, res) => {
     const orders = await Order.find(query)
       .populate("shippingmethod_id", "name fee")
       .populate("paymentmethod_id", "name")
-      .populate("voucher_id", "name discount_value")
+      .populate("voucher_id", "name title discount_value")
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(parseInt(limit));
