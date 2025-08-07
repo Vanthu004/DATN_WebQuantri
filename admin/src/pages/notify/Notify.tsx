@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../../css/notify/notify.css";
 import { useOrderNotify } from "../../contexts/OrderNotifyContext";
+import api from "../../configs/api";
 
 interface Order {
   _id: string;
@@ -20,13 +21,8 @@ const Notify = () => {
   useEffect(() => {
     const fetchRecentOrders = async () => {
       try {
-        const res = await fetch("http://localhost:3000/api/orders");
-        if (!res.ok) {
-          console.error('Failed to fetch orders:', res.status);
-          return;
-        }
-        
-        const data = await res.json();
+        const response = await api.get("/orders");
+        const data = response.data.data?.orders || response.data.data || response.data; // Handle nested structure
         
         if (Array.isArray(data) && data.length > 0) {
           // Sắp xếp theo thời gian tạo mới nhất
