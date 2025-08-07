@@ -9,23 +9,10 @@ const { validationResult } = require("express-validator");
 const crypto = require('crypto');
 const mongoose = require("mongoose");
 const createError = require("http-errors");
+const { S3Client, PutObjectCommand } = require("@aws-sdk/client-s3");
 const { createClient } = require('@supabase/supabase-js');
 const cloudinary = require('cloudinary').v2;
 const streamifier = require('streamifier');
-const winston = require('winston');
-
-// Khởi tạo logger
-const logger = winston.createLogger({
-  level: 'info',
-  format: winston.format.combine(
-    winston.format.timestamp(),
-    winston.format.json()
-  ),
-  transports: [
-    new winston.transports.File({ filename: 'error.log', level: 'error' }),
-    new winston.transports.File({ filename: 'combined.log' })
-  ]
-});
 
 // Khởi tạo Supabase client
 const supabaseUrl = process.env.SUPABASE_URL;
@@ -79,10 +66,10 @@ const sendVerificationEmail = async (email, otp) => {
     };
 
     const info = await transporter.sendMail(mailOptions);
-    logger.info(`Email sent successfully: ${info.messageId}`);
+    console.log(`Email sent successfully: ${info.messageId}`);
     return true;
   } catch (error) {
-    logger.error(`Lỗi gửi email: ${error.message}`, {
+    console.error(`Lỗi gửi email: ${error.message}`, {
       code: error.code,
       details: error
     });
@@ -101,42 +88,6 @@ const checkAndUpdateBanStatus = async (user) => {
     await user.save();
   }
   return user;
-};
-
-// Lấy tất cả users
-exports.getAllUsers = async (req, res) => {
-  try {
-    const users = await User.find({ 'ban.isBanned': false })
-      .select("-password")
-      .populate("avatar");
-    res.status(200).json(users);
-  } catch (error) {
-    logger.error(`Get all users error: ${error.message}`);
-    res.status(500).json({ message: "Lỗi server", error: error.message });
-  }
-};
-
-// Lấy thông tin người dùng theo ID
-exports.getUserById = async (req, res, next) => {
-  try {
-    const userId = req.params.id;
-    if (!mongoose.Types.ObjectId.isValid(userId)) {
-      return res.status(400).json({ message: "ID người dùng không hợp lệ" });
-    }
-
-    const user = await User.findById(userId)
-      .select("-password")
-      .populate("avatar");
-    if (!user) {
-      return res.status(404).json({ message: "Không tìm thấy người dùng" });
-    }
-
-    await checkAndUpdateBanStatus(user);
-    res.status(200).json(user);
-  } catch (error) {
-    logger.error(`Get user by ID error: ${error.message}`);
-    res.status(500).json({ message: "Lỗi server", error: error.message });
-  }
 };
 
 // Tạo user mới
@@ -171,11 +122,12 @@ exports.createUser = async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
     const verificationOtp = Math.floor(100000 + Math.random() * 900000).toString();
 
+    // Tạo user trong MongoDB
     const user = new User({
       email,
       password: hashedPassword,
       name,
-      role,
+      role: role || 'user',
       phone_number,
       address,
       email_verified: false,
@@ -184,13 +136,32 @@ exports.createUser = async (req, res) => {
       avatar: avatar || null,
       avatar_url: avatar_url || "",
     });
+
+    // Tạo user trong Supabase
+    console.log('Creating Supabase user:', { email, name, userId: user._id.toString() });
+    const { data: supabaseUser, error: supabaseError } = await supabase.auth.admin.createUser({
+      email,
+      password,
+      user_metadata: { id: user._id.toString(), name },
+      email_confirm: true, // Tự động xác nhận email
+    });
+
+    if (supabaseError) {
+      console.error('Create Supabase user error:', supabaseError.message);
+      return res.status(500).json({ message: 'Lỗi tạo user trong Supabase', error: supabaseError.message });
+    }
+
+    // Lưu supabase_user_id vào MongoDB
+    user.supabase_user_id = supabaseUser.user.id;
     await user.save();
 
+    console.log('Supabase user created:', supabaseUser.user.id);
+
+    // Gửi email xác nhận OTP
     await EmailVerificationToken.create({
       email,
       otp: verificationOtp,
     });
-
     const emailSent = await sendVerificationEmail(email, verificationOtp);
 
     const token = jwt.sign(
@@ -214,7 +185,123 @@ exports.createUser = async (req, res) => {
       emailSent
     });
   } catch (error) {
-    logger.error(`Create user error: ${error.message}`);
+    console.error(`Create user error: ${error.message}`);
+    res.status(500).json({ message: "Lỗi server", error: error.message });
+  }
+};
+// Lấy Supabase token
+exports.getSupabaseToken = async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ message: 'Header Authorization không hợp lệ' });
+    }
+
+    const token = authHeader.split(' ')[1];
+    if (!token) {
+      return res.status(401).json({ message: 'Chưa đăng nhập' });
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    if (!decoded.userId) {
+      return res.status(400).json({ message: 'Token không chứa userId' });
+    }
+
+    const user = await User.findById(decoded.userId).populate('avatar');
+    if (!user) {
+      return res.status(404).json({ message: 'Không tìm thấy người dùng' });
+    }
+
+    await checkAndUpdateBanStatus(user);
+
+    if (user.ban?.isBanned) {
+      return res.status(403).json({
+        message: `Tài khoản của bạn đã bị khóa${user.ban.bannedUntil ? ` đến ${user.ban.bannedUntil.toLocaleString('vi-VN')}` : ' vĩnh viễn'}${user.ban.reason ? ` vì: ${user.ban.reason}` : ''}`,
+      });
+    }
+
+    // Kiểm tra supabase_user_id
+    if (!user.supabase_user_id) {
+      console.error('No Supabase user ID found for user:', user.email);
+      return res.status(404).json({ message: 'User không tồn tại trong Supabase, vui lòng đăng ký lại' });
+    }
+
+    // Tạo JWT thủ công làm access_token
+    console.log('Generating Supabase JWT for user:', decoded.userId);
+    const supabaseJwt = jwt.sign(
+      {
+        sub: user.supabase_user_id, // Supabase user ID từ MongoDB
+        email: user.email,
+        role: 'authenticated',
+        aud: 'authenticated',
+        iat: Math.floor(Date.now() / 1000),
+        exp: Math.floor(Date.now() / 1000) + 60 * 60, // Hết hạn sau 1 giờ
+      },
+      process.env.SUPABASE_SERVICE_ROLE_KEY,
+      { algorithm: 'HS256' }
+    );
+
+    // Tạo refresh_token
+    const refreshToken = jwt.sign(
+      { sub: user.supabase_user_id, type: 'refresh' },
+      process.env.SUPABASE_SERVICE_ROLE_KEY,
+      { algorithm: 'HS256', expiresIn: '7d' }
+    );
+
+    res.status(200).json({
+      message: 'Tạo token Supabase thành công',
+      supabaseToken: {
+        access_token: supabaseJwt,
+        refresh_token: refreshToken,
+      },
+      user: {
+        id: user._id,
+        email: user.email,
+        role: user.role,
+        name: user.name,
+        avatar_url: user.avatar_url,
+      },
+    });
+  } catch (error) {
+    console.error('Supabase token error:', error.message);
+    if (error.name === 'TokenExpiredError') {
+      return res.status(401).json({ message: 'Token đã hết hạn' });
+    }
+    res.status(500).json({ message: 'Lỗi server', error: error.message });
+  }
+};
+// Lấy tất cả users
+exports.getAllUsers = async (req, res) => {
+  try {
+    const users = await User.find({ 'ban.isBanned': false })
+      .select("-password")
+      .populate("avatar");
+    res.status(200).json(users);
+  } catch (error) {
+    console.error(`Get all users error: ${error.message}`);
+    res.status(500).json({ message: "Lỗi server", error: error.message });
+  }
+};
+
+// Lấy thông tin người dùng theo ID
+exports.getUserById = async (req, res, next) => {
+  try {
+    const userId = req.params.id;
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(400).json({ message: "ID người dùng không hợp lệ" });
+    }
+
+    const user = await User.findById(userId)
+      .select("-password")
+      .populate("avatar");
+    if (!user) {
+      return res.status(404).json({ message: "Không tìm thấy người dùng" });
+    }
+
+    await checkAndUpdateBanStatus(user);
+    res.status(200).json(user);
+  } catch (error) {
+    console.error(`Get user by ID error: ${error.message}`);
     res.status(500).json({ message: "Lỗi server", error: error.message });
   }
 };
@@ -292,7 +379,7 @@ exports.updateProfile = async (req, res) => {
       user,
     });
   } catch (error) {
-    logger.error(`Update profile error: ${error.message}`);
+    console.error(`Update profile error: ${error.message}`);
     res.status(500).json({ message: "Lỗi server", error: error.message });
   }
 };
@@ -300,7 +387,28 @@ exports.updateProfile = async (req, res) => {
 // Cập nhật user
 exports.updateUser = async (req, res) => {
   try {
-    const { password, avatar, avatar_url, ...updateData } = req.body;
+    const { password, avatar, avatar_url, role, ...updateData } = req.body;
+
+    // Kiểm tra quyền - chỉ admin mới được cập nhật role
+    if (role && req.user.role !== 'admin') {
+      return res.status(403).json({ 
+        message: "Bạn không có quyền thay đổi role của người dùng" 
+      });
+    }
+
+    // Validate role nếu có
+    if (role && !['admin', 'customer', 'user'].includes(role)) {
+      return res.status(400).json({ 
+        message: "Role không hợp lệ. Role phải là: admin, customer, hoặc user" 
+      });
+    }
+
+    // Không cho phép admin tự hạ cấp chính mình
+    if (role && req.params.id === req.user.userId && role !== 'admin') {
+      return res.status(400).json({ 
+        message: "Bạn không thể hạ cấp chính mình" 
+      });
+    }
 
     if (password) {
       updateData.password = await bcrypt.hash(password, 10);
@@ -311,6 +419,7 @@ exports.updateUser = async (req, res) => {
       {
         $set: {
           ...updateData,
+          role: role || undefined,
           avatar: avatar || null,
           avatar_url: avatar_url || "",
         },
@@ -324,10 +433,13 @@ exports.updateUser = async (req, res) => {
       return res.status(404).json({ message: "Không tìm thấy user" });
     }
 
-    await checkAndUpdateBanStatus(user);
-    res.status(200).json({ message: "Cập nhật user thành công", user });
+    res.status(200).json({ 
+      message: "Cập nhật user thành công", 
+      user,
+      roleUpdated: !!role 
+    });
   } catch (error) {
-    logger.error(`Update user error: ${error.message}`);
+    console.error(`Update user error: ${error.message}`);
     res.status(500).json({ message: "Lỗi server", error: error.message });
   }
 };
@@ -366,7 +478,7 @@ exports.changePassword = async (req, res) => {
 
     res.status(200).json({ message: "Đổi mật khẩu thành công" });
   } catch (error) {
-    logger.error(`Change password error: ${error.message}`);
+    console.error(`Change password error: ${error.message}`);
     res.status(500).json({ message: "Lỗi server", error: error.message });
   }
 };
@@ -380,6 +492,20 @@ exports.blockUser = async (req, res, next) => {
     }
 
     const { isBanned, bannedUntil, reason } = req.body;
+
+    // Kiểm tra quyền - chỉ admin mới được ban user
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ 
+        message: "Bạn không có quyền khóa/mở khóa người dùng" 
+      });
+    }
+
+    // Không cho phép admin tự ban chính mình
+    if (id === req.user.userId) {
+      return res.status(400).json({ 
+        message: "Bạn không thể khóa chính mình" 
+      });
+    }
 
     const banData = {
       isBanned: isBanned === true,
@@ -401,9 +527,9 @@ exports.blockUser = async (req, res, next) => {
         io.to(id).emit("banned", {
           message: `Tài khoản của bạn đã bị khóa${banData.bannedUntil ? ` đến ${new Date(banData.bannedUntil).toLocaleString("vi-VN")}` : " vĩnh viễn"}${banData.reason ? ` vì: ${banData.reason}` : ""}`,
         });
-        logger.info(`WebSocket: Sent banned event to user ${id}`);
+        console.log(`WebSocket: Sent banned event to user ${id}`);
       } else {
-        logger.warn("WebSocket: io not initialized");
+        console.warn("WebSocket: io not initialized");
       }
     }
 
@@ -412,8 +538,59 @@ exports.blockUser = async (req, res, next) => {
       user,
     });
   } catch (error) {
-    logger.error(`Block user error: ${error.message}`);
+    console.error(`Block user error: ${error.message}`);
     next(error);
+  }
+};
+
+// Cập nhật role cho user
+exports.updateUserRole = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { role } = req.body;
+
+    // Kiểm tra quyền - chỉ admin mới được cập nhật role
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ 
+        message: "Bạn không có quyền thay đổi role của người dùng" 
+      });
+    }
+
+    // Validate role
+    if (!role || !['admin', 'customer', 'user'].includes(role)) {
+      return res.status(400).json({ 
+        message: "Role không hợp lệ. Role phải là: admin, customer, hoặc user" 
+      });
+    }
+
+    // Không cho phép admin tự hạ cấp chính mình
+    if (id === req.user.userId && role !== 'admin') {
+      return res.status(400).json({ 
+        message: "Bạn không thể hạ cấp chính mình" 
+      });
+    }
+
+    const user = await User.findByIdAndUpdate(
+      id,
+      { role },
+      { new: true, runValidators: true }
+    )
+      .select("-password")
+      .populate("avatar");
+
+    if (!user) {
+      return res.status(404).json({ message: "Không tìm thấy người dùng" });
+    }
+
+    res.status(200).json({
+      message: `Đã cập nhật role của người dùng thành ${role}`,
+      user,
+      previousRole: user.role,
+      newRole: role
+    });
+  } catch (error) {
+    console.error(`Update user role error: ${error.message}`);
+    res.status(500).json({ message: "Lỗi server", error: error.message });
   }
 };
 
@@ -426,7 +603,7 @@ exports.deleteUser = async (req, res) => {
     }
     res.status(200).json({ message: "Xóa user thành công" });
   } catch (error) {
-    logger.error(`Delete user error: ${error.message}`);
+    console.error(`Delete user error: ${error.message}`);
     res.status(500).json({ message: "Lỗi server", error: error.message });
   }
 };
@@ -466,7 +643,7 @@ exports.login = async (req, res) => {
       token,
     });
   } catch (error) {
-    logger.error(`Login error: ${error.message}`);
+    console.error(`Login error: ${error.message}`);
     res.status(500).json({ message: "Lỗi server", error: error.message });
   }
 };
@@ -487,7 +664,7 @@ exports.getAvatar = async (req, res) => {
 
     res.status(200).json({ avatar_url: user.avatar_url });
   } catch (error) {
-    logger.error(`Get avatar error: ${error.message}`);
+    console.error(`Get avatar error: ${error.message}`);
     res.status(500).json({ message: "Lỗi server", error: error.message });
   }
 };
@@ -525,7 +702,7 @@ exports.updateAvatar = async (req, res) => {
       user,
     });
   } catch (error) {
-    logger.error(`Update avatar error: ${error.message}`);
+    console.error(`Update avatar error: ${error.message}`);
     res.status(500).json({ message: "Lỗi server", error: error.message });
   }
 };
@@ -557,90 +734,11 @@ exports.getCurrentUser = async (req, res, next) => {
 
     res.status(200).json(user);
   } catch (error) {
-    logger.error(`Get current user error: ${error.message}`);
+    console.error(`Get current user error: ${error.message}`);
     next(error);
   }
 };
 
-// Lấy Supabase token
-exports.getSupabaseToken = async (req, res) => {
-  try {
-    const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return res.status(401).json({ message: 'Header Authorization không hợp lệ' });
-    }
-
-    const token = authHeader.split(' ')[1];
-    if (!token) {
-      return res.status(401).json({ message: 'Chưa đăng nhập' });
-    }
-
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    if (!decoded.userId) {
-      return res.status(400).json({ message: 'Token không chứa userId' });
-    }
-
-    const user = await User.findById(decoded.userId).populate('avatar');
-    if (!user) {
-      return res.status(404).json({ message: 'Không tìm thấy người dùng' });
-    }
-
-    await checkAndUpdateBanStatus(user);
-
-    if (user.ban?.isBanned) {
-      return res.status(403).json({
-        message: `Tài khoản của bạn đã bị khóa${user.ban.bannedUntil ? ` đến ${user.ban.bannedUntil.toLocaleString('vi-VN')}` : ' vĩnh viễn'}${user.ban.reason ? ` vì: ${user.ban.reason}` : ''}`,
-      });
-    }
-
-    // Kiểm tra user trong Supabase
-    console.log('Checking Supabase user:', user.email);
-    let { data: supabaseUser, error: userError } = await supabase.auth.admin.getUserByEmail(user.email);
-    if (userError || !supabaseUser) {
-      console.log('Creating new Supabase user:', user.email);
-      const { data: newUser, error: createError } = await supabase.auth.admin.createUser({
-        email: user.email,
-        user_metadata: { id: decoded.userId, name: user.name },
-      });
-      if (createError) {
-        console.error('Create Supabase user error:', createError.message);
-        throw new Error(`Lỗi tạo user trong Supabase: ${createError.message}`);
-      }
-      supabaseUser = newUser;
-    }
-
-    // Tạo access_token và refresh_token
-    console.log('Generating Supabase token for user:', decoded.userId);
-    const { data: session, error: tokenError } = await supabase.auth.admin.signInWithEmail({
-      email: user.email,
-    });
-    if (tokenError) {
-      console.error('Supabase token error:', tokenError.message);
-      throw new Error(`Lỗi tạo token Supabase: ${tokenError.message}`);
-    }
-
-    res.status(200).json({
-      message: 'Tạo token Supabase thành công',
-      supabaseToken: {
-        access_token: session.session.access_token,
-        refresh_token: session.session.refresh_token,
-      },
-      user: {
-        id: user._id,
-        email: user.email,
-        role: user.role,
-        name: user.name,
-        avatar_url: user.avatar_url,
-      },
-    });
-  } catch (error) {
-    console.error('Supabase token error:', error.message);
-    if (error.name === 'TokenExpiredError') {
-      return res.status(401).json({ message: 'Token đã hết hạn' });
-    }
-    res.status(500).json({ message: 'Lỗi server', error: error.message });
-  }
-};
 // Upload ảnh lên Cloudinary
 exports.uploadImage = async (req, res) => {
   try {
@@ -655,10 +753,18 @@ exports.uploadImage = async (req, res) => {
       return res.status(401).json({ message: 'Token không chứa userId hợp lệ' });
     }
 
+    // Kiểm tra file upload
     if (!req.file) {
       return res.status(400).json({ message: 'Vui lòng cung cấp file ảnh' });
     }
 
+    console.log('File buffer:', req.file.buffer.length, 'bytes');
+    console.log('Cloudinary config:', {
+      cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+      upload_preset: process.env.CLOUDINARY_UPLOAD_PRESET
+    });
+
+    // Upload ảnh lên Cloudinary
     const result = await new Promise((resolve, reject) => {
       const stream = cloudinary.uploader.upload_stream(
         {
@@ -673,18 +779,21 @@ exports.uploadImage = async (req, res) => {
       streamifier.createReadStream(req.file.buffer).pipe(stream);
     });
 
+    console.log('Cloudinary response:', result);
+
     res.status(200).json({
       message: 'Upload ảnh thành công',
       image_url: result.secure_url
     });
   } catch (error) {
-    logger.error(`Cloudinary upload error: ${error.message}`);
+    console.error('Cloudinary upload error:', error);
     res.status(500).json({ message: 'Lỗi upload ảnh', error: error.message });
   }
 };
 
 // Tạo tin nhắn
 exports.sendMessage = async (req, res) => {
+  console.log('Running sendMessage version: 2025-08-04');
   try {
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -707,10 +816,18 @@ exports.sendMessage = async (req, res) => {
       return res.status(400).json({ message: 'Vui lòng cung cấp receiver_id và nội dung hoặc ảnh' });
     }
 
-    const receiver = await User.findById(receiver_id);
-    if (!receiver) {
-      return res.status(404).json({ message: 'Không tìm thấy người nhận' });
+    if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      console.error('Missing Supabase configuration:', {
+        SUPABASE_URL: process.env.SUPABASE_URL,
+        SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY
+      });
+      return res.status(500).json({ message: 'Lỗi cấu hình Supabase' });
     }
+
+    const supabase = createClient(
+      process.env.SUPABASE_URL,
+      process.env.SUPABASE_SERVICE_ROLE_KEY
+    );
 
     const { data, error } = await supabase
       .from('messages')
@@ -725,7 +842,7 @@ exports.sendMessage = async (req, res) => {
       .select();
 
     if (error) {
-      logger.error(`Supabase insert error: ${error.message}`);
+      console.error('Supabase insert error:', error);
       return res.status(500).json({ message: 'Lỗi gửi tin nhắn', error: error.message });
     }
 
@@ -734,13 +851,14 @@ exports.sendMessage = async (req, res) => {
       data
     });
   } catch (error) {
-    logger.error(`Send message error: ${error.message}`);
+    console.error('Send message error:', error);
     res.status(500).json({ message: 'Lỗi server', error: error.message });
   }
 };
 
 // Lấy tin nhắn
 exports.getMessages = async (req, res) => {
+  console.log('Running getMessages version: 2025-08-07');
   try {
     if (!req.user?.userId) {
       return res.status(401).json({ message: 'Không có thông tin người dùng từ middleware' });
@@ -748,6 +866,7 @@ exports.getMessages = async (req, res) => {
 
     const user = await User.findById(req.user.userId);
     if (!user) {
+      console.error('User not found for ID:', req.user.userId);
       return res.status(404).json({ message: 'Không tìm thấy người dùng' });
     }
 
@@ -756,35 +875,44 @@ exports.getMessages = async (req, res) => {
       return res.status(400).json({ message: 'Vui lòng cung cấp receiver_id' });
     }
 
-    const receiver = await User.findById(receiver_id);
-    if (!receiver) {
-      return res.status(404).json({ message: 'Không tìm thấy người nhận' });
+    if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      console.error('Missing Supabase configuration:', {
+        SUPABASE_URL: process.env.SUPABASE_URL,
+        SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY
+      });
+      return res.status(500).json({ message: 'Lỗi cấu hình Supabase' });
     }
 
+    const supabase = createClient(
+      process.env.SUPABASE_URL,
+      process.env.SUPABASE_SERVICE_ROLE_KEY
+    );
+
+    // Lấy tin nhắn giữa user hiện tại và receiver_id
     const { data, error } = await supabase
       .from('messages')
-      .select('id, content, image_url, created_at, sender_id, receiver_id, sender_name, sender_avatar_url')
+      .select('id, sender_id, receiver_id, content, image_url, created_at, sender_name, sender_avatar_url')
       .or(
         `and(sender_id.eq.${req.user.userId},receiver_id.eq.${receiver_id}),` +
         `and(sender_id.eq.${receiver_id},receiver_id.eq.${req.user.userId})`
       )
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: true });
 
     if (error) {
-      logger.error(`Supabase fetch error: ${error.message}`);
+      console.error('Supabase fetch error:', error);
       return res.status(500).json({ message: 'Lỗi lấy tin nhắn', error: error.message });
     }
 
-    const messages = data.map((message) => ({
+    const messages = data.map(message => ({
       _id: message.id,
       text: message.content || '',
       image: message.image_url || null,
-      createdAt: message.created_at,
+      createdAt: new Date(message.created_at),
       user: {
         _id: message.sender_id,
-        name: message.sender_name || 'Unknown User',
-        avatar: message.sender_avatar_url || `https://api.dicebear.com/9.x/avataaars/svg?seed=${message.sender_id}`,
-      },
+        name: message.sender_id === req.user.userId ? user.name : message.sender_name || 'Other User',
+        avatar: message.sender_id === req.user.userId ? user.avatar_url : message.sender_avatar_url || ''
+      }
     }));
 
     res.status(200).json({
@@ -792,7 +920,7 @@ exports.getMessages = async (req, res) => {
       messages
     });
   } catch (error) {
-    logger.error(`Get messages error: ${error.message}`);
+    console.error('Get messages error:', error);
     res.status(500).json({ message: 'Lỗi server', error: error.message });
   }
 };
@@ -800,43 +928,51 @@ exports.getMessages = async (req, res) => {
 // Lấy danh sách cuộc trò chuyện
 exports.getConversations = async (req, res) => {
   try {
-    const adminId = req.user.userId;
+    const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
+    const adminId = req.user.userId; // Từ JWT (authMiddleware)
 
+    // Lấy tất cả tin nhắn liên quan đến admin từ Supabase
     const { data: messages, error: messagesError } = await supabase
       .from('messages')
-      .select('id, content, image_url, created_at, sender_id, receiver_id, sender_name, sender_avatar_url')
+      .select('id, content, image_url, created_at, sender_id, receiver_id')
       .or(`sender_id.eq.${adminId},receiver_id.eq.${adminId}`)
       .order('created_at', { ascending: false });
 
     if (messagesError) {
-      logger.error(`Supabase fetch conversations error: ${messagesError.message}`);
+      console.error('Supabase fetch error:', messagesError);
       throw new Error(messagesError.message);
     }
 
+    // Lấy danh sách user duy nhất (không phải admin)
     const userIds = new Set(messages.map((msg) =>
       msg.sender_id === adminId ? msg.receiver_id : msg.sender_id
     ));
 
+    // Lấy thông tin user từ MongoDB và tin nhắn mới nhất từ Supabase
     const users = await Promise.all(
       Array.from(userIds).map(async (userId) => {
         try {
+          // Lấy user từ MongoDB
           const user = await User.findById(userId);
           if (!user || !['user', 'customer'].includes(user.role)) {
             return null;
           }
 
+          // Lấy tin nhắn mới nhất giữa admin và user
           const { data: latestMessage, error: messageError } = await supabase
             .from('messages')
-            .select('id, content, image_url, created_at, sender_id, receiver_id, sender_name, sender_avatar_url')
-            .or(`sender_id.eq.${userId},receiver_id.eq.${userId}`)
-            .or(`sender_id.eq.${adminId},receiver_id.eq.${adminId}`)
+            .select('id, content, image_url, created_at, sender_id, receiver_id')
+            .or(
+              `and(sender_id.eq.${userId},receiver_id.eq.${adminId}),` +
+              `and(sender_id.eq.${adminId},receiver_id.eq.${userId})`
+            )
             .order('created_at', { ascending: false })
             .limit(1)
             .single();
 
           if (messageError) {
-            logger.error(`Supabase fetch latest message error: ${messageError.message}`);
-            throw new Error(messageError.message);
+            console.error(`Error fetching latest message for user ${userId}:`, messageError);
+            return null;
           }
 
           return {
@@ -857,24 +993,25 @@ exports.getConversations = async (req, res) => {
                   createdAt: latestMessage.created_at,
                   user: {
                     _id: userId,
-                    name: latestMessage.sender_name || user.name,
-                    avatar: latestMessage.sender_avatar_url || user.avatar_url || ''
+                    name: user.name,
+                    avatar: user.avatar_url || ''
                   }
                 }
               : undefined
           };
         } catch (error) {
-          logger.error(`Lỗi khi lấy dữ liệu cho user ${userId}: ${error.message}`);
+          console.error(`Lỗi khi lấy dữ liệu cho user ${userId}:`, error);
           return null;
         }
       })
     );
 
+    // Lọc bỏ null
     const filteredUsers = users.filter(user => user !== null);
 
     res.status(200).json({ message: 'Lấy danh sách cuộc trò chuyện thành công', data: filteredUsers });
   } catch (error) {
-    logger.error(`Get conversations error: ${error.message}`);
+    console.error(`Get conversations error: ${error.message}`);
     res.status(500).json({ message: 'Lỗi server', error: error.message });
   }
 };
