@@ -82,6 +82,10 @@ const userSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+    supabase_user_id: {
+      type: String,
+      default: null,
+    },
   },
   {
     timestamps: true,
