@@ -124,8 +124,9 @@ const LayoutAdmin = () => {
                   >
                     {item.icon}
                     <span>{item.label}</span>
+                    {/* Hiển thị chấm đỏ nếu là menu Thông báo và có đơn hàng mới */}
                     {item.path === "/notify" && newOrderCount > 0 && (
-                      <span className="menu-badge">{newOrderCount}</span>
+                      <span className="menu-dot"></span>
                     )}
                   </Link>
                 </li>

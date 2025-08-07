@@ -1,5 +1,6 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { useOrderNotify } from '../contexts/OrderNotifyContext';
+import api from '../configs/api';
 
 interface Order {
   _id: string;
@@ -24,13 +25,9 @@ export const useOrderNotification = () => {
 
   const checkForNewOrders = useCallback(async () => {
     try {
-      const res = await fetch("http://localhost:3000/api/orders");
-      if (!res.ok) {
-        console.error('Failed to fetch orders:', res.status);
-        return;
-      }
-      
-      const data = await res.json();
+      console.log('🔍 Checking for new orders...');
+      const response = await api.get("/orders");
+      const data = response.data.data?.orders || response.data.data || response.data; // Handle nested structure
       
       if (Array.isArray(data) && data.length > 0) {
         // Sắp xếp theo thời gian tạo mới nhất
@@ -42,7 +39,7 @@ export const useOrderNotification = () => {
         
         // Kiểm tra nếu có đơn hàng mới
         if (newest && lastCheckedOrderId && newest._id !== lastCheckedOrderId) {
-          console.log('New order detected:', newest.order_code);
+          console.log('✅ New order detected:', newest.order_code);
           setLatestOrder(newest);
           setShowToast(true);
           
@@ -50,6 +47,11 @@ export const useOrderNotification = () => {
           setTimeout(() => {
             setShowToast(false);
           }, 8000);
+        } else if (newest && !lastCheckedOrderId) {
+          // Lần đầu tiên - chỉ cập nhật ID, không hiển thị notification
+          console.log('🔄 First time checking orders, setting initial ID:', newest._id);
+        } else if (newest && lastCheckedOrderId && newest._id === lastCheckedOrderId) {
+          console.log('ℹ️ No new orders detected');
         }
         
         // Cập nhật ID đơn hàng cuối cùng đã kiểm tra
@@ -60,6 +62,11 @@ export const useOrderNotification = () => {
         // Đếm số đơn hàng chờ xử lý
         const pendingOrders = data.filter((order: Order) => order.status === "Chờ xử lý");
         setNewOrderCount(pendingOrders.length);
+        console.log('📊 Orders summary:', {
+          total: data.length,
+          pending: pendingOrders.length,
+          lastCheckedId: lastCheckedOrderId
+        });
       }
     } catch (error) {
       console.error('Error checking for new orders:', error);
@@ -81,6 +88,12 @@ export const useOrderNotification = () => {
     }
   }, []);
 
+  // Function để force trigger notification (cho testing)
+  const forceTriggerNotification = useCallback(async () => {
+    console.log('🔧 Force triggering notification check...');
+    await checkForNewOrders();
+  }, [checkForNewOrders]);
+
   useEffect(() => {
     startOrderChecking();
 
@@ -93,6 +106,7 @@ export const useOrderNotification = () => {
     checkForNewOrders,
     startOrderChecking,
     stopOrderChecking,
-    resetOrderChecking
+    resetOrderChecking,
+    forceTriggerNotification
   };
 }; 
