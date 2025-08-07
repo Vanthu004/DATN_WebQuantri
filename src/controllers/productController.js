@@ -1056,3 +1056,110 @@ exports.getHomeData = async (req, res) => {
     });
   }
 };
+
+// Thống kê kho hàng
+exports.getInventoryStats = async (req, res) => {
+  try {
+    // Tính tổng số lượng sản phẩm còn trong kho
+    const inventoryStats = await Product.aggregate([
+      {
+        $group: {
+          _id: null,
+          totalProducts: { $sum: 1 },
+          totalQuantity: { $sum: { $ifNull: ["$stock_quantity", 0] } },
+          lowStockProducts: {
+            $sum: {
+              $cond: [
+                { $lte: [{ $ifNull: ["$stock_quantity", 0] }, 10] }, // Sản phẩm có số lượng <= 10
+                1,
+                0
+              ]
+            }
+          },
+          outOfStockProducts: {
+            $sum: {
+              $cond: [
+                { $eq: [{ $ifNull: ["$stock_quantity", 0] }, 0] }, // Sản phẩm hết hàng
+                1,
+                0
+              ]
+            }
+          },
+          totalValue: {
+            $sum: { $multiply: [{ $ifNull: ["$stock_quantity", 0] }, { $ifNull: ["$price", 0] }] }
+          }
+        }
+      }
+    ]);
+
+    // Lấy top 5 sản phẩm sắp hết hàng
+    const lowStockProducts = await Product.find({ stock_quantity: { $lte: 10, $gt: 0 } })
+      .select('name stock_quantity price category_id')
+      .sort({ stock_quantity: 1 })
+      .limit(5);
+
+    // Lấy top 5 sản phẩm hết hàng
+    const outOfStockProducts = await Product.find({ stock_quantity: 0 })
+      .select('name price category_id')
+      .limit(5);
+
+    // Lấy tất cả sản phẩm với thông tin chi tiết
+    const allProducts = await Product.find({})
+      .select('name stock_quantity price category_id')
+      .sort({ stock_quantity: 1, name: 1 });
+
+    // Lấy thống kê theo danh mục
+    const categoryStats = await Product.aggregate([
+      {
+        $lookup: {
+          from: "categories",
+          localField: "category_id",
+          foreignField: "_id",
+          as: "category"
+        }
+      },
+      {
+        $unwind: {
+          path: "$category",
+          preserveNullAndEmptyArrays: true
+        }
+      },
+      {
+        $group: {
+          _id: "$category.name",
+          count: { $sum: 1 },
+          totalQuantity: { $sum: { $ifNull: ["$stock_quantity", 0] } },
+          totalValue: { $sum: { $multiply: [{ $ifNull: ["$stock_quantity", 0] }, { $ifNull: ["$price", 0] }] } }
+        }
+      },
+      {
+        $sort: { totalQuantity: -1 }
+      }
+    ]);
+
+    const stats = inventoryStats[0] || {
+      totalProducts: 0,
+      totalQuantity: 0,
+      lowStockProducts: 0,
+      outOfStockProducts: 0,
+      totalValue: 0
+    };
+
+    res.status(200).json({
+      message: "Lấy thống kê kho hàng thành công",
+      stats: {
+        ...stats,
+        lowStockProductsList: lowStockProducts,
+        outOfStockProductsList: outOfStockProducts,
+        allProductsList: allProducts,
+        categoryStats: categoryStats
+      }
+    });
+  } catch (error) {
+    console.error("Error getting inventory stats:", error);
+    res.status(500).json({ 
+      message: "Lỗi server", 
+      error: error.message 
+    });
+  }
+};

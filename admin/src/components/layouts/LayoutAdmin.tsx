@@ -1,25 +1,34 @@
 import { Link, Outlet, useNavigate, useLocation } from "react-router-dom";
 import {
-  FaTachometerAlt,
   FaUser,
   FaProductHunt,
   FaList,
   FaShoppingCart,
   FaBook, // Thêm biểu tượng cho Guides
+  FaChartBar, // Thêm biểu tượng cho Thống kê
+  FaWarehouse, // Thêm biểu tượng cho Kho hàng
 } from "react-icons/fa";
 import { MdOutlineNotificationsActive } from "react-icons/md";
 import { RiDiscountPercentFill } from "react-icons/ri";
 import { BiSolidCommentDetail } from "react-icons/bi";
 import { AiFillSetting } from "react-icons/ai";
 import "../../css/layouts/layoutAdmin.css";
+import "../../css/notify/orderToast.css";
 import logo from '../../assets/LogoSwear.png';
 import { useOrderNotify } from "../../contexts/OrderNotifyContext";
+import { useOrderNotification } from "../../hooks/useOrderNotification";
+import OrderToast from "../OrderToast";
 
 const menuItems = [
   {
     path: "/",
-    icon: <FaTachometerAlt />,
-    label: "Bảng điều khiển",
+    icon: <FaChartBar />,
+    label: "Thống kê",
+  },
+  {
+    path: "/inventory",
+    icon: <FaWarehouse />,
+    label: "Kho hàng",
   },
   {
     path: "/notify",
@@ -81,15 +90,34 @@ const menuItems = [
 const LayoutAdmin = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { newOrderCount } = useOrderNotify();
+  const { newOrderCount, latestOrder, showToast, setShowToast } = useOrderNotify();
+  
+  // Khởi tạo hook để kiểm tra đơn hàng mới
+  useOrderNotification();
 
   const handleLogout = () => {
     localStorage.removeItem("token");
     navigate("/login");
   };
 
+  const handleViewOrder = (orderId: string) => {
+    navigate(`/orders/${orderId}`);
+  };
+
+  const handleCloseToast = () => {
+    setShowToast(false);
+  };
+
   return (
     <div className="layout-container">
+      {/* Order Toast Notification */}
+      <OrderToast
+        order={latestOrder}
+        isVisible={showToast}
+        onClose={handleCloseToast}
+        onViewOrder={handleViewOrder}
+      />
+
       {/* Header */}
       <header className="layout-header">
         <Link to="/" className="logo-section">
@@ -118,9 +146,9 @@ const LayoutAdmin = () => {
                   >
                     {item.icon}
                     <span>{item.label}</span>
-                    {/* Hiển thị badge nếu là menu Thông báo và có số mới > 0 */}
+                    {/* Hiển thị chấm đỏ nếu là menu Thông báo và có đơn hàng mới */}
                     {item.path === "/notify" && newOrderCount > 0 && (
-                      <span className="menu-badge">{newOrderCount}</span>
+                      <span className="menu-dot"></span>
                     )}
                   </Link>
                 </li>

@@ -4,7 +4,6 @@ import { getAllUsers } from "../../services/user";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import "../../css/voucher/addVoucher.css";
-
 const AddVoucher = () => {
   const navigate = useNavigate();
 
@@ -56,9 +55,9 @@ const AddVoucher = () => {
       toast.warning("Vui lòng nhập đầy đủ thông tin");
       return;
     }
-
     const payload: any = {
       title,
+
       discount_value: discountValue,
       usage_limit: usageLimit,
       expiry_date: expiryDate,
