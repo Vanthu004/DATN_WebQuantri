@@ -3,10 +3,15 @@ import api from "../configs/api";
 export interface VoucherData {
   _id?: string;
   voucher_id?: string;
+  title?: string; 
   discount_value: number;
   usage_limit: number;
   expiry_date: string;
-  User_id?: { _id: string; name?: string; email?: string } | string | null;
+  User_id?: {
+    _id: string;
+    name?: string; 
+    email?: string;
+  } | string | null;
   used_count?: number;
   status?: "active" | "inactive" | "expired";
 }
