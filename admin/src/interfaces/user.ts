@@ -1,3 +1,4 @@
+//DATN_WebQuantri/admin/src/interfaces/user.ts
 import Upload from "./upload";
 
 export default interface User {
