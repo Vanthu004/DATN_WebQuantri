@@ -237,14 +237,14 @@ exports.getSupabaseToken = async (req, res) => {
         iat: Math.floor(Date.now() / 1000),
         exp: Math.floor(Date.now() / 1000) + 60 * 60, // Hết hạn sau 1 giờ
       },
-      process.env.SUPABASE_SERVICE_ROLE_KEY,
+      process.env.SUPABASE_JWT_SECRET, // Sử dụng JWT Secret từ Supabase
       { algorithm: 'HS256' }
     );
 
     // Tạo refresh_token
     const refreshToken = jwt.sign(
       { sub: user.supabase_user_id, type: 'refresh' },
-      process.env.SUPABASE_SERVICE_ROLE_KEY,
+      process.env.SUPABASE_JWT_SECRET, // Sử dụng JWT Secret từ Supabase
       { algorithm: 'HS256', expiresIn: '7d' }
     );
 
@@ -783,7 +783,7 @@ exports.uploadImage = async (req, res) => {
 
     res.status(200).json({
       message: 'Upload ảnh thành công',
-      image_url: result.secure_url
+      imageUrl: result.secure_url
     });
   } catch (error) {
     console.error('Cloudinary upload error:', error);
@@ -819,7 +819,7 @@ exports.sendMessage = async (req, res) => {
     if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
       console.error('Missing Supabase configuration:', {
         SUPABASE_URL: process.env.SUPABASE_URL,
-        SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY
+        SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
       });
       return res.status(500).json({ message: 'Lỗi cấu hình Supabase' });
     }
@@ -837,9 +837,10 @@ exports.sendMessage = async (req, res) => {
         content: content || null,
         image_url: image_url || null,
         sender_name: user.name,
-        sender_avatar_url: user.avatar_url || null
+        sender_avatar_url: user.avatar_url || null,
       })
-      .select();
+      .select()
+      .single(); // Trả về object thay vì mảng
 
     if (error) {
       console.error('Supabase insert error:', error);
@@ -848,7 +849,17 @@ exports.sendMessage = async (req, res) => {
 
     res.status(201).json({
       message: 'Gửi tin nhắn thành công',
-      data
+      data: {
+        _id: data.id,
+        text: data.content,
+        image: data.image_url,
+        createdAt: data.created_at,
+        user: {
+          _id: user._id,
+          name: user.name,
+          avatar: user.avatar_url || '',
+        },
+      },
     });
   } catch (error) {
     console.error('Send message error:', error);

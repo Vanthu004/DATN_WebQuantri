@@ -1,7 +1,7 @@
 import { Route, Routes } from "react-router-dom";
 import "./App.css";
 import PageNotFound from "./pages/PageNotFound";
-import Dashboard from "./pages/statics/Dashboard";
+//import Dashboard from "./pages/statics/Dashboard";
 import LayoutAdmin from "./components/layouts/LayoutAdmin";
 import ListProduct from "./pages/products/ListProduct";
 import ListCategory from "./pages/categories/ListCategory";
@@ -42,7 +42,7 @@ function App() {
         {/* Private routes */}
         <Route element={<PrivateRouter />}>
           <Route element={<LayoutAdmin />}>
-            <Route path="/" index element={<Dashboard />} />
+           
             <Route path="/notify" element={<Notify />} />
             <Route path="/vouchers" element={<Vouchers />} />
             <Route path="/addvouchers" element={<AddVoucher />} />
@@ -83,7 +83,7 @@ function App() {
             <Route path="/guides" element={<Guides />} />
             {/* Thêm route mới cho Support */}
             <Route path="/support" element={<Support />} />
-            <Route path="/support/:userId" element={<Chat />} />
+            <Route path="/chat/:userId" element={<Chat />} />
           </Route>
         </Route>
         {/* Public path */}
