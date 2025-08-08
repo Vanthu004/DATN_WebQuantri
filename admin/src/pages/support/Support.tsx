@@ -6,6 +6,7 @@ import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/supabase';
 import { blockUser } from '../../services/user';
+import { Loader2 } from 'lucide-react';
 
 interface User {
   _id: string;
@@ -24,6 +25,7 @@ interface Message {
 
 interface UserWithMessages extends User {
   latestMessage?: Message;
+  unreadCount?: number;
 }
 
 interface ConversationsResponse {
@@ -54,6 +56,7 @@ const Support = () => {
         if (!token) {
           toast.error('Vui lòng đăng nhập lại');
           console.log('No token found in localStorage');
+          navigate('/login');
           return;
         }
         console.log('Fetching supabase-token with URL:', `${import.meta.env.VITE_API_URL}/supabase-token`);
@@ -61,59 +64,74 @@ const Support = () => {
           `${import.meta.env.VITE_API_URL}/supabase-token`,
           {
             headers: { Authorization: `Bearer ${token}` },
+            validateStatus: (status) => status >= 200 && status < 500,
           }
         );
+
+        if (typeof response.data !== 'object' || !response.data.user?.id) {
+          throw new Error('Invalid response format from supabase-token API');
+        }
+
         console.log('Supabase token response:', response.data);
         setUserId(response.data.user.id);
-        const { error } = await supabase.auth.setSession({
-          access_token: response.data.supabaseToken.access_token,
-          refresh_token: response.data.supabaseToken.refresh_token,
-        });
-        if (error) {
-          throw new Error(`Supabase setSession error: ${error.message}`);
-        }
+        // Bỏ setSession để tránh lỗi JWT
       } catch (error: unknown) {
         const axiosError = error as AxiosError<ErrorResponse>;
         console.error('Fetch user error:', axiosError.response?.data || axiosError.message);
         toast.error('Lỗi lấy thông tin người dùng: ' + (axiosError.response?.data?.message || axiosError.message));
+        if (axiosError.response?.status === 401 || axiosError.response?.status === 403) {
+          localStorage.removeItem('token');
+          navigate('/login');
+        }
       } finally {
         setLoading(false);
       }
     };
     if (token) fetchUser();
-  }, [token]);
+  }, [token, navigate]);
 
   // Lấy danh sách cuộc trò chuyện
-  useEffect(() => {
-    const fetchConversations = async () => {
-      try {
-        if (!token) {
-          toast.error('Vui lòng đăng nhập lại');
-          return;
-        }
-        console.log('Fetching conversations with URL:', `${import.meta.env.VITE_API_URL}/api/users/messages/conversations`);
-        const response = await axios.get<ConversationsResponse>(
-          `${import.meta.env.VITE_API_URL}/api/users/messages/conversations`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
-        console.log('Conversations response:', response.data);
-        setConversations(response.data.data);
-        setLoading(false);
-      } catch (error: unknown) {
-        const axiosError = error as AxiosError<ErrorResponse>;
-        console.error('Fetch conversations error:', axiosError.response?.data || axiosError.message);
-        toast.error('Lỗi lấy danh sách cuộc trò chuyện: ' + (axiosError.response?.data?.message || axiosError.message));
-        setLoading(false);
+  const fetchConversations = async () => {
+    try {
+      if (!token) {
+        toast.error('Vui lòng đăng nhập lại');
+        navigate('/login');
+        return;
       }
-    };
-    fetchConversations();
+      console.log('Fetching conversations with URL:', `${import.meta.env.VITE_API_URL}/messages/conversations`);
+      const response = await axios.get<ConversationsResponse>(
+        `${import.meta.env.VITE_API_URL}/messages/conversations`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+          validateStatus: (status) => status >= 200 && status < 500,
+        }
+      );
+
+      if (typeof response.data !== 'object' || !response.data.data) {
+        throw new Error('Invalid response format from conversations API');
+      }
+
+      console.log('Conversations response:', response.data);
+      setConversations(response.data.data);
+    } catch (error: unknown) {
+      const axiosError = error as AxiosError<ErrorResponse>;
+      console.error('Fetch conversations error:', axiosError.response?.data || axiosError.message);
+      toast.error('Lỗi lấy danh sách cuộc trò chuyện: ' + (axiosError.response?.data?.message || axiosError.message));
+      if (axiosError.response?.status === 401 || axiosError.response?.status === 403) {
+        localStorage.removeItem('token');
+        navigate('/login');
+      }
+    }
+  };
+
+  useEffect(() => {
+    if (token) fetchConversations();
   }, [token]);
 
   // Supabase Realtime: Cập nhật khi có tin nhắn mới
   useEffect(() => {
-    if (!userId) return;
+    if (!userId || !token) return;
+
     console.log('Subscribing to Supabase Realtime for userId:', userId);
     const channel = supabase
       .channel('messages')
@@ -125,27 +143,19 @@ const Support = () => {
           table: 'messages',
           filter: `receiver_id=eq.${userId}`,
         },
-        async () => {
+        async (payload) => {
+          console.log('New message:', payload.new);
           try {
-            if (!token) {
-              toast.error('Vui lòng đăng nhập lại');
-              return;
-            }
-            console.log('New message detected, fetching conversations');
-            const response = await axios.get<ConversationsResponse>(
-              `${import.meta.env.VITE_API_URL}/api/users/messages/conversations`,
-              {
-                headers: { Authorization: `Bearer ${token}` },
-              }
+            await fetchConversations();
+            setConversations((prev) =>
+              prev.map((conv) =>
+                conv._id === payload.new.sender_id
+                  ? { ...conv, unreadCount: (conv.unreadCount || 0) + 1 }
+                  : conv
+              )
             );
-            console.log('Updated conversations:', response.data);
-            setConversations(response.data.data);
-          } catch (error: unknown) {
-            const axiosError = error as AxiosError<ErrorResponse>;
-            console.error(
-              'Error updating conversations:',
-              axiosError.response?.data?.message || axiosError.message
-            );
+          } catch (error) {
+            console.error('Error updating conversations:', error);
           }
         }
       )
@@ -162,19 +172,13 @@ const Support = () => {
     try {
       if (!token) {
         toast.error('Vui lòng đăng nhập lại');
+        navigate('/login');
         return;
       }
       console.log('Blocking user:', userId);
       await blockUser(userId, { isBanned: true, reason: 'Vi phạm quy định', bannedUntil: null }, token);
       toast.success('Chặn người dùng thành công');
-      const response = await axios.get<ConversationsResponse>(
-        `${import.meta.env.VITE_API_URL}/api/users/messages/conversations`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-      console.log('Updated conversations after block:', response.data);
-      setConversations(response.data.data);
+      await fetchConversations();
     } catch (error: unknown) {
       const axiosError = error as AxiosError<ErrorResponse>;
       console.error('Block user error:', axiosError.response?.data || axiosError.message);
@@ -183,49 +187,50 @@ const Support = () => {
   };
 
   return (
-    <div style={{ height: '600px' }}>
-      <h1 style={{ padding: '10px', fontSize: '24px' }}>Hỗ trợ người dùng</h1>
+    <div className="h-[600px] p-4 bg-gray-100">
+      <h1 className="text-2xl font-bold mb-4">Hỗ trợ người dùng</h1>
       {loading ? (
-        <p>Đang tải...</p>
+        <div className="flex justify-center items-center h-full">
+          <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+        </div>
+      ) : conversations.length === 0 ? (
+        <p className="text-gray-500 text-center">Không có cuộc trò chuyện nào.</p>
       ) : (
         <ConversationList>
-          {conversations.length === 0 ? (
-            <p>Không có cuộc trò chuyện nào.</p>
-          ) : (
-            conversations.map((conv) => (
-              <Conversation
-                key={conv._id}
-                name={conv.name}
-                lastSenderName={conv.latestMessage?.user.name}
-                info={
-                  conv.ban.isBanned
-                    ? `Bị khóa: ${conv.ban.reason || 'Không rõ lý do'}`
-                    : conv.latestMessage
-                    ? conv.latestMessage.text || 'Đã gửi một ảnh'
-                    : 'Chưa có tin nhắn'
-                }
-                lastActivityTime={
-                  conv.latestMessage ? new Date(conv.latestMessage.createdAt).toLocaleTimeString('vi-VN') : ''
-                }
-                onClick={() => navigate(`/chat/${conv._id}`)}
-              >
-                <Avatar src={conv.avatar_url || 'https://api.dicebear.com/9.x/avataaars/svg'} name={conv.name} />
-                {!conv.ban.isBanned && (
-                  <div style={{ marginLeft: '10px' }}>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleBlockUser(conv._id);
-                      }}
-                      style={{ color: 'red' }}
-                    >
-                      Chặn
-                    </button>
-                  </div>
-                )}
-              </Conversation>
-            ))
-          )}
+          {conversations.map((conv) => (
+            <Conversation
+              key={conv._id}
+              name={conv.name}
+              lastSenderName={conv.latestMessage?.user.name}
+              info={
+                conv.ban.isBanned
+                  ? `Bị khóa: ${conv.ban.reason || 'Không rõ lý do'}`
+                  : conv.latestMessage
+                  ? conv.latestMessage.text || 'Đã gửi một ảnh'
+                  : 'Chưa có tin nhắn'
+              }
+              lastActivityTime={
+                conv.latestMessage ? new Date(conv.latestMessage.createdAt).toLocaleTimeString('vi-VN') : ''
+              }
+              onClick={() => navigate(`/chat/${conv._id}`)}
+              unreadCnt={conv.unreadCount || 0}
+            >
+              <Avatar src={conv.avatar_url || 'https://api.dicebear.com/9.x/avataaars/svg'} name={conv.name} />
+              {!conv.ban.isBanned && (
+                <Conversation.Operations>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleBlockUser(conv._id);
+                    }}
+                    className="text-red-500 hover:text-red-700"
+                  >
+                    Chặn
+                  </button>
+                </Conversation.Operations>
+              )}
+            </Conversation>
+          ))}
         </ConversationList>
       )}
     </div>
