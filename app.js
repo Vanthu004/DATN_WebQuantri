@@ -7,6 +7,7 @@ const { Server } = require("socket.io");
 
 // Khởi tạo app và server
 const app = express();
+const path = require("path");
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
@@ -55,6 +56,7 @@ if (!process.env.JWT_SECRET) {
 app.use(cors());
 app.use(express.json());
 app.use("/uploads", express.static("uploads"));
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // ====== Định nghĩa các ROUTE ======
 app.use("/api/users", userRouter);
