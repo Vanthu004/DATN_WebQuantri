@@ -9,6 +9,7 @@ const upload = require("../middlewares/uploadMiddleware");
 
 // Supabase routes
 router.get('/supabase-token', authMiddleware, userController.getSupabaseToken);
+router.get('/admins', authMiddleware, userController.getAdmins);
 
 // Public routes
 router.post("/register", userController.createUser);
