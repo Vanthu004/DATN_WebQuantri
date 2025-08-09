@@ -20,11 +20,20 @@ exports.createReview = async (req, res) => {
       return res.status(400).json({ message: "Bạn đã đánh giá sản phẩm này rồi." });
     }
 
+    // ✅ Nếu có ảnh thì lưu đường dẫn
+    let image_url = "";
+    if (req.file) {
+      image_url = `${req.protocol}://${req.get("host")}/uploads/reviews/${req.file.filename}`;
+      console.log("req.file:", req.file);
+
+    }
+
     const review = new Review({
       user_id: new ObjectId(user_id),
       product_id: new ObjectId(product_id),
       rating,
       comment,
+      image_url,
       create_date: new Date(),
     });
 
@@ -40,6 +49,7 @@ exports.createReview = async (req, res) => {
     res.status(400).json({ message: error.message });
   }
 };
+
 
 // ✅ Lấy tất cả review hoặc theo product_id (bằng query param)
 exports.getReviews = async (req, res) => {
