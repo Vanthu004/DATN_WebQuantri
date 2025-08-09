@@ -1,0 +1,197 @@
+{
+  "summary": {
+    "total": 31,
+    "passed": 29,
+    "failed": 2,
+    "successRate": "93.5"
+  },
+  "timestamp": "2025-08-08T13:30:39.619Z",
+  "tests": [
+    {
+      "test": "Admin Login",
+      "status": "PASS",
+      "details": "Role: admin",
+      "timestamp": "2025-08-08T13:30:30.001Z"
+    },
+    {
+      "test": "User Login",
+      "status": "PASS",
+      "details": "Role: user",
+      "timestamp": "2025-08-08T13:30:30.103Z"
+    },
+    {
+      "test": "Admin Supabase Token",
+      "status": "PASS",
+      "details": "Token generated successfully",
+      "timestamp": "2025-08-08T13:30:30.197Z"
+    },
+    {
+      "test": "Supabase Token Structure",
+      "status": "PASS",
+      "details": "Contains access_token and refresh_token",
+      "timestamp": "2025-08-08T13:30:30.197Z"
+    },
+    {
+      "test": "Supabase User Info",
+      "status": "PASS",
+      "details": "Supabase ID: 479aa9be-7a9a-4aaf-9137-835609a8e2ac",
+      "timestamp": "2025-08-08T13:30:30.197Z"
+    },
+    {
+      "test": "User Supabase Token",
+      "status": "PASS",
+      "details": "User token generated successfully",
+      "timestamp": "2025-08-08T13:30:30.288Z"
+    },
+    {
+      "test": "Get Admins",
+      "status": "PASS",
+      "details": "Found 2 admin(s)",
+      "timestamp": "2025-08-08T13:30:30.379Z"
+    },
+    {
+      "test": "Admin Data Structure",
+      "status": "FAIL",
+      "details": "Missing required fields",
+      "timestamp": "2025-08-08T13:30:30.379Z"
+    },
+    {
+      "test": "Send Text Message",
+      "status": "PASS",
+      "details": "Message ID: 79",
+      "timestamp": "2025-08-08T13:30:31.150Z"
+    },
+    {
+      "test": "Image Upload",
+      "status": "PASS",
+      "details": "URL: https://res.cloudinary.com/du6cuhb3q/image/upload/...",
+      "timestamp": "2025-08-08T13:30:34.764Z"
+    },
+    {
+      "test": "Send Image Message",
+      "status": "PASS",
+      "details": "Image message sent successfully",
+      "timestamp": "2025-08-08T13:30:35.129Z"
+    },
+    {
+      "test": "Invalid Message Validation",
+      "status": "PASS",
+      "details": "Correctly rejected empty message",
+      "timestamp": "2025-08-08T13:30:35.219Z"
+    },
+    {
+      "test": "Get Messages",
+      "status": "PASS",
+      "details": "Retrieved 10 message(s)",
+      "timestamp": "2025-08-08T13:30:35.619Z"
+    },
+    {
+      "test": "Message Structure",
+      "status": "PASS",
+      "details": "Contains required fields",
+      "timestamp": "2025-08-08T13:30:35.619Z"
+    },
+    {
+      "test": "Message User Info",
+      "status": "PASS",
+      "details": "User info complete",
+      "timestamp": "2025-08-08T13:30:35.619Z"
+    },
+    {
+      "test": "Message Pagination",
+      "status": "PASS",
+      "details": "Pagination parameters work",
+      "timestamp": "2025-08-08T13:30:35.964Z"
+    },
+    {
+      "test": "Get Conversations",
+      "status": "PASS",
+      "details": "Found 1 conversation(s)",
+      "timestamp": "2025-08-08T13:30:36.498Z"
+    },
+    {
+      "test": "Admin Conversation Rights",
+      "status": "PASS",
+      "details": "Admin only sees user/customer conversations",
+      "timestamp": "2025-08-08T13:30:36.498Z"
+    },
+    {
+      "test": "Conversation Structure",
+      "status": "PASS",
+      "details": "Contains required fields",
+      "timestamp": "2025-08-08T13:30:36.498Z"
+    },
+    {
+      "test": "Latest Message Info",
+      "status": "PASS",
+      "details": "Latest message complete",
+      "timestamp": "2025-08-08T13:30:36.498Z"
+    },
+    {
+      "test": "No Token Security",
+      "status": "PASS",
+      "details": "Correctly requires authentication",
+      "timestamp": "2025-08-08T13:30:36.501Z"
+    },
+    {
+      "test": "Invalid Token Security",
+      "status": "PASS",
+      "details": "Correctly rejects invalid token",
+      "timestamp": "2025-08-08T13:30:36.505Z"
+    },
+    {
+      "test": "Invalid Receiver ID",
+      "status": "PASS",
+      "details": "Correctly handles invalid receiver ID with status 400",
+      "timestamp": "2025-08-08T13:30:36.683Z"
+    },
+    {
+      "test": "Missing Required Fields",
+      "status": "PASS",
+      "details": "Correctly requires receiver_id",
+      "timestamp": "2025-08-08T13:30:36.770Z"
+    },
+    {
+      "test": "Supabase User Mapping",
+      "status": "PASS",
+      "details": "User has Supabase ID",
+      "timestamp": "2025-08-08T13:30:36.861Z"
+    },
+    {
+      "test": "Supabase Message Insert",
+      "status": "PASS",
+      "details": "Message inserted to Supabase",
+      "timestamp": "2025-08-08T13:30:37.166Z"
+    },
+    {
+      "test": "Supabase Message Retrieval",
+      "status": "PASS",
+      "details": "Message retrieved from Supabase",
+      "timestamp": "2025-08-08T13:30:38.494Z"
+    },
+    {
+      "test": "Response Time",
+      "status": "PASS",
+      "details": "396ms (Good)",
+      "timestamp": "2025-08-08T13:30:38.980Z"
+    },
+    {
+      "test": "Concurrent Requests",
+      "status": "PASS",
+      "details": "5 requests in 93ms",
+      "timestamp": "2025-08-08T13:30:39.076Z"
+    },
+    {
+      "test": "Supabase RLS",
+      "status": "FAIL",
+      "details": "ID người dùng không hợp lệ",
+      "timestamp": "2025-08-08T13:30:39.214Z"
+    },
+    {
+      "test": "Supabase User Mismatch",
+      "status": "PASS",
+      "details": "Handles missing MongoDB users correctly",
+      "timestamp": "2025-08-08T13:30:39.617Z"
+    }
+  ]
+}

@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "migrate-messages": "node src/scripts/migrateMessages.js"
   },
   "keywords": [],
   "author": "",
@@ -21,7 +22,7 @@
     "cloudinary": "^2.7.0",
     "cors": "^2.8.5",
     "crypto-js": "^4.2.0",
-    "dotenv": "^16.5.0",
+    "dotenv": "^16.6.1",
     "express": "^4.21.2",
     "express-validator": "^7.2.1",
     "form-data": "^4.0.4",
