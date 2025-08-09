@@ -63,11 +63,11 @@ const Chat = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-  const elements = document.querySelectorAll(".cs-message__content");
-  elements.forEach(el => {
-    console.log("Message height:", el.clientHeight);
-  });
-}, [messages]);
+    const elements = document.querySelectorAll(".cs-message__content");
+    elements.forEach((el) => {
+      console.log("Message height:", el.clientHeight);
+    });
+  }, [messages]);
 
   // Lấy adminId từ API supabase-token
   useEffect(() => {
@@ -357,20 +357,19 @@ const Chat = () => {
                       msg.user._id === userId ? "incoming" : "outgoing",
                     position: "single",
                   }}
-                 
                 >
                   <Message.HtmlContent
-  html={`${
-    msg.text
-      ? `<div style="margin: 0; padding: 0;">${msg.text}</div>`
-      : ""
-  }
+                    html={`${
+                      msg.text
+                        ? `<div style="margin: 0; padding: 0;">${msg.text}</div>`
+                        : ""
+                    }
   ${
     msg.image
       ? `<img src="${msg.image}" alt="image" style="max-width:200px; margin-top:8px;" />`
       : ""
   }`}
-/>
+                  />
 
                   <Avatar
                     src={
@@ -412,30 +411,28 @@ const Chat = () => {
                   onChange={(val) => setNewMessage(val)}
                   onSend={handleSendMessage}
                   disabled={sending}
-
                   attachButton={false}
-                   style={{
+                  style={{
                     flex: 1,
-                    minHeight: '20px',
-                    fontSize: '16px',
-                    padding: '9px',
-                    width: '100%',
-                    boxSizing: 'border-box',
+                    minHeight: "20px",
+                    fontSize: "16px",
+                    padding: "9px",
+                    width: "100%",
+                    boxSizing: "border-box",
                   }}
-
-
                 />
                 {image && (
-  <div className="flex items-center gap-2">
-    <img
-      src={URL.createObjectURL(image)}
-      alt="Preview"
-      className="w-10 h-10 object-cover rounded"
-    />
-    <span className="text-sm text-gray-500 truncate max-w-[150px]">{image.name}</span>
-  </div>
-)}
-
+                  <div className="flex items-center gap-2">
+                    <img
+                      src={URL.createObjectURL(image)}
+                      alt="Preview"
+                      className="w-10 h-10 object-cover rounded"
+                    />
+                    <span className="text-sm text-gray-500 truncate max-w-[150px]">
+                      {image.name}
+                    </span>
+                  </div>
+                )}
               </div>
             </InputToolbox>
           </ChatContainer>
