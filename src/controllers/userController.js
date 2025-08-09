@@ -1,3 +1,4 @@
+// userController.js - Controller for User Management
 const User = require('../models/user');
 const EmailVerificationToken = require('../models/EmailVerificationToken');
 const bcrypt = require('bcrypt');
@@ -220,31 +221,27 @@ exports.getSupabaseToken = async (req, res) => {
       });
     }
 
-    // Kiểm tra supabase_user_id
     if (!user.supabase_user_id) {
       console.error('No Supabase user ID found for user:', user.email);
       return res.status(404).json({ message: 'User không tồn tại trong Supabase, vui lòng đăng ký lại' });
     }
 
-    // Tạo JWT thủ công làm access_token
-    console.log('Generating Supabase JWT for user:', decoded.userId);
     const supabaseJwt = jwt.sign(
       {
-        sub: user.supabase_user_id, // Supabase user ID từ MongoDB
+        sub: user.supabase_user_id,
         email: user.email,
         role: 'authenticated',
         aud: 'authenticated',
         iat: Math.floor(Date.now() / 1000),
-        exp: Math.floor(Date.now() / 1000) + 60 * 60, // Hết hạn sau 1 giờ
+        exp: Math.floor(Date.now() / 1000) + 60 * 60,
       },
-      process.env.SUPABASE_JWT_SECRET, // Sử dụng JWT Secret từ Supabase
+      process.env.SUPABASE_JWT_SECRET,
       { algorithm: 'HS256' }
     );
 
-    // Tạo refresh_token
     const refreshToken = jwt.sign(
       { sub: user.supabase_user_id, type: 'refresh' },
-      process.env.SUPABASE_JWT_SECRET, // Sử dụng JWT Secret từ Supabase
+      process.env.SUPABASE_JWT_SECRET,
       { algorithm: 'HS256', expiresIn: '7d' }
     );
 
@@ -256,6 +253,7 @@ exports.getSupabaseToken = async (req, res) => {
       },
       user: {
         id: user._id,
+        supabase_user_id: user.supabase_user_id,
         email: user.email,
         role: user.role,
         name: user.name,
@@ -391,22 +389,22 @@ exports.updateUser = async (req, res) => {
 
     // Kiểm tra quyền - chỉ admin mới được cập nhật role
     if (role && req.user.role !== 'admin') {
-      return res.status(403).json({ 
-        message: "Bạn không có quyền thay đổi role của người dùng" 
+      return res.status(403).json({
+        message: "Bạn không có quyền thay đổi role của người dùng"
       });
     }
 
     // Validate role nếu có
     if (role && !['admin', 'customer', 'user'].includes(role)) {
-      return res.status(400).json({ 
-        message: "Role không hợp lệ. Role phải là: admin, customer, hoặc user" 
+      return res.status(400).json({
+        message: "Role không hợp lệ. Role phải là: admin, customer, hoặc user"
       });
     }
 
     // Không cho phép admin tự hạ cấp chính mình
     if (role && req.params.id === req.user.userId && role !== 'admin') {
-      return res.status(400).json({ 
-        message: "Bạn không thể hạ cấp chính mình" 
+      return res.status(400).json({
+        message: "Bạn không thể hạ cấp chính mình"
       });
     }
 
@@ -433,10 +431,10 @@ exports.updateUser = async (req, res) => {
       return res.status(404).json({ message: "Không tìm thấy user" });
     }
 
-    res.status(200).json({ 
-      message: "Cập nhật user thành công", 
+    res.status(200).json({
+      message: "Cập nhật user thành công",
       user,
-      roleUpdated: !!role 
+      roleUpdated: !!role
     });
   } catch (error) {
     console.error(`Update user error: ${error.message}`);
@@ -495,15 +493,15 @@ exports.blockUser = async (req, res, next) => {
 
     // Kiểm tra quyền - chỉ admin mới được ban user
     if (req.user.role !== 'admin') {
-      return res.status(403).json({ 
-        message: "Bạn không có quyền khóa/mở khóa người dùng" 
+      return res.status(403).json({
+        message: "Bạn không có quyền khóa/mở khóa người dùng"
       });
     }
 
     // Không cho phép admin tự ban chính mình
     if (id === req.user.userId) {
-      return res.status(400).json({ 
-        message: "Bạn không thể khóa chính mình" 
+      return res.status(400).json({
+        message: "Bạn không thể khóa chính mình"
       });
     }
 
@@ -551,22 +549,22 @@ exports.updateUserRole = async (req, res) => {
 
     // Kiểm tra quyền - chỉ admin mới được cập nhật role
     if (req.user.role !== 'admin') {
-      return res.status(403).json({ 
-        message: "Bạn không có quyền thay đổi role của người dùng" 
+      return res.status(403).json({
+        message: "Bạn không có quyền thay đổi role của người dùng"
       });
     }
 
     // Validate role
     if (!role || !['admin', 'customer', 'user'].includes(role)) {
-      return res.status(400).json({ 
-        message: "Role không hợp lệ. Role phải là: admin, customer, hoặc user" 
+      return res.status(400).json({
+        message: "Role không hợp lệ. Role phải là: admin, customer, hoặc user"
       });
     }
 
     // Không cho phép admin tự hạ cấp chính mình
     if (id === req.user.userId && role !== 'admin') {
-      return res.status(400).json({ 
-        message: "Bạn không thể hạ cấp chính mình" 
+      return res.status(400).json({
+        message: "Bạn không thể hạ cấp chính mình"
       });
     }
 
@@ -791,13 +789,18 @@ exports.uploadImage = async (req, res) => {
   }
 };
 
-// Tạo tin nhắn
+
+// Tạo tin nhắn - FIXED
 exports.sendMessage = async (req, res) => {
-  console.log('Running sendMessage version: 2025-08-04');
   try {
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return res.status(401).json({ message: 'Header Authorization không hợp lệ' });
+    }
+
+    const supabaseAccessToken = req.headers['supabase-access-token'];
+    if (!supabaseAccessToken) {
+      return res.status(401).json({ message: 'Thiếu Supabase access token' });
     }
 
     const token = authHeader.split(' ')[1];
@@ -811,36 +814,55 @@ exports.sendMessage = async (req, res) => {
       return res.status(404).json({ message: 'Không tìm thấy người dùng' });
     }
 
+    await checkAndUpdateBanStatus(user);
+    if (user.ban?.isBanned) {
+      return res.status(403).json({
+        message: `Tài khoản của bạn đã bị khóa${user.ban.bannedUntil ? ` đến ${user.ban.bannedUntil.toLocaleString('vi-VN')}` : ' vĩnh viễn'}${user.ban.reason ? ` vì: ${user.ban.reason}` : ''}`,
+      });
+    }
+
     const { receiver_id, content, image_url } = req.body;
     if (!receiver_id || (!content && !image_url)) {
       return res.status(400).json({ message: 'Vui lòng cung cấp receiver_id và nội dung hoặc ảnh' });
     }
 
-    if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
-      console.error('Missing Supabase configuration:', {
-        SUPABASE_URL: process.env.SUPABASE_URL,
-        SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
-      });
-      return res.status(500).json({ message: 'Lỗi cấu hình Supabase' });
+    if (!mongoose.Types.ObjectId.isValid(receiver_id)) {
+      return res.status(400).json({ message: 'receiver_id không hợp lệ' });
     }
 
-    const supabase = createClient(
-      process.env.SUPABASE_URL,
-      process.env.SUPABASE_SERVICE_ROLE_KEY
-    );
+    const receiver = await User.findById(receiver_id);
+    if (!receiver) {
+      return res.status(404).json({ message: 'Người nhận không tồn tại' });
+    }
+
+    if (user.role === 'user' && receiver.role !== 'admin') {
+      return res.status(403).json({ message: 'Bạn chỉ có thể gửi tin nhắn cho admin' });
+    }
+
+    const senderSupabaseId = user.supabase_user_id;
+    const receiverSupabaseId = receiver.supabase_user_id;
+
+    if (!senderSupabaseId || !receiverSupabaseId) {
+      return res.status(400).json({ message: 'Lỗi: Không tìm thấy Supabase user ID' });
+    }
+
+    const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY, {
+      auth: { autoRefreshToken: false, persistSession: false },
+      global: { headers: { Authorization: `Bearer ${supabaseAccessToken}` } }
+    });
 
     const { data, error } = await supabase
       .from('messages')
       .insert({
-        sender_id: decoded.userId,
-        receiver_id,
+        sender_id: senderSupabaseId,
+        receiver_id: receiverSupabaseId,
         content: content || null,
         image_url: image_url || null,
         sender_name: user.name,
         sender_avatar_url: user.avatar_url || null,
       })
       .select()
-      .single(); // Trả về object thay vì mảng
+      .single();
 
     if (error) {
       console.error('Supabase insert error:', error);
@@ -855,7 +877,8 @@ exports.sendMessage = async (req, res) => {
         image: data.image_url,
         createdAt: data.created_at,
         user: {
-          _id: user._id,
+          _id: user._id.toString(),
+          supabase_id: senderSupabaseId,
           name: user.name,
           avatar: user.avatar_url || '',
         },
@@ -867,64 +890,86 @@ exports.sendMessage = async (req, res) => {
   }
 };
 
-// Lấy tin nhắn
+// Lấy tin nhắn - FIXED
 exports.getMessages = async (req, res) => {
-  console.log('Running getMessages version: 2025-08-07');
   try {
     if (!req.user?.userId) {
       return res.status(401).json({ message: 'Không có thông tin người dùng từ middleware' });
     }
 
+    const supabaseAccessToken = req.headers['supabase-access-token'];
+    if (!supabaseAccessToken) {
+      return res.status(401).json({ message: 'Thiếu Supabase access token' });
+    }
+
     const user = await User.findById(req.user.userId);
     if (!user) {
-      console.error('User not found for ID:', req.user.userId);
       return res.status(404).json({ message: 'Không tìm thấy người dùng' });
     }
 
-    const { receiver_id } = req.query;
+    const { receiver_id, limit = 50, offset = 0 } = req.query;
     if (!receiver_id) {
-      return res.status(400).json({ message: 'Vui lòng cung cấp receiver_id' });
+      return res.status(400).json({ message: 'Vui lòng cung cấp receiver_id (MongoDB ID)' });
     }
 
-    if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
-      console.error('Missing Supabase configuration:', {
-        SUPABASE_URL: process.env.SUPABASE_URL,
-        SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY
+    if (!mongoose.Types.ObjectId.isValid(receiver_id)) {
+      return res.status(400).json({ message: 'receiver_id không hợp lệ' });
+    }
+
+    const receiver = await User.findById(receiver_id);
+    if (!receiver) {
+      return res.status(404).json({ message: 'Người nhận không tồn tại' });
+    }
+
+    await checkAndUpdateBanStatus(user);
+    if (user.ban?.isBanned) {
+      return res.status(403).json({
+        message: `Tài khoản của bạn đã bị khóa${user.ban.bannedUntil ? ` đến ${user.ban.bannedUntil.toLocaleString('vi-VN')}` : ' vĩnh viễn'}${user.ban.reason ? ` vì: ${user.ban.reason}` : ''}`,
       });
-      return res.status(500).json({ message: 'Lỗi cấu hình Supabase' });
     }
 
-    const supabase = createClient(
-      process.env.SUPABASE_URL,
-      process.env.SUPABASE_SERVICE_ROLE_KEY
-    );
+    const senderSupabaseId = user.supabase_user_id;
+    const receiverSupabaseId = receiver.supabase_user_id;
 
-    // Lấy tin nhắn giữa user hiện tại và receiver_id
+    if (!senderSupabaseId || !receiverSupabaseId) {
+      return res.status(400).json({ message: 'Lỗi: Không tìm thấy Supabase user ID' });
+    }
+
+    const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY, {
+      auth: { autoRefreshToken: false, persistSession: false },
+      global: { headers: { Authorization: `Bearer ${supabaseAccessToken}` } }
+    });
+
     const { data, error } = await supabase
       .from('messages')
       .select('id, sender_id, receiver_id, content, image_url, created_at, sender_name, sender_avatar_url')
       .or(
-        `and(sender_id.eq.${req.user.userId},receiver_id.eq.${receiver_id}),` +
-        `and(sender_id.eq.${receiver_id},receiver_id.eq.${req.user.userId})`
+        `and(sender_id.eq.${senderSupabaseId},receiver_id.eq.${receiverSupabaseId}),` +
+        `and(sender_id.eq.${receiverSupabaseId},receiver_id.eq.${senderSupabaseId})`
       )
-      .order('created_at', { ascending: true });
+      .order('created_at', { ascending: true })
+      .range(parseInt(offset), parseInt(offset) + parseInt(limit) - 1);
 
     if (error) {
       console.error('Supabase fetch error:', error);
       return res.status(500).json({ message: 'Lỗi lấy tin nhắn', error: error.message });
     }
 
-    const messages = data.map(message => ({
-      _id: message.id,
-      text: message.content || '',
-      image: message.image_url || null,
-      createdAt: new Date(message.created_at),
-      user: {
-        _id: message.sender_id,
-        name: message.sender_id === req.user.userId ? user.name : message.sender_name || 'Other User',
-        avatar: message.sender_id === req.user.userId ? user.avatar_url : message.sender_avatar_url || ''
-      }
-    }));
+    const messages = data.map(message => {
+      const isCurrentUserSender = message.sender_id === senderSupabaseId;
+      return {
+        _id: message.id,
+        text: message.content || '',
+        image: message.image_url || null,
+        createdAt: new Date(message.created_at),
+        user: {
+          _id: isCurrentUserSender ? user._id.toString() : receiver._id.toString(),
+          supabase_id: message.sender_id,
+          name: isCurrentUserSender ? user.name : (message.sender_name || receiver.name),
+          avatar: isCurrentUserSender ? (user.avatar_url || '') : (message.sender_avatar_url || receiver.avatar_url || '')
+        }
+      };
+    });
 
     res.status(200).json({
       message: 'Lấy tin nhắn thành công',
@@ -936,53 +981,81 @@ exports.getMessages = async (req, res) => {
   }
 };
 
-// Lấy danh sách cuộc trò chuyện
+// Lấy danh sách cuộc trò chuyện - FIXED
 exports.getConversations = async (req, res) => {
   try {
-    const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
-    const adminId = req.user.userId; // Từ JWT (authMiddleware)
+    const supabaseAccessToken = req.headers['supabase-access-token'];
+    if (!supabaseAccessToken) {
+      return res.status(401).json({ message: 'Thiếu Supabase access token' });
+    }
 
-    // Lấy tất cả tin nhắn liên quan đến admin từ Supabase
+    const currentUser = await User.findById(req.user.userId);
+    if (!currentUser || !currentUser.supabase_user_id) {
+      return res.status(404).json({ message: 'Không tìm thấy thông tin người dùng hoặc Supabase ID' });
+    }
+
+    const currentSupabaseId = currentUser.supabase_user_id;
+
+    const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY, {
+      auth: { autoRefreshToken: false, persistSession: false },
+      global: { headers: { Authorization: `Bearer ${supabaseAccessToken}` } }
+    });
+
     const { data: messages, error: messagesError } = await supabase
       .from('messages')
-      .select('id, content, image_url, created_at, sender_id, receiver_id')
-      .or(`sender_id.eq.${adminId},receiver_id.eq.${adminId}`)
+      .select('id, content, image_url, created_at, sender_id, receiver_id, sender_name, sender_avatar_url')
+      .or(`sender_id.eq.${currentSupabaseId},receiver_id.eq.${currentSupabaseId}`)
       .order('created_at', { ascending: false });
 
     if (messagesError) {
       console.error('Supabase fetch error:', messagesError);
-      throw new Error(messagesError.message);
+      return res.status(500).json({ 
+        message: 'Lỗi lấy tin nhắn từ Supabase', 
+        error: messagesError.message,
+        code: messagesError.code
+      });
     }
 
-    // Lấy danh sách user duy nhất (không phải admin)
-    const userIds = new Set(messages.map((msg) =>
-      msg.sender_id === adminId ? msg.receiver_id : msg.sender_id
+    if (!messages || messages.length === 0) {
+      return res.status(200).json({ 
+        message: 'Không có cuộc trò chuyện nào', 
+        data: [] 
+      });
+    }
+
+    const otherSupabaseIds = new Set(messages.map((msg) =>
+      msg.sender_id === currentSupabaseId ? msg.receiver_id : msg.sender_id
     ));
 
-    // Lấy thông tin user từ MongoDB và tin nhắn mới nhất từ Supabase
     const users = await Promise.all(
-      Array.from(userIds).map(async (userId) => {
+      Array.from(otherSupabaseIds).map(async (supabaseId) => {
         try {
-          // Lấy user từ MongoDB
-          const user = await User.findById(userId);
-          if (!user || !['user', 'customer'].includes(user.role)) {
+          const user = await User.findOne({ supabase_user_id: supabaseId });
+          if (!user) {
+            console.error(`User not found for Supabase ID: ${supabaseId}`);
+            return null; // Bỏ qua user không tìm thấy
+          }
+
+          if (currentUser.role === 'user' && user.role !== 'admin') {
+            return null;
+          }
+          if (currentUser.role === 'admin' && !['user', 'customer'].includes(user.role)) {
             return null;
           }
 
-          // Lấy tin nhắn mới nhất giữa admin và user
           const { data: latestMessage, error: messageError } = await supabase
             .from('messages')
-            .select('id, content, image_url, created_at, sender_id, receiver_id')
+            .select('id, content, image_url, created_at, sender_id, receiver_id, sender_name, sender_avatar_url')
             .or(
-              `and(sender_id.eq.${userId},receiver_id.eq.${adminId}),` +
-              `and(sender_id.eq.${adminId},receiver_id.eq.${userId})`
+              `and(sender_id.eq.${supabaseId},receiver_id.eq.${currentSupabaseId}),` +
+              `and(sender_id.eq.${currentSupabaseId},receiver_id.eq.${supabaseId})`
             )
             .order('created_at', { ascending: false })
             .limit(1)
             .single();
 
-          if (messageError) {
-            console.error(`Error fetching latest message for user ${userId}:`, messageError);
+          if (messageError && messageError.code !== 'PGRST116') {
+            console.error(`Error fetching latest message for user ${user._id}:`, messageError);
             return null;
           }
 
@@ -996,6 +1069,7 @@ exports.getConversations = async (req, res) => {
             email_verified: user.email_verified || false,
             createdAt: user.createdAt,
             updatedAt: user.updatedAt,
+            supabase_user_id: user.supabase_user_id,
             latestMessage: latestMessage
               ? {
                   _id: latestMessage.id,
@@ -1003,26 +1077,53 @@ exports.getConversations = async (req, res) => {
                   image: latestMessage.image_url,
                   createdAt: latestMessage.created_at,
                   user: {
-                    _id: userId,
-                    name: user.name,
-                    avatar: user.avatar_url || ''
+                    _id: user._id.toString(),
+                    supabase_id: latestMessage.sender_id,
+                    name: latestMessage.sender_id === currentSupabaseId ? currentUser.name : user.name,
+                    avatar: latestMessage.sender_id === currentSupabaseId ? currentUser.avatar_url : user.avatar_url || ''
                   }
                 }
-              : undefined
+              : null
           };
         } catch (error) {
-          console.error(`Lỗi khi lấy dữ liệu cho user ${userId}:`, error);
+          console.error(`Lỗi khi lấy dữ liệu cho supabase user ${supabaseId}:`, error);
           return null;
         }
       })
     );
 
-    // Lọc bỏ null
-    const filteredUsers = users.filter(user => user !== null);
+    const filteredUsers = users
+      .filter(user => user !== null)
+      .sort((a, b) => {
+        if (!a.latestMessage && !b.latestMessage) return 0;
+        if (!a.latestMessage) return 1;
+        if (!b.latestMessage) return -1;
+        return new Date(b.latestMessage.createdAt) - new Date(a.latestMessage.createdAt);
+      });
 
-    res.status(200).json({ message: 'Lấy danh sách cuộc trò chuyện thành công', data: filteredUsers });
+    if (filteredUsers.length === 0 && otherSupabaseIds.size > 0) {
+      console.warn(`Found ${otherSupabaseIds.size} Supabase IDs without corresponding MongoDB users`);
+    }
+
+    res.status(200).json({ 
+      message: 'Lấy danh sách cuộc trò chuyện thành công', 
+      data: filteredUsers 
+    });
   } catch (error) {
     console.error(`Get conversations error: ${error.message}`);
+    res.status(500).json({ 
+      message: 'Lỗi server khi lấy danh sách cuộc trò chuyện', 
+      error: error.message 
+    });
+  }
+};
+
+exports.getAdmins = async (req, res) => {
+  try {
+    const admins = await User.find({ role: 'admin' }).select('name avatar_url supabase_user_id');
+    res.status(200).json({ message: 'Lấy danh sách admin thành công', data: admins });
+  } catch (error) {
+    console.error('Get admins error:', error);
     res.status(500).json({ message: 'Lỗi server', error: error.message });
   }
 };
