@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/user');
+const mongoose = require('mongoose');
 
 module.exports = async (req, res, next) => {
   if (!process.env.JWT_SECRET) {
@@ -18,34 +19,38 @@ module.exports = async (req, res, next) => {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findById(decoded.userId);
+    console.log('Decoded JWT:', decoded); // Log để debug
 
+    if (!decoded.userId || !mongoose.Types.ObjectId.isValid(decoded.userId)) {
+      return res.status(401).json({ message: 'Token không chứa userId hợp lệ' });
+    }
+
+    const user = await User.findById(decoded.userId);
     if (!user) {
       return res.status(404).json({ message: 'Không tìm thấy người dùng' });
     }
 
-   // Kiểm tra trạng thái ban
-if (user.ban?.isBanned) {
-  if (!user.ban.bannedUntil || user.ban.bannedUntil > new Date()) {
-    return res.status(403).json({
-      message: 'Tài khoản của bạn đã bị khóa' + 
-        (user.ban.bannedUntil ? ` đến ${user.ban.bannedUntil.toLocaleString()}` : ' vĩnh viễn') +
-        (user.ban.reason ? ` vì: ${user.ban.reason}` : ''),
-    });
-  } else {
-    // Hết hạn ban => cập nhật lại trạng thái
-    user.ban.isBanned = false;
-    user.ban.bannedUntil = null;
-    user.ban.reason = '';
-    await user.save();
-  }
-}
+    // Kiểm tra trạng thái ban
+    if (user.ban?.isBanned) {
+      if (!user.ban.bannedUntil || user.ban.bannedUntil > new Date()) {
+        return res.status(403).json({
+          message: `Tài khoản của bạn đã bị khóa` +
+            (user.ban.bannedUntil ? ` đến ${user.ban.bannedUntil.toLocaleString('vi-VN')}` : ' vĩnh viễn') +
+            (user.ban.reason ? ` vì: ${user.ban.reason}` : ''),
+        });
+      } else {
+        // Hết hạn ban => tự động unban
+        user.ban.isBanned = false;
+        user.ban.bannedUntil = null;
+        user.ban.reason = '';
+        await user.save();
+      }
+    }
 
-
-
-    req.user = decoded;
+    req.user = { userId: decoded.userId, role: decoded.role };
     next();
   } catch (err) {
+    console.error('Auth middleware error:', err);
     if (err.name === 'TokenExpiredError') {
       return res.status(401).json({ message: 'Token đã hết hạn' });
     }

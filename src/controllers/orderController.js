@@ -14,7 +14,7 @@ exports.createOrder = async (req, res) => {
     const { user_id, total_price, shippingmethod_id, paymentmethod_id, voucher_id, shipping_address, note } = req.body;
 
     // Validation
-    if (!user_id || !total_price || !shippingmethod_id || !paymentmethod_id || !voucher_id || !shipping_address) {
+    if (!user_id || !total_price || !shippingmethod_id || !paymentmethod_id || !shipping_address) {
       return res.status(400).json({ 
         success: false,
         msg: "Thiếu thông tin bắt buộc" 
@@ -131,7 +131,7 @@ exports.getAllOrders = async (req, res) => {
       .populate("user_id", "name email phone")
       .populate("shippingmethod_id", "name fee")
       .populate("paymentmethod_id", "name")
-      .populate("voucher_id", "name discount_value")
+      .populate("voucher_id", "name title discount_value")
       .sort(sortOption)
       .skip(skip)
       .limit(parseInt(limit));
@@ -203,7 +203,7 @@ exports.getOrderById = async (req, res) => {
       .populate("user_id", "name email phone address")
       .populate("shippingmethod_id", "name fee description")
       .populate("paymentmethod_id", "name description")
-      .populate("voucher_id", "name discount_value");
+      .populate("voucher_id", "name title discount_value");
 
     if (!order) {
       return res.status(404).json({ 
@@ -256,7 +256,7 @@ exports.getOrdersByUser = async (req, res) => {
     const orders = await Order.find(query)
       .populate("shippingmethod_id", "name fee")
       .populate("paymentmethod_id", "name")
-      .populate("voucher_id", "name discount_value")
+      .populate("voucher_id", "name title discount_value")
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(parseInt(limit));
@@ -478,6 +478,59 @@ exports.createOrderWithDetails = async (req, res) => {
       });
     }
 
+    // Xử lý voucher nếu có//
+    let finalTotalPrice = orderData.total_price;
+    let voucherInfo = null;
+    
+    if (orderData.voucher_id) {
+      const Voucher = require("../models/Voucher");
+      const voucher = await Voucher.findById(orderData.voucher_id);
+      
+      if (!voucher) {
+        return res.status(400).json({
+          success: false,
+          msg: "Voucher không hợp lệ"
+        });
+      }
+
+      // Kiểm tra voucher có hợp lệ không
+      if (voucher.status !== 'active') {
+        return res.status(400).json({
+          success: false,
+          msg: "Voucher không còn hiệu lực"
+        });
+      }
+
+      if (new Date(voucher.expiry_date) < new Date()) {
+        return res.status(400).json({
+          success: false,
+          msg: "Voucher đã hết hạn"
+        });
+      }
+
+      if (voucher.usage_limit <= voucher.used_count) {
+        return res.status(400).json({
+          success: false,
+          msg: "Voucher đã hết lượt sử dụng"
+        });
+      }
+
+      // Tính toán discount
+      const discount = voucher.discount_value;
+      finalTotalPrice = Math.max(0, orderData.total_price - discount);
+      
+      // Cập nhật usage count
+      voucher.used_count += 1;
+      await voucher.save({ session });
+      
+      voucherInfo = {
+        voucher_id: orderData.voucher_id,
+        discount_applied: discount,
+        original_total: orderData.total_price,
+        final_total: finalTotalPrice
+      };
+    }
+
     // Tạo order_code tự động
     const now = new Date();
     const dd = String(now.getDate()).padStart(2, "0");
@@ -497,8 +550,12 @@ exports.createOrderWithDetails = async (req, res) => {
     }
     const order_code = `ORDER${String(nextNumber).padStart(3, "0")}${dateStr}`;
 
-    // Tạo Order, dùng total_price do client gửi lên
-    const order = await Order.create([{ ...orderData, order_code }], {
+    // Tạo Order với total_price đã được tính toán
+    const order = await Order.create([{ 
+      ...orderData, 
+      total_price: finalTotalPrice,
+      order_code 
+    }], {
       session,
     });
     const orderId = order[0]._id;
@@ -571,8 +628,9 @@ exports.createOrderWithDetails = async (req, res) => {
       success: true,
       msg: "Tạo đơn hàng thành công",
       data: {
-        order: order[0], // giữ nguyên total_price đã lưu
+        order: order[0],
         orderDetails: details,
+        voucherInfo: voucherInfo
       }
     });
   } catch (err) {

@@ -3,26 +3,26 @@ import { createVoucher } from "../../services/voucher";
 import { getAllUsers } from "../../services/user";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
-
+import "../../css/voucher/addVoucher.css";
 const AddVoucher = () => {
   const navigate = useNavigate();
 
   const [type, setType] = useState<"all" | "personal">("all");
-  const [voucherId, setVoucherId] = useState<string>("");
-  const [discountValue, setDiscountValue] = useState<number>(0);
+  const [discountValue, setDiscountValue] = useState<number>(1);
+  const [title, setTitle] = useState<string>("");
   const [usageLimit, setUsageLimit] = useState<number>(1);
   const [expiryDate, setExpiryDate] = useState<string>("");
+  const [voucherOption, setVoucherOption] = useState<"product" | "free_shipping">("product");
   const [users, setUsers] = useState<{ _id: string; name?: string }[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
 
+  // Load users nếu loại voucher là cá nhân
   const fetchUsers = async () => {
     setLoadingUsers(true);
     try {
       const data = await getAllUsers();
-      console.log("Danh sách users tải về:", data);
       setUsers(data);
     } catch (error) {
-      console.error("Lỗi khi tải danh sách user:", error);
       toast.error("Không tải được danh sách người dùng");
     } finally {
       setLoadingUsers(false);
@@ -32,94 +32,117 @@ const AddVoucher = () => {
   useEffect(() => {
     if (type === "personal") {
       fetchUsers();
+    } else {
+      setUsers([]);
     }
   }, [type]);
+
+  // Tự động cập nhật tiêu đề và giá trị giảm khi chọn loại voucher
+  useEffect(() => {
+    if (voucherOption === "free_shipping") {
+      setTitle("Miễn phí vận chuyển");
+      setDiscountValue(0);
+    } else {
+      setTitle("");
+      setDiscountValue(1);
+    }
+  }, [voucherOption]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!discountValue || !usageLimit || !expiryDate) {
+    if (!title || !usageLimit || !expiryDate) {
       toast.warning("Vui lòng nhập đầy đủ thông tin");
       return;
     }
-
     const payload: any = {
+      title,
+
       discount_value: discountValue,
       usage_limit: usageLimit,
       expiry_date: expiryDate,
       status: "active",
+      isPersonal: type === "personal",
     };
-
-    if (voucherId.trim() !== "") {
-      payload.voucher_id = voucherId.trim();
-    }
 
     if (type === "personal") {
       payload.userIds = users.map((u) => u._id);
     }
 
-    console.log("Payload gửi lên API tạo voucher:", payload);
+    console.log("Payload gửi lên:", payload);
 
     try {
       await createVoucher(payload);
       toast.success("Thêm voucher thành công");
       navigate("/vouchers");
     } catch (err) {
-      console.error("Lỗi khi tạo voucher:", err);
       toast.error("Thêm voucher thất bại");
     }
   };
 
   return (
-    <div className="max-w-xl mx-auto bg-white p-6 rounded-lg shadow-md">
-      <h2 className="text-2xl font-semibold mb-4">Thêm voucher</h2>
+    <div className="add-voucher-container">
+      <h2 className="add-voucher-title">Thêm voucher</h2>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="add-voucher-form">
         {/* Loại voucher */}
-        <div className="flex items-center space-x-4">
-          <label className="font-medium">Loại voucher:</label>
+        <div>
+          <label>Loại voucher:</label>
           <select
             value={type}
             onChange={(e) => setType(e.target.value as "all" | "personal")}
-            className="border border-gray-300 px-3 py-2 rounded w-full"
           >
             <option value="all">Dùng chung</option>
             <option value="personal">Cá nhân</option>
           </select>
         </div>
 
-        {/* Mã voucher (tuỳ chọn) */}
+        {/* Loại ưu đãi */}
         <div>
-          <label className="block font-medium mb-1">Mã voucher (tuỳ chọn)</label>
-          <input
-            type="text"
-            className="border border-gray-300 px-3 py-2 rounded w-full"
-            placeholder="VD: VOUCHER2025"
-            value={voucherId}
-            onChange={(e) => setVoucherId(e.target.value)}
-          />
-          <p className="text-sm text-gray-500 mt-1">Nếu để trống, hệ thống sẽ tự sinh mã</p>
+          <label>Loại ưu đãi</label>
+          <select
+            value={voucherOption}
+            onChange={(e) =>
+              setVoucherOption(e.target.value as "product" | "free_shipping")
+            }
+          >
+            <option value="product">Giảm giá sản phẩm</option>
+            <option value="free_shipping">Miễn phí vận chuyển</option>
+          </select>
         </div>
 
-        {/* Giá trị giảm */}
+        {/* Tiêu đề */}
         <div>
-          <label className="block font-medium mb-1">Giá trị giảm (%)</label>
+          <label>Tiêu đề</label>
           <input
-            type="number"
-            className="border border-gray-300 px-3 py-2 rounded w-full"
-            value={discountValue}
-            onChange={(e) => setDiscountValue(Number(e.target.value))}
-            min={1}
+            type="text"
+            placeholder="Nhập tiêu đề"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            readOnly={voucherOption === "free_shipping"}
             required
           />
         </div>
 
+        {/* Giá trị giảm (chỉ khi loại product) */}
+        {voucherOption === "product" && (
+          <div>
+            <label>Giá trị giảm (%)</label>
+            <input
+              type="number"
+              value={discountValue}
+              onChange={(e) => setDiscountValue(Number(e.target.value))}
+              min={1}
+              required
+            />
+          </div>
+        )}
+
         {/* Số lượt sử dụng */}
         <div>
-          <label className="block font-medium mb-1">Số lượt sử dụng</label>
+          <label>Số lượt sử dụng</label>
           <input
             type="number"
-            className="border border-gray-300 px-3 py-2 rounded w-full"
             value={usageLimit}
             onChange={(e) => setUsageLimit(Number(e.target.value))}
             min={1}
@@ -129,26 +152,23 @@ const AddVoucher = () => {
 
         {/* Ngày hết hạn */}
         <div>
-          <label className="block font-medium mb-1">Ngày hết hạn</label>
+          <label>Ngày hết hạn</label>
           <input
             type="date"
-            className="border border-gray-300 px-3 py-2 rounded w-full"
             value={expiryDate}
             onChange={(e) => setExpiryDate(e.target.value)}
             required
           />
         </div>
 
-        {/* Danh sách người dùng (nếu là cá nhân) */}
+        {/* Danh sách người dùng nếu cá nhân */}
         {type === "personal" && (
           <div>
-            <label className="block font-medium mb-1">
-              Người dùng áp dụng ({users.length})
-            </label>
+            <label>Người dùng áp dụng ({users.length})</label>
             {loadingUsers ? (
-              <p className="text-gray-500">Đang tải danh sách...</p>
+              <p className="add-voucher-hint">Đang tải danh sách...</p>
             ) : (
-              <ul className="max-h-40 overflow-y-auto text-sm bg-gray-50 border p-2 rounded">
+              <ul className="add-voucher-users">
                 {users.map((u) => (
                   <li key={u._id}>
                     {u.name || "Không tên"} ({u._id})
@@ -159,10 +179,7 @@ const AddVoucher = () => {
           </div>
         )}
 
-        <button
-          type="submit"
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
-        >
+        <button type="submit" className="add-voucher-submit">
           Thêm voucher
         </button>
       </form>
