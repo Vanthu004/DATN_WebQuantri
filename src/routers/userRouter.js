@@ -18,9 +18,12 @@ router.put("/update-profile", authMiddleware, userController.updateProfile);
 router.put("/update-avatar", authMiddleware, userController.updateAvatar);
 router.put("/change-password", authMiddleware, userController.changePassword);
 
-// Protected routes (yêu cầu xác thực) - routes có parameter
+// Protected routes (yêu cầu xác thực)
 router.get("/", authMiddleware, userController.getAllUsers);
 router.get("/all", userController.getAllUsers);
+// Routes cho thống kê khách hàng (đặt trước routes có :id để tránh conflict)
+router.get("/statistics", authMiddleware, userController.getCustomerStatistics);
+router.get("/top-customers", authMiddleware, userController.getTopCustomers);
 router.get("/avatar/:id", userController.getAvatar);
 router.get("/:id", authMiddleware, userController.getUserById);
 router.put("/:id", authMiddleware, userController.updateUser);
@@ -28,5 +31,7 @@ router.delete("/:id", authMiddleware, userController.deleteUser);
 router.patch("/:id/block", authMiddleware, userController.blockUser);
 // Cập nhật role cho user (cấp quyền)
 router.patch("/:id/role", authMiddleware, userController.updateUserRole);
+
+// (đã di chuyển routes thống kê lên trên để tránh bị bắt bởi ":id")
 
 module.exports = router;

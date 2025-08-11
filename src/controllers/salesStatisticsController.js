@@ -4,6 +4,46 @@ const Order = require("../models/Order");
 const OrderDetail = require("../models/OrderDetail");
 const Product = require("../models/product");
 
+// Test endpoint để kiểm tra data
+exports.testData = async (req, res) => {
+  try {
+    // Đếm tổng số đơn hàng
+    const totalOrders = await Order.countDocuments();
+    
+    // Đếm đơn hàng theo status
+    const ordersByStatus = await Order.aggregate([
+      { $group: { _id: "$status", count: { $sum: 1 } } }
+    ]);
+    
+    // Đếm đơn hàng theo payment_status
+    const ordersByPayment = await Order.aggregate([
+      { $group: { _id: "$payment_status", count: { $sum: 1 } } }
+    ]);
+    
+    // Lấy 5 đơn hàng mới nhất
+    const recentOrders = await Order.find()
+      .sort({ createdAt: -1 })
+      .limit(5)
+      .select('status payment_status total_price createdAt');
+
+    res.json({
+      success: true,
+      data: {
+        totalOrders,
+        ordersByStatus,
+        ordersByPayment,
+        recentOrders
+      }
+    });
+  } catch (error) {
+    console.error("Error in test data:", error);
+    res.status(500).json({
+      success: false,
+      msg: "Lỗi khi test data",
+    });
+  }
+};
+
 // Thống kê doanh thu theo thời gian
 exports.getRevenueStatistics = async (req, res) => {
   try {
@@ -22,6 +62,9 @@ exports.getRevenueStatistics = async (req, res) => {
     // Chỉ tính đơn hàng đã hoàn thành
     matchStage.status = { $in: ["Đã giao hàng", "Hoàn thành"] };
     matchStage.payment_status = "paid";
+
+    // Log để debug
+    console.log("Match stage:", JSON.stringify(matchStage, null, 2));
 
     const pipeline = [
       { $match: matchStage },
@@ -42,7 +85,7 @@ exports.getRevenueStatistics = async (req, res) => {
           },
           revenue: { $sum: "$total_price" },
           order_count: { $sum: 1 },
-          product_sold_count: { $sum: "$total_quantity" },
+          product_sold_count: { $sum: 1 }, // Tạm thời đếm số đơn hàng, có thể cải thiện sau
         },
       },
       { $sort: { _id: -1 } },
@@ -50,6 +93,10 @@ exports.getRevenueStatistics = async (req, res) => {
     ];
 
     const statistics = await Order.aggregate(pipeline);
+
+    // Log để debug
+    console.log("Pipeline:", JSON.stringify(pipeline, null, 2));
+    console.log("Statistics result:", JSON.stringify(statistics, null, 2));
 
     res.json({
       success: true,
