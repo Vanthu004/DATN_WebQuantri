@@ -110,7 +110,11 @@ export class SalesStatisticsService {
     if (params.end_date) queryParams.append("end_date", params.end_date);
     if (params.limit) queryParams.append("limit", params.limit.toString());
 
-    const response = await api.get(`/sales-statistics/revenue?${queryParams}`);
+    // Lấy token từ localStorage
+    const token = localStorage.getItem("token");
+    const headers = token ? { Authorization: `Bearer ${token}` } : {};
+
+    const response = await api.get(`/sales-statistics/revenue?${queryParams}`, { headers });
     return response.data as RevenueStatisticsResponse;
   }
 
@@ -131,8 +135,13 @@ export class SalesStatisticsService {
     if (params.category_id)
       queryParams.append("category_id", params.category_id);
 
+    // Lấy token từ localStorage
+    const token = localStorage.getItem("token");
+    const headers = token ? { Authorization: `Bearer ${token}` } : {};
+
     const response = await api.get(
-      `/sales-statistics/top-products?${queryParams}`
+      `/sales-statistics/top-products?${queryParams}`,
+      { headers }
     );
     return response.data as TopSellingProductsResponse;
   }
@@ -149,8 +158,13 @@ export class SalesStatisticsService {
     if (params.start_date) queryParams.append("start_date", params.start_date);
     if (params.end_date) queryParams.append("end_date", params.end_date);
 
+    // Lấy token từ localStorage
+    const token = localStorage.getItem("token");
+    const headers = token ? { Authorization: `Bearer ${token}` } : {};
+
     const response = await api.get(
-      `/sales-statistics/dashboard?${queryParams}`
+      `/sales-statistics/dashboard?${queryParams}`,
+      { headers }
     );
     return response.data as DashboardResponse;
   }
@@ -167,15 +181,24 @@ export class SalesStatisticsService {
     queryParams.append("end_date", params.end_date);
     if (params.type) queryParams.append("type", params.type);
 
+    // Lấy token từ localStorage
+    const token = localStorage.getItem("token");
+    const headers = token ? { Authorization: `Bearer ${token}` } : {};
+
     const response = await api.get(
-      `/sales-statistics/date-range?${queryParams}`
+      `/sales-statistics/date-range?${queryParams}`,
+      { headers }
     );
     return response.data as DateRangeResponse;
   }
 
   // Tạo thống kê theo ngày (cron job)
   static async generateDailyStatistics(): Promise<GenerateDailyStatisticsResponse> {
-    const response = await api.post("/sales-statistics/generate-daily");
+    // Lấy token từ localStorage
+    const token = localStorage.getItem("token");
+    const headers = token ? { Authorization: `Bearer ${token}` } : {};
+
+    const response = await api.post("/sales-statistics/generate-daily", {}, { headers });
     return response.data as GenerateDailyStatisticsResponse;
   }
 

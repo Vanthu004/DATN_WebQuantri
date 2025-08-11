@@ -725,3 +725,147 @@ exports.getCurrentUser = async (req, res, next) => {
     next(error);
   }
 };
+
+// Lấy thống kê khách hàng
+exports.getCustomerStatistics = async (req, res) => {
+  try {
+    const { timeRange = "month" } = req.query;
+    
+    // Tính toán thời gian dựa trên timeRange
+    const now = new Date();
+    let startDate;
+    
+    switch (timeRange) {
+      case "week":
+        startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        break;
+      case "month":
+        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+        break;
+      case "quarter":
+        const quarter = Math.floor(now.getMonth() / 3);
+        startDate = new Date(now.getFullYear(), quarter * 3, 1);
+        break;
+      case "year":
+        startDate = new Date(now.getFullYear(), 0, 1);
+        break;
+      default:
+        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+    }
+
+    // Lấy tổng số khách hàng (tính cả role 'user' và 'customer')
+    const totalCustomers = await User.countDocuments({ role: { $in: ["user", "customer"] } });
+    
+    // Lấy số khách hàng có đơn hàng
+    const Order = require("../models/Order");
+    const customersWithOrders = await Order.distinct("user_id");
+    const customersWithOrdersCount = customersWithOrders.length;
+    
+    // Lấy số khách hàng mới trong khoảng thời gian
+    const newCustomersThisMonth = await User.countDocuments({
+      role: "customer",
+      createdAt: { $gte: startDate }
+    });
+    
+    // Lấy số khách hàng tích cực (có đơn hàng trong 3 tháng gần đây)
+    const threeMonthsAgo = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+    const activeCustomers = await Order.distinct("user_id", {
+      createdAt: { $gte: threeMonthsAgo }
+    });
+    const activeCustomersCount = activeCustomers.length;
+    
+    // Tính tổng doanh thu từ khách hàng (từ các đơn đã giao/hoàn thành)
+    const totalRevenue = await Order.aggregate([
+      { $match: { status: { $in: ["Đã giao hàng", "Hoàn thành"] } } },
+      { $group: { _id: null, total: { $sum: "$total_price" } } }
+    ]);
+    
+    // Tính giá trị đơn hàng trung bình
+    const averageOrderValue = await Order.aggregate([
+      { $match: { status: { $in: ["Đã giao hàng", "Hoàn thành"] } } },
+      { $group: { _id: null, average: { $avg: "$total_price" } } }
+    ]);
+    
+    // Tính tỷ lệ giữ chân khách hàng (đơn giản: khách có >1 đơn hàng)
+    const customersWithMultipleOrders = await Order.aggregate([
+      { $group: { _id: "$user_id", orderCount: { $sum: 1 } } },
+      { $match: { orderCount: { $gt: 1 } } }
+    ]);
+    
+    const customerRetentionRate = customersWithOrdersCount > 0 
+      ? (customersWithMultipleOrders.length / customersWithOrdersCount) * 100 
+      : 0;
+
+    const stats = {
+      totalCustomers,
+      customersWithOrders: customersWithOrdersCount,
+      newCustomersThisMonth,
+      activeCustomers: activeCustomersCount,
+      totalRevenue: totalRevenue[0]?.total || 0,
+      averageOrderValue: Math.round(averageOrderValue[0]?.average || 0),
+      customerRetentionRate: Math.round(customerRetentionRate * 100) / 100
+    };
+
+    res.status(200).json({
+      success: true,
+      data: stats
+    });
+  } catch (error) {
+    console.error("Get customer statistics error:", error);
+    res.status(500).json({ 
+      success: false,
+      message: "Lỗi server", 
+      error: error.message 
+    });
+  }
+};
+
+// Lấy top khách hàng tiềm năng
+exports.getTopCustomers = async (req, res) => {
+  try {
+    const Order = require("../models/Order");
+    
+    // Lấy top khách hàng theo số lượng đơn hàng và tổng chi tiêu
+    const topCustomers = await Order.aggregate([
+      { $match: { status: { $in: ["Đã giao hàng", "Hoàn thành"] } } },
+      { $group: { 
+        _id: "$user_id", 
+        orderCount: { $sum: 1 },
+        totalSpent: { $sum: "$total_amount" }
+      }},
+      { $sort: { totalSpent: -1 } },
+      { $limit: 10 }
+    ]);
+    
+    // Lấy thông tin chi tiết của khách hàng
+    const customerIds = topCustomers.map(c => c._id);
+    const customers = await User.find({ _id: { $in: customerIds } })
+      .select("name email role createdAt");
+    
+    // Kết hợp thông tin
+    const result = customers.map(customer => {
+      const orderInfo = topCustomers.find(o => o._id.toString() === customer._id.toString());
+      return {
+        _id: customer._id,
+        name: customer.name,
+        email: customer.email,
+        role: customer.role,
+        createdAt: customer.createdAt,
+        orderCount: orderInfo?.orderCount || 0,
+        totalSpent: orderInfo?.totalSpent || 0
+      };
+    });
+    
+    res.status(200).json({
+      success: true,
+      data: result
+    });
+  } catch (error) {
+    console.error("Get top customers error:", error);
+    res.status(500).json({ 
+      success: false,
+      message: "Lỗi server", 
+      error: error.message 
+    });
+  }
+};
