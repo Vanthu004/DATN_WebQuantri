@@ -1,7 +1,6 @@
 import { Route, Routes } from "react-router-dom";
 import "./App.css";
 import PageNotFound from "./pages/PageNotFound";
-import Dashboard from "./pages/statics/Dashboard";
 import LayoutAdmin from "./components/layouts/LayoutAdmin";
 import ListProduct from "./pages/products/ListProduct";
 import ListCategory from "./pages/categories/ListCategory";
@@ -14,6 +13,7 @@ import { ToastContainer } from "react-toastify";
 import RegisterPage from "./pages/auths/Register";
 import Login from "./pages/auths/Login";
 import ListUser from "./pages/users/ListUser";
+import UserManagementPage from "./pages/users/UserManagementPage";
 import Setting from "./pages/settings/Setting";
 import OrderPage from "./pages/orders/Order";
 import OrderDetail from "./pages/orders/OrderDetail";
@@ -24,6 +24,8 @@ import Vouchers from "./pages/vouchers/Vouchers";
 import AddVoucher from "./pages/vouchers/AddVoucher";
 import EditVoucher from "./pages/vouchers/UpdateVoucher";
 import Comments from "./pages/comments/Comments";
+import SalesStatisticsPage from "./pages/statistics/SalesStatisticsPage";
+import InventoryPage from "./pages/inventory/InventoryPage";
 
 import ListSizes from "./pages/sizes/ListSizes";
 import AddSize from "./pages/sizes/AddSize";
@@ -32,17 +34,20 @@ import ListColors from "./pages/colors/ListColors";
 import AddColor from "./pages/colors/AddColor";
 import UpdateColor from "./pages/colors/UpdateColor";
 import Guides from "./pages/guides/Guides"; // Import trang mới
+import { OrderNotifyProvider } from "./contexts/OrderNotifyContext";
 
 
 function App() {
   return (
-    <>
+    <OrderNotifyProvider>
       <Routes>
         {/* Private routes */}
         <Route element={<PrivateRouter />}>
           <Route element={<LayoutAdmin />}>
-            <Route path="/" index element={<Dashboard />} />
+            <Route path="/" index element={<SalesStatisticsPage />} />
             <Route path="/notify" element={<Notify />} />
+            <Route path="/statistics" element={<SalesStatisticsPage />} />
+            <Route path="/inventory" element={<InventoryPage />} />
             <Route path="/vouchers" element={<Vouchers />} />
             <Route path="/addvouchers" element={<AddVoucher />} />
             <Route path="//updatevouchers/:voucher_id" element={<EditVoucher />} />
@@ -75,6 +80,7 @@ function App() {
 
             {/* User Path */}
             <Route path="/users" element={<ListUser />} />
+            <Route path="/users/manage" element={<UserManagementPage />} />
 
             {/* Order Path */}
             <Route path="/orders" element={<OrderPage />} />
@@ -91,7 +97,7 @@ function App() {
         <Route path="*" element={<PageNotFound />} />
       </Routes>
       <ToastContainer position="top-right" autoClose={3000} />
-    </>
+    </OrderNotifyProvider>
   );
 }
 

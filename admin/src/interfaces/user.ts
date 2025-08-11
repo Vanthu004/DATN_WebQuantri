@@ -11,11 +11,22 @@ export default interface User {
   avata_url?: string;
   address?: string;
   token_device?: string;
-   ban: {
+  ban: {
     isBanned: boolean;
     bannedUntil?: string | null;
     reason?: string;
   };
+  gender?: "male" | "female" | "other";
+  birthdate?: string;
+  email_verified?: boolean;
   createdAt: string;
   updatedAt: string;
+}
+
+// Interface cho response khi cập nhật role
+export interface UpdateRoleResponse {
+  message: string;
+  user: User;
+  previousRole?: string;
+  newRole?: string;
 }

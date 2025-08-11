@@ -1056,7 +1056,6 @@ exports.getHomeData = async (req, res) => {
     });
   }
 };
-
 // Giảm tồn kho cho 1 hoặc nhiều sản phẩm
 exports.decreaseProductStock = async (req, res) => {
   try {
@@ -1068,8 +1067,8 @@ exports.decreaseProductStock = async (req, res) => {
 
     const bulkOps = items.map(item => ({
       updateOne: {
-        filter: { _id:item.productId },
-        update: { $inc:{ stock_quantity: -item.quantity } }
+        filter: { _id: item.productId },
+        update: { $inc: { stock_quantity: -item.quantity } }
       }
     }));
 
@@ -1080,8 +1079,7 @@ exports.decreaseProductStock = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
-
-// Hoàn lại tồn kho cho 1 hoặc nhiều sản phẩm
+// Hoàn tồn kho cho 1 hoặc nhiều sản phẩm
 exports.increaseProductStock = async (req, res) => {
   try {
     const { items } = req.body; // [{ productId, quantity }, ...]
@@ -1092,8 +1090,8 @@ exports.increaseProductStock = async (req, res) => {
 
     const bulkOps = items.map(item => ({
       updateOne: {
-        filter: { _id:item.productId },
-        update: { $inc:{ stock_quantity: +item.quantity } }
+        filter: { _id: item.productId },
+        update: { $inc: { stock_quantity: +item.quantity } }
       }
     }));
 

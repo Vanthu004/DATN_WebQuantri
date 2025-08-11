@@ -8,6 +8,7 @@ import {
 } from "../../services/voucher";
 import "../../css/voucher/listVoucher.css";
 
+
 const ListVoucher = () => {
   const navigate = useNavigate();
   const [vouchers, setVouchers] = useState<VoucherData[]>([]);
@@ -30,6 +31,7 @@ const ListVoucher = () => {
       if (Array.isArray(data)) {
         const uniqueMap = new Map<string, VoucherData>();
         data.forEach((voucher) => {
+
           const key = voucher.voucher_id || voucher._id!;
           if (!uniqueMap.has(key)) {
             uniqueMap.set(key, voucher);
@@ -98,18 +100,30 @@ if (filterUsage === "available") {
     return true;
   });
 
+  const getVoucherStatus = (expiryDate: string) => {
+    if (!expiryDate) return "unknown";
+    const now = new Date();
+    const expiry = new Date(expiryDate);
+    const diffTime = expiry.getTime() - now.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays < 0) return "expired";
+    if (diffDays <= 7) return "warning";
+    return "active";
+  };
+
   return (
-    <div className="w-full">
-      <div className="flex items-center mb-4">
-        <h2 className="text-xl font-bold">Danh sách voucher</h2>
+    <div className="voucher-container">
+      {/* Header */}
+      <div className="voucher-header">
+        <h2 className="voucher-title">🎫 Danh sách Voucher</h2>
         <button
-          className="ml-auto bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg shadow transition"
+          className="add-voucher-btn"
           onClick={() => navigate("/addvouchers")}
         >
-          Thêm voucher
+          ➕ Thêm Voucher
         </button>
       </div>
-
       {/* Bộ lọc */}
       <div className="mb-4 flex flex-wrap gap-4 items-end">
         <div>
@@ -184,9 +198,9 @@ if (filterUsage === "available") {
           Không có voucher nào.
         </div>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="min-w-full bg-white rounded-lg shadow border border-gray-200">
-            <thead className="bg-gray-100">
+        <div className="table-container">
+          <table className="voucher-table">
+            <thead>
               <tr>
                 <th className="px-4 py-2 border-b">#</th>
                 <th className="px-4 py-2 border-b">Mã voucher</th>
