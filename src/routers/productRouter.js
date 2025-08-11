@@ -10,6 +10,7 @@ router.get('/search', prodCtrl.searchProducts);
 router.get('/category/:categoryId', prodCtrl.getProductsByCategory);
 router.get('/category-type/:type', prodCtrl.getProductsByCategoryType);
 router.get('/home', prodCtrl.getHomeData);
+router.get('/inventory/stats', prodCtrl.getInventoryStats);
 
 // Lấy tất cả sản phẩm
 router.get('/', prodCtrl.getAllProducts);
