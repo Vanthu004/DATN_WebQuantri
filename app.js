@@ -83,7 +83,7 @@ app.use("/api/category-types", categoryTypeRouter);
 app.use("/api/notifications", notificationRouter);
 app.use("/api/addresses", addressRouter);
 app.use("/api/refund-requests", refundRoutes);
-
+app.use("/api", uploadRouter);
 // ====== Auth routes (forgot/reset password) ======
 app.post("/api/forgot-password", authController.forgotPassword);
 app.post("/api/reset-password", authController.resetPassword);
