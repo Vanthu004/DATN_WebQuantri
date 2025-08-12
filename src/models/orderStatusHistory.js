@@ -16,7 +16,7 @@ const orderStatusHistorySchema = new mongoose.Schema({
     required: true
   }
 }, {
-  timestamps: true // ✅ Tự động tạo createdAt, updatedAt
+  timestamps: true
 });
 
 module.exports = mongoose.model("OrderStatusHistory", orderStatusHistorySchema);

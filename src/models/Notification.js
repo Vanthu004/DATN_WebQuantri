@@ -29,6 +29,7 @@ const notificationSchema = new mongoose.Schema({
     enum: ['unread', 'read'],
     default: 'unread'
   }
-}, { timestamps: true });
+},
+ { timestamps: true });
 
 module.exports = mongoose.model('Notification', notificationSchema);
