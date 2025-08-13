@@ -7,6 +7,7 @@ const { Server } = require("socket.io");
 
 // Khởi tạo app và server
 const app = express();
+const path = require("path");
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
@@ -55,6 +56,7 @@ if (!process.env.JWT_SECRET) {
 app.use(cors());
 app.use(express.json());
 app.use("/uploads", express.static("uploads"));
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // ====== Định nghĩa các ROUTE ======
 app.use("/api/users", userRouter);
@@ -81,7 +83,7 @@ app.use("/api/category-types", categoryTypeRouter);
 app.use("/api/notifications", notificationRouter);
 app.use("/api/addresses", addressRouter);
 app.use("/api/refund-requests", refundRoutes);
-
+app.use("/api", uploadRouter);
 // ====== Auth routes (forgot/reset password) ======
 app.post("/api/forgot-password", authController.forgotPassword);
 app.post("/api/reset-password", authController.resetPassword);
