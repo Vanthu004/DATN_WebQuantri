@@ -26,5 +26,6 @@ router.put('/:id', prodCtrl.updateProduct);
 router.delete('/:id', prodCtrl.deleteProduct);
 router.patch('/:id/restore', prodCtrl.restoreProduct);
 router.post('/:id/increment-views', prodCtrl.incrementViews);
-
+router.post("/decrease-stock", prodCtrl.decreaseProductStock);
+router.post("/increase-stock", prodCtrl.increaseProductStock);
 module.exports = router;
