@@ -494,6 +494,10 @@ const Chat = () => {
   );
 };
 
+<<<<<<< HEAD
 export default Dashboard;
 
 export default Dashboard;
+=======
+export default Chat;
+>>>>>>> 49e5cf6f05ce9bde46578a20aba5c006a9680b15
