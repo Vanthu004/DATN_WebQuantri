@@ -1,4 +1,4 @@
-
+// src/routers/userRouter.js
 const express = require("express");
 const router = express.Router();
 const userController = require("../controllers/userController");
@@ -8,7 +8,7 @@ const upload = require("../middlewares/uploadMiddleware");
 
 // Supabase routes
 router.get('/supabase-token', authMiddleware, userController.getSupabaseToken);
-router.get('/admins', authMiddleware, userController.getAdmins);
+
 
 // Public routes
 router.post("/register", userController.createUser);
@@ -27,10 +27,7 @@ router.put("/change-password", authMiddleware, userController.changePassword);
 // Protected routes with parameters (require authentication)
 router.get("/", authMiddleware, userController.getAllUsers);
 router.get("/avatar/:id", authMiddleware, userController.getAvatar);
-router.get("/messages", authMiddleware, userController.getMessages);
-router.post('/messages', authMiddleware, userController.sendMessage);
-router.get("/messages/conversations", authMiddleware, userController.getConversations);
-router.post("/upload-image", authMiddleware, upload.single("image"), userController.uploadImage);
+
 router.get("/:id", authMiddleware, userController.getUserById);
 router.put("/:id", authMiddleware, userController.updateUser);
 router.delete("/:id", authMiddleware, userController.deleteUser);

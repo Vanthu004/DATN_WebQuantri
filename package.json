@@ -4,8 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "migrate-messages": "node src/scripts/migrateMessages.js"
+    "test": "jest"
   },
   "keywords": [],
   "author": "",
@@ -13,41 +12,16 @@
   "type": "commonjs",
   "dependencies": {
     "@aws-sdk/client-s3": "^3.835.0",
-    "@supabase/supabase-js": "^2.53.0",
-<<<<<<< HEAD
-    "@supabase/supabase-js": "^2.53.0",
-=======
-<<<<<<< HEAD
-    "@supabase/supabase-js": "^2.53.0",
-=======
->>>>>>> 49e5cf6f05ce9bde46578a20aba5c006a9680b15
->>>>>>> 1d36e9c030442e917eecc578e4e36990d9806113
+    "@supabase/supabase-js": "^2.55.0",
     "axios": "^1.11.0",
     "bcrypt": "^6.0.0",
     "bcryptjs": "^3.0.2",
     "cloudinary": "^2.7.0",
-<<<<<<< HEAD
-    "cloudinary": "^2.7.0",
-=======
-<<<<<<< HEAD
-    "cloudinary": "^2.7.0",
-=======
->>>>>>> 49e5cf6f05ce9bde46578a20aba5c006a9680b15
->>>>>>> 1d36e9c030442e917eecc578e4e36990d9806113
     "cors": "^2.8.5",
     "crypto-js": "^4.2.0",
-    "dotenv": "^16.6.1",
+    "dotenv": "^16.5.0",
     "express": "^4.21.2",
     "express-validator": "^7.2.1",
-    "form-data": "^4.0.4",
-<<<<<<< HEAD
-    "form-data": "^4.0.4",
-=======
-<<<<<<< HEAD
-    "form-data": "^4.0.4",
-=======
->>>>>>> 49e5cf6f05ce9bde46578a20aba5c006a9680b15
->>>>>>> 1d36e9c030442e917eecc578e4e36990d9806113
     "jsonwebtoken": "^9.0.2",
     "moment": "^2.30.1",
     "mongodb": "^6.17.0",
@@ -59,9 +33,12 @@
     "qs": "^6.14.0",
     "socket.io": "^4.8.1",
     "streamifier": "^0.1.1",
-    "winston": "^3.17.0"
+    "uuid": "^11.1.0"
   },
   "devDependencies": {
+    "jest": "^30.0.5",
+    "mocha": "^11.7.1",
+    "supertest": "^7.1.4",
     "vite": "^6.3.5"
   }
 }
