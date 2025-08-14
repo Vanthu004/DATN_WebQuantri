@@ -31,7 +31,18 @@ export const getAllOrders = async (
     params.append('sort', sort);
 
     const response = await api.get(`/orders?${params.toString()}`);
-    return response.data;
+    return response.data as {
+      success: boolean;
+      data: {
+        orders: Order[];
+        pagination: {
+          page: number;
+          limit: number;
+          total: number;
+          totalPages: number;
+        };
+      };
+    };
   } catch (error) {
     console.error("Error getting all orders:", error);
     throw error;
@@ -42,7 +53,7 @@ export const getAllOrders = async (
 export const getOrderById = async (id: string): Promise<Order> => {
   try {
     const response = await api.get(`/orders/${id}`);
-    return response.data.data;
+    return (response.data as { data: Order }).data;
   } catch (error) {
     console.error("Error getting order by id:", error);
     throw error;
@@ -74,7 +85,18 @@ export const getOrdersByUser = async (
     params.append('limit', limit.toString());
 
     const response = await api.get(`/orders/user/${userId}?${params.toString()}`);
-    return response.data;
+    return response.data as {
+      success: boolean;
+      data: {
+        orders: Order[];
+        pagination: {
+          page: number;
+          limit: number;
+          total: number;
+          totalPages: number;
+        };
+      };
+    };
   } catch (error) {
     console.error("Error getting orders by user:", error);
     throw error;
@@ -96,7 +118,11 @@ export const createOrder = async (orderData: {
 }> => {
   try {
     const response = await api.post("/orders", orderData);
-    return response.data;
+    return response.data as {
+      success: boolean;
+      msg: string;
+      data: Order;
+    };
   } catch (error) {
     console.error("Error creating order:", error);
     throw error;
@@ -114,7 +140,11 @@ export const updateOrder = async (
 }> => {
   try {
     const response = await api.put(`/orders/${id}`, updateData);
-    return response.data;
+    return response.data as {
+      success: boolean;
+      msg: string;
+      data: Order;
+    };
   } catch (error) {
     console.error("Error updating order:", error);
     throw error;
@@ -128,7 +158,10 @@ export const deleteOrder = async (id: string): Promise<{
 }> => {
   try {
     const response = await api.delete(`/orders/${id}`);
-    return response.data;
+    return response.data as {
+      success: boolean;
+      msg: string;
+    };
   } catch (error) {
     console.error("Error deleting order:", error);
     throw error;
@@ -166,9 +199,41 @@ export const createOrderWithDetails = async (orderData: {
 }> => {
   try {
     const response = await api.post("/orders/with-details", orderData);
-    return response.data;
+    return response.data as {
+      success: boolean;
+      msg: string;
+      data: {
+        order: Order;
+        orderDetails: any[];
+        voucherInfo?: {
+          voucher_id: string;
+          discount_applied: number;
+          original_total: number;
+          final_total: number;
+        } | null;
+      };
+    };
   } catch (error) {
     console.error("Error creating order with details:", error);
+    throw error;
+  }
+};
+
+// Cập nhật trạng thái thanh toán cho đơn hàng COD
+export const updateCODPaymentStatus = async (orderId: string): Promise<{
+  success: boolean;
+  msg: string;
+  data: Order;
+}> => {
+  try {
+    const response = await api.put(`/orders/${orderId}/update-cod-payment`);
+    return response.data as {
+      success: boolean;
+      msg: string;
+      data: Order;
+    };
+  } catch (error) {
+    console.error("Error updating COD payment status:", error);
     throw error;
   }
 };

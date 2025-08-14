@@ -31,4 +31,7 @@ router.put("/:id/cancel", orderCtrl.cancelOrder);
 // API cập nhật trạng thái thanh toán khi thanh toán online thành công
 router.post("/update-payment-status", orderCtrl.updatePaymentStatusForOnlinePayment);
 
+// API cập nhật trạng thái thanh toán cho đơn hàng COD
+router.put("/:order_id/update-cod-payment", orderCtrl.updatePaymentStatusForCOD);
+
 module.exports = router;
