@@ -3,11 +3,16 @@ const mongoose = require('mongoose');
 const voucherSchema = new mongoose.Schema({
   voucher_id: {
     type: String,
+    required: false,
     default: () => 'VOUCHER-' + Math.random().toString(36).substring(2, 10).toUpperCase()
   },
   User_id: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
+    required: false,
+  },
+    title: {
+    type: String,
     required: false,
   },
   discount_value: {
