@@ -1,3 +1,4 @@
+// src/models/user.js
 const mongoose = require("mongoose");
 
 const userSchema = new mongoose.Schema(
@@ -8,34 +9,33 @@ const userSchema = new mongoose.Schema(
       unique: true,
       trim: true,
       lowercase: true,
+      match: [/^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/, "Please enter a valid email"], 
     },
     password: {
       type: String,
       required: true,
+      minlength: 8,
     },
     name: {
       type: String,
       required: true,
       trim: true,
+      minlength: 2, 
     },
     role: {
       type: String,
-      enum: ["admin", "customer", "user"],
+      enum: ["user", "staff", "admin", "customer"], 
       default: "user",
     },
     phone_number: {
       type: String,
       required: false,
       trim: true,
-    },
-    avatar: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Upload",
-      required: false,
+      match: [/^\+?[1-9]\d{1,14}$/, "Please enter a valid phone number"], 
     },
     avatar_url: {
       type: String,
-      default: "",
+      default: "", 
     },
     address: {
       type: String,
@@ -44,7 +44,7 @@ const userSchema = new mongoose.Schema(
     },
     token_device: {
       type: String,
-      default: "",
+      default: "", 
     },
     ban: {
       isBanned: {
@@ -77,6 +77,7 @@ const userSchema = new mongoose.Schema(
     email_verification_otp: {
       type: String,
       default: null,
+      select: false, 
     },
     email_verification_expires: {
       type: Date,
@@ -84,16 +85,29 @@ const userSchema = new mongoose.Schema(
     },
     supabase_user_id: {
       type: String,
-      default: null,
+      default: null, 
+      index: true,
     },
+    last_active: {
+      type: Date,
+      default: Date.now, 
+    }
   },
   {
-    timestamps: true,
+    timestamps: true, 
     indexes: [
       { key: { email: 1 }, unique: true },
-      { key: { phone_number: 1 }, sparse: true },
+      { key: { phone_number: 1 }, sparse: true }, 
+      { key: { role: 1 } }, 
+      { key: { supabase_user_id: 1 }, sparse: true }, 
     ],
   }
 );
+
+// Middleware để update timestamps
+userSchema.pre("save", function (next) {
+  this.updatedAt = Date.now();
+  next();
+});
 
 module.exports = mongoose.models.User || mongoose.model("User", userSchema);

@@ -12,6 +12,7 @@ const cors = require("cors");
 const http = require("http");
 const { Server } = require("socket.io");
 
+
 // Khởi tạo app và server
 const app = express();
 const path = require("path");
@@ -22,6 +23,8 @@ const io = new Server(server, {
     methods: ["GET", "POST"],
   },
 });
+
+
 
 // Lưu io vào app để sử dụng trong controllers
 app.set("io", io);
@@ -52,6 +55,9 @@ const notificationRouter = require("./src/routers/notificationRoutes");
 const refundRoutes = require("./src/routers/refundRequestRoutes");
 const sizeRouter = require("./src/routers/sizeRouter");
 const colorRouter = require("./src/routers/colorRouter");
+const chatRoutes = require("./src/routers/chatRoutes.js");
+const chatSocketHandler = require('./src/sockets/chatSocket');
+const { chatNamespace } = chatSocketHandler(io);
 
 // ====== Kiểm tra biến môi trường bắt buộc ======
 if (!process.env.JWT_SECRET) {
@@ -91,6 +97,8 @@ app.use("/api/notifications", notificationRouter);
 app.use("/api/addresses", addressRouter);
 app.use("/api/refund-requests", refundRoutes);
 app.use("/api", uploadRouter);
+app.use('/api/chat', chatRoutes);
+app.set('chatNamespace', chatNamespace);
 // ====== Auth routes (forgot/reset password) ======
 app.post("/api/forgot-password", authController.forgotPassword);
 app.post("/api/reset-password", authController.resetPassword);
@@ -134,3 +142,5 @@ const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
   console.log(`🚀 Server đang chạy tại http://localhost:${PORT}`);
 });
+
+module.exports = app;
