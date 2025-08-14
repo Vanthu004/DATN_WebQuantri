@@ -141,11 +141,27 @@ const OrderDetail = () => {
 
       <div className="order-info-section">
         <div className="order-info-grid">
+          {/* Nhóm 1: Thông tin cơ bản đơn hàng */}
           <div className="info-item">
             <label>Mã đơn hàng:</label>
-            <span className="order-code">{order.order_code}</span>
+            <span>{order.order_code}</span>
           </div>
           
+          <div className="info-item">
+            <label>Ngày tạo:</label>
+            <span>
+              {order.createdAt ? new Date(order.createdAt).toLocaleString('vi-VN') : "-"}
+            </span>
+          </div>
+          
+          <div className="info-item">
+            <label>Trạng thái:</label>
+            <span className={`status-badge status-${getStatusDisplayClass(order.status)}`}>
+              {order.status}
+            </span>
+          </div>
+          
+          {/* Nhóm 2: Thông tin khách hàng */}
           <div className="info-item">
             <label>Khách hàng:</label>
             <span>
@@ -158,12 +174,24 @@ const OrderDetail = () => {
           </div>
           
           <div className="info-item">
-            <label>Trạng thái:</label>
-            <span className={`status-badge status-${getStatusDisplayClass(order.status)}`}>
-              {order.status}
+            <label>Số điện thoại:</label>
+            <span>
+              {typeof order.user_id === "object" &&
+              order.user_id !== null &&
+              "phone" in order.user_id
+                ? order.user_id.phone
+                : 'N/A'}
             </span>
           </div>
           
+          <div className="info-item">
+            <label>Địa chỉ giao hàng:</label>
+            <span>
+              {order.shipping_address || 'N/A'}
+            </span>
+          </div>
+          
+          {/* Nhóm 3: Trạng thái đơn hàng */}
           <div className="info-item">
             <label>Thanh toán:</label>
             <span className={`status-badge payment-${order.payment_status || 'default'}`}>
@@ -187,22 +215,69 @@ const OrderDetail = () => {
           </div>
           
           <div className="info-item">
-            <label>Tổng tiền:</label>
-            <span className="total-price">{order.total_price.toLocaleString()}₫</span>
-          </div>
-          
-          <div className="info-item">
             <label>Số lượng sản phẩm:</label>
             <span>{order.item_count || 0} sản phẩm</span>
           </div>
           
+          {/* Nhóm 4: Hình thức thanh toán và vận chuyển */}
           <div className="info-item">
-            <label>Ngày tạo:</label>
+            <label>Hình thức thanh toán:</label>
             <span>
-              {order.createdAt ? new Date(order.createdAt).toLocaleString('vi-VN') : "-"}
+              {typeof order.paymentmethod_id === "object" && order.paymentmethod_id ? (
+                order.paymentmethod_id.name
+              ) : (
+                'N/A'
+              )}
             </span>
           </div>
           
+          <div className="info-item">
+            <label>Hình thức vận chuyển:</label>
+            <span>
+              {typeof order.shippingmethod_id === "object" && order.shippingmethod_id ? (
+                <>
+                  {order.shippingmethod_id.name}
+                  {order.shippingmethod_id.estimated_days && (
+                    <span className="shipping-speed">
+                      {order.shippingmethod_id.estimated_days <= 2 ? ' (Ship nhanh)' : ' (Ship thường)'}
+                    </span>
+                  )}
+                </>
+              ) : (
+                'N/A'
+              )}
+            </span>
+          </div>
+          
+          {/* Nhóm 5: Thông tin giá */}
+          <div className="info-item">
+            <label>Tổng tiền:</label>
+            <span>{order.total_price.toLocaleString()}₫</span>
+          </div>
+          
+          {order.voucher_id && (
+            <div className="info-item">
+              <label>Voucher sử dụng:</label>
+              <div className="voucher-display">
+                <span className="voucher-title">
+                  {typeof order.voucher_id === "object" && order.voucher_id ? (
+                    order.voucher_id.title
+                  ) : (
+                    'N/A'
+                  )}
+                </span>
+                <span className="voucher-discount">
+                  {typeof order.voucher_id === "object" && order.voucher_id ? (
+                    `(Giảm ${order.voucher_id.discount_value.toLocaleString()}₫)`
+                  ) : (
+                    'N/A'
+                  )}
+                </span>
+              </div>
+            </div>
+          )}
+          
+          {/* Ghi chú nếu có */}
           {order.note && (
             <div className="info-item full-width">
               <label>Ghi chú:</label>

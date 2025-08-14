@@ -38,8 +38,8 @@ exports.createOrder = async (req, res) => {
     }
 
     // Validate payment method
-    const paymentMethod = await PaymentMethod.findById(paymentmethod_id);
-    if (!paymentMethod) {
+    const paymentMethodForOrder = await PaymentMethod.findById(paymentmethod_id);
+    if (!paymentMethodForOrder) {
       return res.status(400).json({
         success: false,
         msg: "Phương thức thanh toán không hợp lệ"
@@ -79,6 +79,26 @@ exports.createOrder = async (req, res) => {
       note,
       order_code,
     }], { session });
+
+    const orderId = order[0]._id;
+
+    // Kiểm tra nếu là thanh toán online thì cập nhật trạng thái thanh toán
+    const paymentMethodForOnline = await PaymentMethod.findById(paymentmethod_id);
+    if (paymentMethodForOnline && paymentMethodForOnline.code && ['ZALOPAY'].includes(paymentMethodForOnline.code.toUpperCase())) {
+      // Đây là thanh toán online, chỉ cập nhật trạng thái thanh toán
+      // KHÔNG thay đổi trạng thái đơn hàng (vẫn ở "Chờ xử lý")
+      await Order.findByIdAndUpdate(
+        orderId,
+        { 
+          payment_status: 'paid',
+          is_paid: true
+          // KHÔNG cập nhật status và confirmed_at
+          // Đơn hàng vẫn ở trạng thái "Chờ xử lý" cho đến khi nhân viên xác nhận
+        },
+        { session }
+      );
+      console.log('Đã cập nhật trạng thái thanh toán cho đơn hàng online:', order_code);
+    }
 
     await session.commitTransaction();
     session.endSession();
@@ -129,9 +149,9 @@ exports.getAllOrders = async (req, res) => {
     
     const orders = await Order.find(query)
       .populate("user_id", "name email phone")
-      .populate("shippingmethod_id", "name fee")
+      .populate("shippingmethod_id", "name fee estimated_days")
       .populate("paymentmethod_id", "name")
-      .populate("voucher_id", "name title discount_value")
+      .populate("voucher_id", "name title discount_value voucher_id")
       .sort(sortOption)
       .skip(skip)
       .limit(parseInt(limit));
@@ -201,9 +221,9 @@ exports.getOrderById = async (req, res) => {
 
     const order = await Order.findById(id)
       .populate("user_id", "name email phone address")
-      .populate("shippingmethod_id", "name fee description")
+      .populate("shippingmethod_id", "name fee description estimated_days")
       .populate("paymentmethod_id", "name description")
-      .populate("voucher_id", "name title discount_value");
+      .populate("voucher_id", "name title discount_value voucher_id");
 
     if (!order) {
       return res.status(404).json({ 
@@ -254,9 +274,9 @@ exports.getOrdersByUser = async (req, res) => {
     const skip = (page - 1) * limit;
     
     const orders = await Order.find(query)
-      .populate("shippingmethod_id", "name fee")
+      .populate("shippingmethod_id", "name fee estimated_days")
       .populate("paymentmethod_id", "name")
-      .populate("voucher_id", "name title discount_value")
+      .populate("voucher_id", "name title discount_value voucher_id")
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(parseInt(limit));
@@ -400,6 +420,53 @@ exports.updateOrder = async (req, res) => {
     res.status(500).json({ 
       success: false,
       error: "Lỗi server khi cập nhật đơn hàng" 
+    });
+  }
+};
+
+// Hàm cập nhật trạng thái thanh toán khi thanh toán online thành công
+exports.updatePaymentStatusForOnlinePayment = async (req, res) => {
+  try {
+    const { order_code, payment_method } = req.body;
+    
+    if (!order_code || !payment_method) {
+      return res.status(400).json({
+        success: false,
+        msg: "Thiếu thông tin bắt buộc"
+      });
+    }
+
+    // Tìm và cập nhật đơn hàng - chỉ cập nhật trạng thái thanh toán
+    const updatedOrder = await Order.findOneAndUpdate(
+      { order_code: order_code },
+      { 
+        payment_status: 'paid',
+        is_paid: true
+        // KHÔNG cập nhật status và confirmed_at
+        // Đơn hàng vẫn ở trạng thái "Chờ xử lý" cho đến khi nhân viên xác nhận
+      },
+      { new: true }
+    ).populate("user_id", "name email")
+     .populate("shippingmethod_id", "name")
+     .populate("paymentmethod_id", "name");
+
+    if (!updatedOrder) {
+      return res.status(404).json({
+        success: false,
+        msg: "Không tìm thấy đơn hàng"
+      });
+    }
+
+    res.json({
+      success: true,
+      msg: "Cập nhật trạng thái thanh toán thành công",
+      data: updatedOrder
+    });
+  } catch (error) {
+    console.error("Lỗi cập nhật trạng thái thanh toán:", error);
+    res.status(500).json({
+      success: false,
+      error: "Lỗi server khi cập nhật trạng thái thanh toán"
     });
   }
 };
@@ -617,6 +684,24 @@ exports.createOrderWithDetails = async (req, res) => {
         { $inc: { sold_quantity: item.quantity } },
         { session }
       );
+    }
+
+    // Kiểm tra nếu là thanh toán online thì cập nhật trạng thái thanh toán
+    const paymentMethodForOnline = await PaymentMethod.findById(orderData.paymentmethod_id);
+    if (paymentMethodForOnline && paymentMethodForOnline.code && ['ZALOPAY', 'VNPAY', 'MOMO'].includes(paymentMethodForOnline.code.toUpperCase())) {
+      // Đây là thanh toán online, chỉ cập nhật trạng thái thanh toán
+      // KHÔNG thay đổi trạng thái đơn hàng (vẫn ở "Chờ xử lý")
+      await Order.findByIdAndUpdate(
+        orderId,
+        { 
+          payment_status: 'paid',
+          is_paid: true
+          // KHÔNG cập nhật status và confirmed_at
+          // Đơn hàng vẫn ở trạng thái "Chờ xử lý" cho đến khi nhân viên xác nhận
+        },
+        { session }
+      );
+      console.log('Đã cập nhật trạng thái thanh toán cho đơn hàng online:', order_code);
     }
 
     // Không cập nhật lại total_price nữa, dùng giá client gửi
