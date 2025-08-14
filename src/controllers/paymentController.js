@@ -191,7 +191,7 @@ exports.createZaloPayOrder = async (req, res) => {
     item: JSON.stringify(items),
     embed_data: JSON.stringify(embed_data),
     amount: amount,
-    callback_url: 'https://6acad9389c19.ngrok-free.app/api/payments/zalopay/callback', // Đảm bảo đúng URL public
+    callback_url: 'https://59c38d099f74.ngrok-free.app/api/payments/zalopay/callback', // Đảm bảo đúng URL public
     description: `Thanh toán ZaloPay cho đơn hàng #${transID}`,
     bank_code: '',
   };
