@@ -14,6 +14,8 @@ const { S3Client, PutObjectCommand } = require("@aws-sdk/client-s3");
 const { createClient } = require('@supabase/supabase-js');
 const cloudinary = require('cloudinary').v2;
 const streamifier = require('streamifier');
+const { supabase, supabaseClient } = require('../config/supabase');
+
 
 // Hàm tạo transporter email
 const createEmailTransporter = () => {

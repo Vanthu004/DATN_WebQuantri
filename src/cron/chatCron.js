@@ -86,4 +86,4 @@ const startChatCronJobs = () => {
   console.log('✅ Chat cron jobs started');
 };
 
-module.exports = { startChatCronJobs };
+module.exports = { startChatCronJobs, autoCloseInactiveRooms, autoAssignStaffToWaitingRooms };

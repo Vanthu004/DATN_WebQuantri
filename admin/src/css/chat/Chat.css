@@ -1,0 +1,63 @@
+.chat-container {
+  padding: 16px;
+  background-color: #f5f6f5;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.chat-title {
+  font-size: 24px;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 16px;
+}
+
+.chat-loading {
+  color: #666;
+  font-size: 16px;
+  text-align: center;
+}
+
+.chat-empty {
+  color: #666;
+  font-size: 16px;
+  text-align: center;
+  margin-top: 20px;
+}
+
+/* Tùy chỉnh GiftedChat */
+.gifted-chat {
+  flex: 1;
+}
+
+.gifted-chat .gifted-chat-message {
+  max-width: 80%;
+}
+
+.gifted-chat .gifted-chat-message-text {
+  font-size: 14px;
+  padding: 8px 12px;
+  border-radius: 12px;
+}
+
+.gifted-chat .gifted-chat-message-sent {
+  background-color: #0084ff;
+  color: #fff;
+}
+
+.gifted-chat .gifted-chat-message-received {
+  background-color: #fff;
+  color: #333;
+}
+
+.gifted-chat .gifted-chat-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+}
+
+.gifted-chat .gifted-chat-time {
+  font-size: 12px;
+  color: #999;
+}
