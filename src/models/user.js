@@ -33,6 +33,17 @@ const userSchema = new mongoose.Schema(
       trim: true,
       match: [/^\+?[1-9]\d{1,14}$/, "Please enter a valid phone number"], 
     },
+     avatar: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Upload",
+    },
+    phone_number: {
+      type: String,
+      required: false,
+    },
+    birthdate: {
+      type: Date
+    },
     avatar_url: {
       type: String,
       default: "", 
