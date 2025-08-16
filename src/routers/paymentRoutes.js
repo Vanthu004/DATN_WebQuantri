@@ -25,4 +25,7 @@ router.post('/zalopay/callback', paymentController.zaloPayCallback);
 // Tính toán voucher discount cho thanh toán online
 router.post('/calculate-voucher', paymentController.calculateVoucherForPayment);
 
+// Xử lý thanh toán online thành công
+router.post('/online-payment-success', paymentController.handleOnlinePaymentSuccess);
+
 module.exports = router;
