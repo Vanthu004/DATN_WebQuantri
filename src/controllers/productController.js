@@ -333,6 +333,7 @@ exports.getProductById = async (req, res) => {
     // Đảm bảo các trường cần thiết
     const result = {
       ...product,
+      variants: variants, // <-- Trả về variants array
       colorGroups, // <-- Trả về nhóm màu, mỗi nhóm chứa các size
       reviews: reviews,
       rating: parseFloat(rating),

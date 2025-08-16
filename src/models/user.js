@@ -18,7 +18,7 @@ const userSchema = new mongoose.Schema(
     },
     role: {
       type: String,
-      enum: ["admin", "customer", "user"],
+      enum: ["admin", "staff", "user"],
       default: "user",
     },
     phone_number: {
@@ -58,25 +58,25 @@ const userSchema = new mongoose.Schema(
 
     gender: {
       type: String,
-      enum: ['male', 'female', 'other'],
-      default: 'other'
+      enum: ["male", "female", "other"],
+      default: "other",
     },
     birthdate: {
-      type: Date
+      type: Date,
     },
     // Thêm trường cho xác nhận email
     email_verified: {
       type: Boolean,
-      default: false
+      default: false,
     },
     email_verification_otp: {
       type: String,
-      default: null
+      default: null,
     },
     email_verification_expires: {
       type: Date,
-      default: null
-    }
+      default: null,
+    },
   },
 
   { timestamps: true }
