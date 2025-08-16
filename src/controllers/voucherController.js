@@ -45,8 +45,9 @@ exports.createVoucher = async (req, res) => {
       const vouchers = await Promise.all(
         users.map((user) => {
           return new Voucher({
-            voucher_id,
+            voucher_id: generateVoucherId(),
             User_id: user._id,
+            title,
             discount_value,
             usage_limit,
             expiry_date,
@@ -60,7 +61,8 @@ exports.createVoucher = async (req, res) => {
 
     // Nếu không phải cá nhân => tạo 1 bản voucher dùng chung
     const voucher = new Voucher({
-      voucher_id,
+      voucher_id: generateVoucherId(),
+      title,
       discount_value,
       usage_limit,
       expiry_date,
@@ -215,48 +217,54 @@ exports.getVoucherByVoucherId = async (req, res) => {
       .json({ error: err.message || "Lỗi server khi lấy voucher." });
   }
 };
-//áp dụng voucher của người dùng
+// Áp dụng voucher cho đơn hàng (cá nhân + dùng chung)
 exports.applyVoucherToOrder = async (req, res) => {
   try {
     const { voucherId, userId } = req.params;
+    if (!voucherId) return res.status(400).json({ error: "voucher_id là bắt buộc." });
 
-    if (!voucherId) {
-      return res.status(400).json({ error: "voucher_id là bắt buộc." });
-    }
+    const userObjectId = userId ? mongoose.Types.ObjectId(userId) : null;
 
-    // Tìm voucher theo voucherId và userId
-    const voucher = await Voucher.findOne({
+    // Atomic update, chỉ giảm usage_limit 1 lần, dùng $inc và $gt để chắc chắn
+    const query = {
       voucher_id: voucherId,
-      $or: [{ User_id: null }, { User_id: userId }],
-    });
+      usage_limit: { $gt: 0 },
+      status: "active",
+      expiry_date: { $gte: new Date() },
+    };
 
-    if (!voucher) {
-      return res.status(404).json({ error: "Không tìm thấy voucher hợp lệ." });
+    if (userObjectId) {
+      query.User_id = userObjectId; // ưu tiên voucher cá nhân
+    } else {
+      query.User_id = null; // voucher dùng chung
     }
 
-    // Các kiểm tra
-    if (voucher.status !== "active") {
-      return res
-        .status(400)
-        .json({ error: "Voucher không còn hiệu lực (status)." });
+    const voucher = await Voucher.findOneAndUpdate(
+      query,
+      { $inc: { usage_limit: -1, used_count: 1 } },
+      { new: true }
+    );
+
+    // Nếu không tìm thấy voucher cá nhân, thử voucher dùng chung
+    if (!voucher && userObjectId) {
+      const commonVoucher = await Voucher.findOneAndUpdate(
+        { ...query, User_id: null },
+        { $inc: { usage_limit: -1, used_count: 1 } },
+        { new: true }
+      );
+      if (!commonVoucher) return res.status(400).json({ error: "Voucher không hợp lệ hoặc đã hết lượt." });
+      return res.status(200).json({ message: "Áp dụng voucher thành công", voucher: commonVoucher });
     }
 
-    if (new Date(voucher.expiry_date) < new Date()) {
-      return res.status(400).json({ error: "Voucher đã hết hạn." });
-    }
+    if (!voucher) return res.status(400).json({ error: "Voucher không hợp lệ hoặc đã hết lượt." });
 
-    if (voucher.usage_limit <= 0) {
-      return res.status(400).json({ error: "Voucher đã hết lượt sử dụng." });
-    }
-
-    // Cập nhật usage
-    voucher.usage_limit -= 1;
-    voucher.used_count += 1;
-    await voucher.save();
-
-    res.status(200).json({ message: "Áp dụng voucher thành công.", voucher });
+    res.status(200).json({ message: "Áp dụng voucher thành công", voucher });
   } catch (err) {
     console.error("❌ applyVoucherToOrder error:", err);
-    res.status(500).json({ error: "Lỗi server khi áp dụng voucher." });
+    res.status(500).json({ error: "Lỗi server khi áp dụng voucher" });
   }
 };
+
+
+
+
