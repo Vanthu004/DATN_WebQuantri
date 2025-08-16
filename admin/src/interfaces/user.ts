@@ -5,7 +5,7 @@ export default interface User {
   email: string;
   password?: string;
   name: string;
-  role: "admin" | "customer" | "user";
+  role: "admin" | "staff" | "user";
   phone_number?: string;
   avatar?: Upload | string;
   avata_url?: string;

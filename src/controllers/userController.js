@@ -1,21 +1,23 @@
 // src/controllers/userController.js
-const User = require('../models/user');
-const EmailVerificationToken = require('../models/EmailVerificationToken');
-const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken');
-const nodemailer = require('nodemailer');
-const multer = require('multer');
-const path = require('path');
+const User = require("../models/user");
+const EmailVerificationToken = require("../models/EmailVerificationToken");
+const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
+const nodemailer = require("nodemailer");
+const multer = require("multer");
+const path = require("path");
 const { validationResult } = require("express-validator");
-const crypto = require('crypto');
-const mongoose = require("mongoose")
+const crypto = require("crypto");
+const mongoose = require("mongoose");
 const createError = require("http-errors");
 const { S3Client, PutObjectCommand } = require("@aws-sdk/client-s3");
 // Hàm tạo transporter email
 const createEmailTransporter = () => {
   // Kiểm tra các biến môi trường cần thiết
   if (!process.env.EMAIL_USERNAME || !process.env.EMAIL_PASSWORD) {
-    throw new Error("EMAIL_USERNAME và EMAIL_PASSWORD phải được cấu hình trong file .env");
+    throw new Error(
+      "EMAIL_USERNAME và EMAIL_PASSWORD phải được cấu hình trong file .env"
+    );
   }
 
   return nodemailer.createTransport({
@@ -58,12 +60,14 @@ const sendVerificationEmail = async (email, otp) => {
     console.error("❌ Lỗi gửi email:", error.message);
 
     // Xử lý các lỗi cụ thể
-    if (error.code === 'EAUTH') {
+    if (error.code === "EAUTH") {
       console.error("🔐 Lỗi xác thực email. Vui lòng kiểm tra:");
       console.error("   - EMAIL_USERNAME trong file .env");
-      console.error("   - EMAIL_PASSWORD phải là App Password (không phải password thường)");
+      console.error(
+        "   - EMAIL_PASSWORD phải là App Password (không phải password thường)"
+      );
       console.error("   - Bật 2FA cho Gmail và tạo App Password");
-    } else if (error.code === 'ECONNECTION') {
+    } else if (error.code === "ECONNECTION") {
       console.error("🌐 Lỗi kết nối email server");
     } else {
       console.error("📧 Lỗi gửi email khác:", error);
@@ -160,7 +164,9 @@ exports.createUser = async (req, res) => {
     const emailSent = await sendVerificationEmail(email, verificationOtp);
 
     if (!emailSent) {
-      console.warn("⚠️ Không thể gửi email xác nhận, nhưng user vẫn được tạo thành công");
+      console.warn(
+        "⚠️ Không thể gửi email xác nhận, nhưng user vẫn được tạo thành công"
+      );
     }
 
     // Tạo token
@@ -183,7 +189,7 @@ exports.createUser = async (req, res) => {
       message: responseMessage,
       user: populated,
       token,
-      emailSent: emailSent
+      emailSent: emailSent,
     });
   } catch (error) {
     res.status(500).json({ message: "Lỗi server", error: error.message });
@@ -298,23 +304,23 @@ exports.updateUser = async (req, res) => {
     const { password, avatar, avata_url, role, ...updateData } = req.body;
 
     // Kiểm tra quyền - chỉ admin mới được cập nhật role
-    if (role && req.user.role !== 'admin') {
-      return res.status(403).json({ 
-        message: "Bạn không có quyền thay đổi role của người dùng" 
+    if (role && req.user.role !== "admin") {
+      return res.status(403).json({
+        message: "Bạn không có quyền thay đổi role của người dùng",
       });
     }
 
     // Validate role nếu có
-    if (role && !['admin', 'customer', 'user'].includes(role)) {
-      return res.status(400).json({ 
-        message: "Role không hợp lệ. Role phải là: admin, customer, hoặc user" 
+    if (role && !["admin", "staff", "user"].includes(role)) {
+      return res.status(400).json({
+        message: "Role không hợp lệ. Role phải là: admin, staff, hoặc user",
       });
     }
 
     // Không cho phép admin tự hạ cấp chính mình
-    if (role && req.params.id === req.user.userId && role !== 'admin') {
-      return res.status(400).json({ 
-        message: "Bạn không thể hạ cấp chính mình" 
+    if (role && req.params.id === req.user.userId && role !== "admin") {
+      return res.status(400).json({
+        message: "Bạn không thể hạ cấp chính mình",
       });
     }
 
@@ -342,10 +348,10 @@ exports.updateUser = async (req, res) => {
       return res.status(404).json({ message: "Không tìm thấy user" });
     }
 
-    res.status(200).json({ 
-      message: "Cập nhật user thành công", 
+    res.status(200).json({
+      message: "Cập nhật user thành công",
       user,
-      roleUpdated: !!role 
+      roleUpdated: !!role,
     });
   } catch (error) {
     res.status(500).json({ message: "Lỗi server", error: error.message });
@@ -457,16 +463,16 @@ exports.blockUser = async (req, res, next) => {
     const { isBanned, bannedUntil, reason } = req.body;
 
     // Kiểm tra quyền - chỉ admin mới được ban user
-    if (req.user.role !== 'admin') {
-      return res.status(403).json({ 
-        message: "Bạn không có quyền khóa/mở khóa người dùng" 
+    if (req.user.role !== "admin") {
+      return res.status(403).json({
+        message: "Bạn không có quyền khóa/mở khóa người dùng",
       });
     }
 
     // Không cho phép admin tự ban chính mình
     if (id === req.user.userId) {
-      return res.status(400).json({ 
-        message: "Bạn không thể khóa chính mình" 
+      return res.status(400).json({
+        message: "Bạn không thể khóa chính mình",
       });
     }
 
@@ -476,7 +482,11 @@ exports.blockUser = async (req, res, next) => {
       reason: isBanned ? reason || "" : "",
     };
 
-    const user = await User.findByIdAndUpdate(id, { ban: banData }, { new: true })
+    const user = await User.findByIdAndUpdate(
+      id,
+      { ban: banData },
+      { new: true }
+    )
       .select("-password")
       .populate("avatar");
 
@@ -489,7 +499,9 @@ exports.blockUser = async (req, res, next) => {
       if (io) {
         io.to(id).emit("banned", {
           message: `Tài khoản của bạn đã bị khóa${
-            banData.bannedUntil ? ` đến ${new Date(banData.bannedUntil).toLocaleString("vi-VN")}` : " vĩnh viễn"
+            banData.bannedUntil
+              ? ` đến ${new Date(banData.bannedUntil).toLocaleString("vi-VN")}`
+              : " vĩnh viễn"
           }${banData.reason ? ` vì: ${banData.reason}` : ""}`,
         });
         console.log(`WebSocket: Sent banned event to user ${id}`);
@@ -499,7 +511,9 @@ exports.blockUser = async (req, res, next) => {
     }
 
     res.status(200).json({
-      message: isBanned ? "Đã khóa (ban) tài khoản người dùng" : "Đã mở khóa (unban) tài khoản người dùng",
+      message: isBanned
+        ? "Đã khóa (ban) tài khoản người dùng"
+        : "Đã mở khóa (unban) tài khoản người dùng",
       user,
     });
   } catch (error) {
@@ -514,23 +528,23 @@ exports.updateUserRole = async (req, res) => {
     const { role } = req.body;
 
     // Kiểm tra quyền - chỉ admin mới được cập nhật role
-    if (req.user.role !== 'admin') {
-      return res.status(403).json({ 
-        message: "Bạn không có quyền thay đổi role của người dùng" 
+    if (req.user.role !== "admin") {
+      return res.status(403).json({
+        message: "Bạn không có quyền thay đổi role của người dùng",
       });
     }
 
     // Validate role
-    if (!role || !['admin', 'customer', 'user'].includes(role)) {
-      return res.status(400).json({ 
-        message: "Role không hợp lệ. Role phải là: admin, customer, hoặc user" 
+    if (!role || !["admin", "staff", "user"].includes(role)) {
+      return res.status(400).json({
+        message: "Role không hợp lệ. Role phải là: admin, staff, hoặc user",
       });
     }
 
     // Không cho phép admin tự hạ cấp chính mình
-    if (id === req.user.userId && role !== 'admin') {
-      return res.status(400).json({ 
-        message: "Bạn không thể hạ cấp chính mình" 
+    if (id === req.user.userId && role !== "admin") {
+      return res.status(400).json({
+        message: "Bạn không thể hạ cấp chính mình",
       });
     }
 
@@ -550,7 +564,7 @@ exports.updateUserRole = async (req, res) => {
       message: `Đã cập nhật role của người dùng thành ${role}`,
       user,
       previousRole: user.role,
-      newRole: role
+      newRole: role,
     });
   } catch (error) {
     res.status(500).json({ message: "Lỗi server", error: error.message });
@@ -576,7 +590,9 @@ exports.login = async (req, res) => {
 
     const user = await User.findOne({ email }).populate("avatar");
     if (!user) {
-      return res.status(401).json({ message: "Email hoặc mật khẩu không đúng" });
+      return res
+        .status(401)
+        .json({ message: "Email hoặc mật khẩu không đúng" });
     }
 
     // Kiểm tra trạng thái ban
@@ -585,7 +601,7 @@ exports.login = async (req, res) => {
         user.ban = {
           isBanned: false,
           bannedUntil: null,
-          reason: ""
+          reason: "",
         };
         await user.save();
       } else {
@@ -602,7 +618,9 @@ exports.login = async (req, res) => {
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      return res.status(401).json({ message: "Email hoặc mật khẩu không đúng" });
+      return res
+        .status(401)
+        .json({ message: "Email hoặc mật khẩu không đúng" });
     }
 
     const token = jwt.sign(
@@ -620,7 +638,6 @@ exports.login = async (req, res) => {
     res.status(500).json({ message: "Lỗi server", error: error.message });
   }
 };
-
 
 // Lấy ảnh avatar của user
 exports.getAvatar = async (req, res) => {
@@ -672,7 +689,7 @@ exports.updateAvatar = async (req, res) => {
       {
         avatar: uploadId,
 
-        avata_url: upload.url
+        avata_url: upload.url,
       },
       { new: true, runValidators: true }
     )
@@ -710,10 +727,16 @@ exports.getCurrentUser = async (req, res, next) => {
     }
 
     const now = new Date();
-    if (user.ban?.isBanned && user.ban.bannedUntil && new Date(user.ban.bannedUntil) > now) {
+    if (
+      user.ban?.isBanned &&
+      user.ban.bannedUntil &&
+      new Date(user.ban.bannedUntil) > now
+    ) {
       throw createError(
         403,
-        `Tài khoản của bạn đã bị khóa đến ${new Date(user.ban.bannedUntil).toLocaleString("vi-VN")}${
+        `Tài khoản của bạn đã bị khóa đến ${new Date(
+          user.ban.bannedUntil
+        ).toLocaleString("vi-VN")}${
           user.ban.reason ? ` vì: ${user.ban.reason}` : ""
         }`
       );
@@ -730,11 +753,11 @@ exports.getCurrentUser = async (req, res, next) => {
 exports.getCustomerStatistics = async (req, res) => {
   try {
     const { timeRange = "month" } = req.query;
-    
+
     // Tính toán thời gian dựa trên timeRange
     const now = new Date();
     let startDate;
-    
+
     switch (timeRange) {
       case "week":
         startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
@@ -754,47 +777,50 @@ exports.getCustomerStatistics = async (req, res) => {
     }
 
     // Lấy tổng số khách hàng (tính cả role 'user' và 'customer')
-    const totalCustomers = await User.countDocuments({ role: { $in: ["user", "customer"] } });
-    
+    const totalCustomers = await User.countDocuments({
+      role: { $in: ["user", "customer"] },
+    });
+
     // Lấy số khách hàng có đơn hàng
     const Order = require("../models/Order");
     const customersWithOrders = await Order.distinct("user_id");
     const customersWithOrdersCount = customersWithOrders.length;
-    
+
     // Lấy số khách hàng mới trong khoảng thời gian
     const newCustomersThisMonth = await User.countDocuments({
       role: "customer",
-      createdAt: { $gte: startDate }
+      createdAt: { $gte: startDate },
     });
-    
+
     // Lấy số khách hàng tích cực (có đơn hàng trong 3 tháng gần đây)
     const threeMonthsAgo = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
     const activeCustomers = await Order.distinct("user_id", {
-      createdAt: { $gte: threeMonthsAgo }
+      createdAt: { $gte: threeMonthsAgo },
     });
     const activeCustomersCount = activeCustomers.length;
-    
+
     // Tính tổng doanh thu từ khách hàng (từ các đơn đã giao/hoàn thành)
     const totalRevenue = await Order.aggregate([
       { $match: { status: { $in: ["Đã giao hàng", "Hoàn thành"] } } },
-      { $group: { _id: null, total: { $sum: "$total_price" } } }
+      { $group: { _id: null, total: { $sum: "$total_price" } } },
     ]);
-    
+
     // Tính giá trị đơn hàng trung bình
     const averageOrderValue = await Order.aggregate([
       { $match: { status: { $in: ["Đã giao hàng", "Hoàn thành"] } } },
-      { $group: { _id: null, average: { $avg: "$total_price" } } }
+      { $group: { _id: null, average: { $avg: "$total_price" } } },
     ]);
-    
+
     // Tính tỷ lệ giữ chân khách hàng (đơn giản: khách có >1 đơn hàng)
     const customersWithMultipleOrders = await Order.aggregate([
       { $group: { _id: "$user_id", orderCount: { $sum: 1 } } },
-      { $match: { orderCount: { $gt: 1 } } }
+      { $match: { orderCount: { $gt: 1 } } },
     ]);
-    
-    const customerRetentionRate = customersWithOrdersCount > 0 
-      ? (customersWithMultipleOrders.length / customersWithOrdersCount) * 100 
-      : 0;
+
+    const customerRetentionRate =
+      customersWithOrdersCount > 0
+        ? (customersWithMultipleOrders.length / customersWithOrdersCount) * 100
+        : 0;
 
     const stats = {
       totalCustomers,
@@ -803,19 +829,19 @@ exports.getCustomerStatistics = async (req, res) => {
       activeCustomers: activeCustomersCount,
       totalRevenue: totalRevenue[0]?.total || 0,
       averageOrderValue: Math.round(averageOrderValue[0]?.average || 0),
-      customerRetentionRate: Math.round(customerRetentionRate * 100) / 100
+      customerRetentionRate: Math.round(customerRetentionRate * 100) / 100,
     };
 
     res.status(200).json({
       success: true,
-      data: stats
+      data: stats,
     });
   } catch (error) {
     console.error("Get customer statistics error:", error);
-    res.status(500).json({ 
+    res.status(500).json({
       success: false,
-      message: "Lỗi server", 
-      error: error.message 
+      message: "Lỗi server",
+      error: error.message,
     });
   }
 };
@@ -824,27 +850,32 @@ exports.getCustomerStatistics = async (req, res) => {
 exports.getTopCustomers = async (req, res) => {
   try {
     const Order = require("../models/Order");
-    
+
     // Lấy top khách hàng theo số lượng đơn hàng và tổng chi tiêu
     const topCustomers = await Order.aggregate([
       { $match: { status: { $in: ["Đã giao hàng", "Hoàn thành"] } } },
-      { $group: { 
-        _id: "$user_id", 
-        orderCount: { $sum: 1 },
-        totalSpent: { $sum: "$total_amount" }
-      }},
+      {
+        $group: {
+          _id: "$user_id",
+          orderCount: { $sum: 1 },
+          totalSpent: { $sum: "$total_amount" },
+        },
+      },
       { $sort: { totalSpent: -1 } },
-      { $limit: 10 }
+      { $limit: 10 },
     ]);
-    
+
     // Lấy thông tin chi tiết của khách hàng
-    const customerIds = topCustomers.map(c => c._id);
-    const customers = await User.find({ _id: { $in: customerIds } })
-      .select("name email role createdAt");
-    
+    const customerIds = topCustomers.map((c) => c._id);
+    const customers = await User.find({ _id: { $in: customerIds } }).select(
+      "name email role createdAt"
+    );
+
     // Kết hợp thông tin
-    const result = customers.map(customer => {
-      const orderInfo = topCustomers.find(o => o._id.toString() === customer._id.toString());
+    const result = customers.map((customer) => {
+      const orderInfo = topCustomers.find(
+        (o) => o._id.toString() === customer._id.toString()
+      );
       return {
         _id: customer._id,
         name: customer.name,
@@ -852,20 +883,20 @@ exports.getTopCustomers = async (req, res) => {
         role: customer.role,
         createdAt: customer.createdAt,
         orderCount: orderInfo?.orderCount || 0,
-        totalSpent: orderInfo?.totalSpent || 0
+        totalSpent: orderInfo?.totalSpent || 0,
       };
     });
-    
+
     res.status(200).json({
       success: true,
-      data: result
+      data: result,
     });
   } catch (error) {
     console.error("Get top customers error:", error);
-    res.status(500).json({ 
+    res.status(500).json({
       success: false,
-      message: "Lỗi server", 
-      error: error.message 
+      message: "Lỗi server",
+      error: error.message,
     });
   }
 };

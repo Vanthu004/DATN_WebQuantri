@@ -1,10 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, } from "react";
 import { SalesDashboard } from "./SalesDashboard";
 import { RevenueChart } from "./RevenueChart";
 import { TopProductsChart } from "./TopProductsChart";
 import { TrendsChart } from "./TrendsChart";
-import { CustomerStatistics } from "./CustomerStatistics";
-import { TestDataComponent } from "./TestDataComponent";
 
 interface StatisticsOverviewProps {
   className?: string;
@@ -20,9 +18,7 @@ export const StatisticsOverview: React.FC<StatisticsOverviewProps> = ({
     { id: "revenue", label: "Doanh thu", icon: "💰" },
     { id: "products", label: "Sản phẩm", icon: "📦" },
     { id: "trends", label: "Xu hướng", icon: "📈" },
-            { id: "customers", label: "Khách hàng", icon: "👥" },
-        { id: "test", label: "Test Data", icon: "🧪" },
-      ];
+  ];
 
   const renderSection = () => {
     switch (activeSection) {
@@ -34,10 +30,6 @@ export const StatisticsOverview: React.FC<StatisticsOverviewProps> = ({
         return <TopProductsChart />;
       case "trends":
         return <TrendsChart />;
-      case "customers":
-        return <CustomerStatistics />;
-      case "test":
-        return <TestDataComponent />;
       default:
         return <SalesDashboard />;
     }
@@ -71,7 +63,7 @@ export const StatisticsOverview: React.FC<StatisticsOverviewProps> = ({
       <div>{renderSection()}</div>
 
       {/* Quick Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg p-6">
           <div className="flex items-center justify-between">
             <div>
@@ -111,26 +103,6 @@ export const StatisticsOverview: React.FC<StatisticsOverviewProps> = ({
             <span className="text-3xl">📈</span>
           </div>
         </div>
-
-        <div className="bg-gradient-to-r from-indigo-500 to-indigo-600 text-white rounded-lg p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-indigo-100 text-sm">Khách hàng</p>
-              <p className="text-2xl font-bold">Phân tích</p>
-            </div>
-            <span className="text-3xl">👥</span>
-          </div>
-        </div>
-
-        <div className="bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-red-100 text-sm">Test Data</p>
-              <p className="text-2xl font-bold">API Check</p>
-            </div>
-            <span className="text-3xl">🧪</span>
-          </div>
-        </div>
       </div>
 
       {/* Help Section */}
@@ -139,7 +111,7 @@ export const StatisticsOverview: React.FC<StatisticsOverviewProps> = ({
           <span className="mr-2">💡</span>
           Hướng dẫn sử dụng
         </h3>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
           <div>
             <h4 className="font-medium mb-2">📊 Tổng quan</h4>
             <p className="text-gray-600">
@@ -164,18 +136,6 @@ export const StatisticsOverview: React.FC<StatisticsOverviewProps> = ({
             <h4 className="font-medium mb-2">📈 Xu hướng</h4>
             <p className="text-gray-600">
               So sánh tăng trưởng với kỳ trước và phân tích xu hướng
-            </p>
-          </div>
-          <div>
-            <h4 className="font-medium mb-2">👥 Khách hàng</h4>
-            <p className="text-gray-600">
-              Phân tích khách hàng, tỷ lệ chuyển đổi, giữ chân và top khách hàng tiềm năng
-            </p>
-          </div>
-          <div>
-            <h4 className="font-medium mb-2">🧪 Test Data</h4>
-            <p className="text-gray-600">
-              Kiểm tra dữ liệu từ database và test các API endpoints
             </p>
           </div>
         </div>

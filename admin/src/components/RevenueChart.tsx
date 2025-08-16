@@ -2,6 +2,9 @@ import React, { useState, useEffect } from "react";
 import SalesStatisticsService, {
   RevenueStatistics,
 } from "../services/salesStatistics";
+import { DateRangePicker } from "./DateRangePicker";
+import { LoadingSkeleton } from "./common/LoadingSkeleton";
+import { ErrorBoundary } from "./common/ErrorBoundary";
 
 interface RevenueChartProps {
   className?: string;
@@ -56,6 +59,11 @@ export const RevenueChart: React.FC<RevenueChartProps> = ({ className }) => {
     fetchData();
   }, [type, startDate, endDate]);
 
+  const handleDateChange = (newStartDate: string, newEndDate: string) => {
+    setStartDate(newStartDate);
+    setEndDate(newEndDate);
+  };
+
   const exportData = () => {
     const csvContent = [
       ["Ngày", "Doanh thu", "Số đơn hàng", "Số sản phẩm bán"],
@@ -84,38 +92,18 @@ export const RevenueChart: React.FC<RevenueChartProps> = ({ className }) => {
   };
 
   if (loading) {
-    return (
-      <div className={`bg-white rounded-lg shadow ${className}`}>
-        <div className="p-6">
-          <div className="flex items-center justify-between mb-4">
-            <div className="h-6 bg-gray-200 rounded w-48 animate-pulse"></div>
-            <div className="h-10 bg-gray-200 rounded w-32 animate-pulse"></div>
-          </div>
-          <div className="h-64 bg-gray-200 rounded animate-pulse"></div>
-        </div>
-      </div>
-    );
+    return <LoadingSkeleton type="chart" className={className} />;
   }
 
   if (error) {
     return (
-      <div className={`bg-white rounded-lg shadow ${className}`}>
-        <div className="p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold flex items-center">
-              <span className="mr-2">📈</span>
-              Biểu đồ doanh thu
-            </h3>
-            <button
-              onClick={fetchData}
-              className="px-3 py-1 border border-gray-300 rounded hover:bg-gray-50 text-sm"
-            >
-              Thử lại
-            </button>
-          </div>
-          <p className="text-red-500">{error}</p>
-        </div>
-      </div>
+      <ErrorBoundary
+        error={error}
+        onRetry={fetchData}
+        className={className}
+        title="Lỗi tải dữ liệu biểu đồ"
+        retryText="Thử lại"
+      />
     );
   }
 
@@ -152,7 +140,7 @@ export const RevenueChart: React.FC<RevenueChartProps> = ({ className }) => {
             </select>
             <button
               onClick={exportData}
-              className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+              className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
               title="Xuất CSV"
             >
               📥
@@ -161,27 +149,14 @@ export const RevenueChart: React.FC<RevenueChartProps> = ({ className }) => {
         </div>
 
         {/* Date Range Picker */}
-        <div className="flex items-center space-x-4 mb-6">
-          <div className="flex items-center space-x-2">
-            <span className="text-gray-500">📅</span>
-            <span className="text-sm text-gray-600">Từ:</span>
-            <input
-              type="date"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-          <div className="flex items-center space-x-2">
-            <span className="text-sm text-gray-600">Đến:</span>
-            <input
-              type="date"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-        </div>
+        <DateRangePicker
+          startDate={startDate}
+          endDate={endDate}
+          onDateChange={handleDateChange}
+          showQuickSelect={true}
+          showValidation={true}
+          className="mb-6"
+        />
 
         {/* Summary Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
