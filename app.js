@@ -45,6 +45,7 @@ const notificationRouter = require("./src/routers/notificationRoutes");
 const refundRoutes = require("./src/routers/refundRequestRoutes");
 const sizeRouter = require("./src/routers/sizeRouter");
 const colorRouter = require("./src/routers/colorRouter");
+const searchHistoryRouter = require("./src/routers/searchHistoryRouter");
 
 // ====== Kiểm tra biến môi trường bắt buộc ======
 if (!process.env.JWT_SECRET) {
@@ -84,6 +85,7 @@ app.use("/api/notifications", notificationRouter);
 app.use("/api/addresses", addressRouter);
 app.use("/api/refund-requests", refundRoutes);
 app.use("/api", uploadRouter);
+app.use("/api/search-history", searchHistoryRouter);
 // ====== Auth routes (forgot/reset password) ======
 app.post("/api/forgot-password", authController.forgotPassword);
 app.post("/api/reset-password", authController.resetPassword);
