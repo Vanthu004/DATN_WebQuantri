@@ -1,3 +1,4 @@
+// admin/src/services/auth.ts
 import api from "../configs/api";
 
 export const Register = async (userData: {

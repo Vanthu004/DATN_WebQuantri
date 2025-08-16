@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { getAllOrders, updateOrder } from "../../services/order";
+import { getAllOrders, updateOrder, updateCODPaymentStatus } from "../../services/order";
 import Order from "../../interfaces/order";
 import "../../css/orders/order.css";
 import ToastMessage from "../../components/ToastMessage";
@@ -112,6 +112,32 @@ const OrderPage = () => {
       setToast({
         type: "error",
         message: error?.response?.data?.msg || "Cập nhật trạng thái thất bại!",
+      });
+    }
+  };
+
+  const handleCODPaymentUpdate = async (orderId: string) => {
+    try {
+      const response = await updateCODPaymentStatus(orderId);
+      if (response.success) {
+        setOrders((orders) =>
+          orders.map((order) =>
+            order._id === orderId ? { 
+              ...order, 
+              payment_status: response.data.payment_status,
+              is_paid: response.data.is_paid 
+            } : order
+          )
+        );
+        setToast({
+          type: "success",
+          message: "Cập nhật trạng thái thanh toán COD thành công!",
+        });
+      }
+    } catch (error: any) {
+      setToast({
+        type: "error",
+        message: error?.response?.data?.msg || "Cập nhật trạng thái thanh toán COD thất bại!",
       });
     }
   };
@@ -281,6 +307,19 @@ const OrderPage = () => {
                     <span className={`status-badge ${getPaymentStatusBadgeClass(order.payment_status)}`}>
                       {paymentStatusOptions.find(opt => opt.value === order.payment_status)?.label || "N/A"}
                     </span>
+                    {/* Nút cập nhật trạng thái thanh toán cho đơn hàng COD */}
+                    {typeof order.paymentmethod_id === 'object' && 
+                     order.paymentmethod_id.code === 'COD' && 
+                     order.payment_status === 'pending' && 
+                     (order.status === 'Đã giao hàng' || order.status === 'Hoàn thành') && (
+                      <button
+                        onClick={() => handleCODPaymentUpdate(order._id)}
+                        className="btn-update-cod-payment"
+                        title="Cập nhật trạng thái thanh toán COD"
+                      >
+                        ✓ Xác nhận thanh toán
+                      </button>
+                    )}
                   </td>
                   <td>
                     <span className={`status-badge ${getPaymentStatusBadgeClass(order.shipping_status)}`}>
