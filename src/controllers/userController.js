@@ -161,7 +161,7 @@ exports.createUser = async (req, res) => {
 
     if (!emailSent) {
       console.warn("⚠️ Không thể gửi email xác nhận, nhưng user vẫn được tạo thành công");
-    }
+    }     
 
     // Tạo token
     const token = jwt.sign(
