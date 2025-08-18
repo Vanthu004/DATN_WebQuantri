@@ -10,6 +10,7 @@ import AddProduct from "./pages/products/AddProduct";
 import UpdateProduct from "./pages/products/UpdateProduct";
 import PrivateRouter from "./hooks/PrivateRouter";
 import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import RegisterPage from "./pages/auths/Register";
 import Login from "./pages/auths/Login";
 import ListUser from "./pages/users/ListUser";
@@ -26,6 +27,14 @@ import EditVoucher from "./pages/vouchers/UpdateVoucher";
 import Comments from "./pages/comments/Comments";
 import SalesStatisticsPage from "./pages/statistics/SalesStatisticsPage";
 import InventoryPage from "./pages/inventory/InventoryPage";
+
+// Shipper Management Pages
+import ShipperManagementPage from "./pages/shippers/ShipperManagementPage";
+import ShipperListPage from "./pages/shippers/ShipperListPage";
+import OrderAssignmentPage from "./pages/shippers/OrderAssignmentPage";
+import ShipperStatisticsPage from "./pages/shippers/ShipperStatisticsPage";
+import AddShipper from "./pages/shippers/AddShipper";
+import ShipperReportsPage from "./pages/shippers/ShipperReportsPage";
 
 import ListSizes from "./pages/sizes/ListSizes";
 import AddSize from "./pages/sizes/AddSize";
@@ -48,9 +57,18 @@ function App() {
             <Route path="/notify" element={<Notify />} />
             <Route path="/statistics" element={<SalesStatisticsPage />} />
             <Route path="/inventory" element={<InventoryPage />} />
+            
+            {/* Shipper Management Routes */}
+            <Route path="/shippers" element={<ShipperManagementPage />} />
+            <Route path="/shippers/list" element={<ShipperListPage />} />
+            <Route path="/shippers/add" element={<AddShipper />} />
+            <Route path="/shippers/orders" element={<OrderAssignmentPage />} />
+            <Route path="/shippers/statistics" element={<ShipperStatisticsPage />} />
+            <Route path="/shippers/reports" element={<ShipperReportsPage />} />
+            
             <Route path="/vouchers" element={<Vouchers />} />
             <Route path="/addvouchers" element={<AddVoucher />} />
-            <Route path="//updatevouchers/:voucher_id" element={<EditVoucher />} />
+            <Route path="/updatevouchers/:voucher_id" element={<EditVoucher />} />
 
             <Route path="/comments" element={<Comments />} />
 

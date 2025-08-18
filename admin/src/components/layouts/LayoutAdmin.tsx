@@ -7,6 +7,7 @@ import {
   FaBook, // Thêm biểu tượng cho Guides
   FaChartBar, // Thêm biểu tượng cho Thống kê
   FaWarehouse, // Thêm biểu tượng cho Kho hàng
+  FaTruck, // Thêm biểu tượng cho Shipper
 } from "react-icons/fa";
 import { MdOutlineNotificationsActive } from "react-icons/md";
 import { RiDiscountPercentFill } from "react-icons/ri";
@@ -29,6 +30,11 @@ const menuItems = [
     path: "/inventory",
     icon: <FaWarehouse />,
     label: "Kho hàng",
+  },
+  {
+    path: "/shippers",
+    icon: <FaTruck />,
+    label: "Quản lý Shipper",
   },
   {
     path: "/notify",
