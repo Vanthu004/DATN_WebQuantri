@@ -1,3 +1,5 @@
+// admin/src/App.tsx (Updated)
+
 import { Route, Routes } from "react-router-dom";
 import "./App.css";
 import PageNotFound from "./pages/PageNotFound";
@@ -42,79 +44,88 @@ import UpdateSize from "./pages/sizes/UpdateSize";
 import ListColors from "./pages/colors/ListColors";
 import AddColor from "./pages/colors/AddColor";
 import UpdateColor from "./pages/colors/UpdateColor";
-import Guides from "./pages/guides/Guides"; // Import trang mới
-import { OrderNotifyProvider } from "./contexts/OrderNotifyContext";
+import Guides from "./pages/guides/Guides";
 
+// Chat Support Pages
+import ChatDashboard from "./pages/chat/ChatDashboard";
+import ChatRoomsList from "./pages/chat/ChatRoomsList";
+import ChatRoomDetail from "./pages/chat/ChatRoomDetail";
+
+import { OrderNotifyProvider } from "./contexts/OrderNotifyContext";
+import { ChatProvider } from "./contexts/ChatContext";
 
 function App() {
   return (
     <OrderNotifyProvider>
-      <Routes>
-        {/* Private routes */}
-        <Route element={<PrivateRouter />}>
-          <Route element={<LayoutAdmin />}>
-            <Route path="/" index element={<SalesStatisticsPage />} />
-            <Route path="/notify" element={<Notify />} />
-            <Route path="/statistics" element={<SalesStatisticsPage />} />
-            <Route path="/inventory" element={<InventoryPage />} />
-            
-            {/* Shipper Management Routes */}
-            <Route path="/shippers" element={<ShipperManagementPage />} />
-            <Route path="/shippers/list" element={<ShipperListPage />} />
-            <Route path="/shippers/add" element={<AddShipper />} />
-            <Route path="/shippers/orders" element={<OrderAssignmentPage />} />
-            <Route path="/shippers/statistics" element={<ShipperStatisticsPage />} />
-            <Route path="/shippers/reports" element={<ShipperReportsPage />} />
-            
-            <Route path="/vouchers" element={<Vouchers />} />
-            <Route path="/addvouchers" element={<AddVoucher />} />
-            <Route path="/updatevouchers/:voucher_id" element={<EditVoucher />} />
 
-            <Route path="/comments" element={<Comments />} />
+      <ChatProvider>
+        <Routes>
+          {/* Private routes */}
+          <Route element={<PrivateRouter />}>
+            <Route element={<LayoutAdmin />}>
+              <Route path="/" index element={<SalesStatisticsPage />} />
+              <Route path="/notify" element={<Notify />} />
+              <Route path="/statistics" element={<SalesStatisticsPage />} />
+              <Route path="/inventory" element={<InventoryPage />} />
+              <Route path="/vouchers" element={<Vouchers />} />
+              <Route path="/addvouchers" element={<AddVoucher />} />
+              <Route path="/updatevouchers/:voucher_id" element={<EditVoucher />} />
 
-            {/* Product Path */}
-            <Route path="/products" element={<ListProduct />} />
-            <Route path="/products/add" element={<AddProduct />} />
-            <Route path="/products/update/:id" element={<UpdateProduct />} />
+              <Route path="/comments" element={<Comments />} />
 
-            {/* Category Path */}
-            <Route path="/categories/types" element={<ManageCategoryType />} />
-            <Route path="/categories" element={<ListCategory />} />
-            <Route path="/categories/add" element={<AddCategory />} />
-            <Route path="/categories/update/:id" element={<UpdateCategory />} />
+              {/* Product Path */}
+              <Route path="/products" element={<ListProduct />} />
+              <Route path="/products/add" element={<AddProduct />} />
+              <Route path="/products/update/:id" element={<UpdateProduct />} />
 
-            {/* Size Path */}
-            <Route path="/sizes" element={<ListSizes />} />
-            <Route path="/sizes/add" element={<AddSize />} />
-            <Route path="/sizes/update/:id" element={<UpdateSize />} />
+              {/* Category Path */}
+              <Route path="/categories/types" element={<ManageCategoryType />} />
+              <Route path="/categories" element={<ListCategory />} />
+              <Route path="/categories/add" element={<AddCategory />} />
+              <Route path="/categories/update/:id" element={<UpdateCategory />} />
 
-            {/* Color Path */}
-            <Route path="/colors" element={<ListColors />} />
-            <Route path="/colors/add" element={<AddColor />} />
-            <Route path="/colors/update/:id" element={<UpdateColor />} />
+              {/* Size Path */}
+              <Route path="/sizes" element={<ListSizes />} />
+              <Route path="/sizes/add" element={<AddSize />} />
+              <Route path="/sizes/update/:id" element={<UpdateSize />} />
 
-            {/* Products by Category Type */}
-            <Route path="/products/category-type/:type" element={<ProductsByCategoryType />} />
+              {/* Color Path */}
+              <Route path="/colors" element={<ListColors />} />
+              <Route path="/colors/add" element={<AddColor />} />
+              <Route path="/colors/update/:id" element={<UpdateColor />} />
 
-            {/* User Path */}
-            <Route path="/users" element={<ListUser />} />
-            <Route path="/users/manage" element={<UserManagementPage />} />
+              {/* Products by Category Type */}
+              <Route path="/products/category-type/:type" element={<ProductsByCategoryType />} />
 
-            {/* Order Path */}
-            <Route path="/orders" element={<OrderPage />} />
-            <Route path="/orders/:id" element={<OrderDetail />} />
-            <Route path="/setting" element={<Setting />} />
+              {/* User Path */}
+              <Route path="/users" element={<ListUser />} />
+              <Route path="/users/manage" element={<UserManagementPage />} />
 
-            {/* Thêm route mới cho Guides */}
-            <Route path="/guides" element={<Guides />} />
+              {/* Order Path */}
+              <Route path="/orders" element={<OrderPage />} />
+              <Route path="/orders/:id" element={<OrderDetail />} />
+
+              {/* Chat Support Routes */}
+              <Route path="/chat/dashboard" element={<ChatDashboard />} />
+              <Route path="/chat/rooms" element={<ChatRoomsList />} />
+              <Route path="/chat/room/:roomId" element={<ChatRoomDetail />} />
+              
+              {/* Redirect /chat to dashboard */}
+              <Route path="/chat" element={<ChatDashboard />} />
+
+              {/* Settings & Guides */}
+              <Route path="/setting" element={<Setting />} />
+              <Route path="/guides" element={<Guides />} />
+            </Route>
           </Route>
-        </Route>
-        {/* Public path */}
-        <Route path="/register" element={<RegisterPage />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="*" element={<PageNotFound />} />
-      </Routes>
-      <ToastContainer position="top-right" autoClose={3000} />
+          
+          {/* Public path */}
+          <Route path="/register" element={<RegisterPage />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="*" element={<PageNotFound />} />
+        </Routes>
+        <ToastContainer position="top-right" autoClose={3000} />
+      </ChatProvider>
     </OrderNotifyProvider>
   );
 }
