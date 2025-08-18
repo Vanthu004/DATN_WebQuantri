@@ -1,8 +1,9 @@
+// src/middlewares/authMiddleware.js
 const jwt = require('jsonwebtoken');
 const User = require('../models/user');
-const mongoose = require('mongoose');
 
 module.exports = async (req, res, next) => {
+  console.log('Running authMiddleware version: 2025-08-03');
   if (!process.env.JWT_SECRET) {
     throw new Error('JWT_SECRET không được định nghĩa trong biến môi trường');
   }
@@ -19,9 +20,9 @@ module.exports = async (req, res, next) => {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    console.log('Decoded JWT:', decoded); // Log để debug
+    console.log('Decoded JWT:', decoded);
 
-    if (!decoded.userId || !mongoose.Types.ObjectId.isValid(decoded.userId)) {
+    if (!decoded.userId) {
       return res.status(401).json({ message: 'Token không chứa userId hợp lệ' });
     }
 
@@ -30,7 +31,6 @@ module.exports = async (req, res, next) => {
       return res.status(404).json({ message: 'Không tìm thấy người dùng' });
     }
 
-    // Kiểm tra trạng thái ban
     if (user.ban?.isBanned) {
       if (!user.ban.bannedUntil || user.ban.bannedUntil > new Date()) {
         return res.status(403).json({
@@ -39,7 +39,6 @@ module.exports = async (req, res, next) => {
             (user.ban.reason ? ` vì: ${user.ban.reason}` : ''),
         });
       } else {
-        // Hết hạn ban => tự động unban
         user.ban.isBanned = false;
         user.ban.bannedUntil = null;
         user.ban.reason = '';

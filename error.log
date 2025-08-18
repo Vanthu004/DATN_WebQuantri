@@ -1,0 +1,13 @@
+{"level":"error","message":"Supabase insert error: Could not find the 'sender_avatar_url' column of 'messages' in the schema cache","timestamp":"2025-08-03T13:37:03.267Z"}
+{"level":"error","message":"Supabase insert error: Could not find the 'sender_avatar_url' column of 'messages' in the schema cache","timestamp":"2025-08-03T13:56:25.201Z"}
+{"level":"error","message":"Supabase token error: supabase.auth.admin.generateAuthTokens is not a function","timestamp":"2025-08-03T20:10:21.269Z"}
+{"level":"error","message":"Supabase token error: supabase.auth.admin.generateAuthTokens is not a function","timestamp":"2025-08-03T20:10:43.260Z"}
+{"level":"error","message":"Supabase token error: supabase.auth.admin.generateAuthTokens is not a function","timestamp":"2025-08-03T20:10:47.707Z"}
+{"level":"error","message":"Supabase token error: supabase.auth.admin.generateAuthTokens is not a function","timestamp":"2025-08-03T20:10:47.772Z"}
+{"level":"error","message":"Supabase token error: supabase.auth.admin.generateAuthTokens is not a function","timestamp":"2025-08-03T20:12:09.359Z"}
+{"level":"error","message":"Supabase token error: supabase.auth.admin.generateAuthTokens is not a function","timestamp":"2025-08-03T20:18:38.243Z"}
+{"level":"error","message":"Supabase token error: supabase.auth.admin.generateAuthTokens is not a function","timestamp":"2025-08-03T20:18:38.299Z"}
+{"level":"error","message":"Supabase token error: supabase.auth.admin.generateAuthTokens is not a function","timestamp":"2025-08-03T20:19:42.546Z"}
+{"level":"error","message":"Supabase token error: supabase.auth.admin.generateAuthTokens is not a function","timestamp":"2025-08-03T20:19:42.599Z"}
+{"level":"error","message":"Supabase token error: supabase.auth.admin.generateAuthTokens is not a function","timestamp":"2025-08-03T20:22:02.986Z"}
+{"level":"error","message":"Supabase token error: supabase.auth.admin.generateAuthTokens is not a function","timestamp":"2025-08-03T20:25:31.392Z"}

@@ -1,8 +1,14 @@
-const Voucher = require('../models/Voucher');
-const mongoose = require('mongoose');
-const User = require('../models/User');
+const Voucher = require("../models/Voucher");
+const mongoose = require("mongoose");
+const User = require("../models/user");
 
 // Tạo voucher (1 bản ghi hoặc nhiều bản ghi voucher cá nhân)
+// Nếu req.body có userIds: tạo voucher cá nhân cho từng userId
+// Hàm tạo voucher mới (thêm)
+const generateVoucherId = () => {
+  return "VOUCHER-" + Math.random().toString(36).substring(2, 10).toUpperCase();
+};
+
 exports.createVoucher = async (req, res) => {
   try {
     const {
@@ -10,9 +16,8 @@ exports.createVoucher = async (req, res) => {
       discount_value,
       usage_limit,
       expiry_date,
-      status = 'active',
-      isPersonal = false,
-      userIds = [],
+      status = "active",
+      isPersonal = false, // true: tạo voucher cá nhân cho tất cả user
     } = req.body;
 
     if (!title || !usage_limit || !expiry_date) {
@@ -30,47 +35,45 @@ exports.createVoucher = async (req, res) => {
     }
 
     if (isPersonal) {
-      if (!Array.isArray(userIds) || userIds.length === 0) {
-        return res.status(400).json({ error: "Vui lòng cung cấp danh sách userIds cho voucher cá nhân." });
+      const users = await User.find({}, "_id");
+      if (!users || users.length === 0) {
+        return res
+          .status(404)
+          .json({ error: "Không tìm thấy user nào để tạo voucher cá nhân." });
       }
 
-      // Tạo voucher riêng cho từng user với voucher_id riêng
-      const vouchers = userIds.map(userId => ({
-        voucher_id: 'VOUCHER-' + Math.random().toString(36).substring(2, 10).toUpperCase(),
-        User_id: new mongoose.Types.ObjectId(userId),
-        title,
-        discount_value: finalDiscount,
-        usage_limit,
-        used_count: 0,
-        expiry_date: new Date(expiry_date),
-        status,
-      }));
+      const vouchers = await Promise.all(
+        users.map((user) => {
+          return new Voucher({
+            voucher_id,
+            User_id: user._id,
+            discount_value,
+            usage_limit,
+            expiry_date,
+            status,
+          }).save();
+        }),
+      );
 
-      await Voucher.insertMany(vouchers);
-
-      return res.status(201).json({ message: "Tạo voucher cá nhân thành công." });
-
-    } else {
-      // Voucher dùng chung, chỉ tạo 1 bản ghi
-      const voucher_id = 'VOUCHER-' + Math.random().toString(36).substring(2, 10).toUpperCase();
-
-      const voucher = new Voucher({
-        voucher_id,
-        title,
-        discount_value: finalDiscount,
-        usage_limit,
-        used_count: 0,
-        expiry_date: new Date(expiry_date),
-        status,
-      });
-      await voucher.save();
-
-      return res.status(201).json({ message: "Tạo voucher thành công.", voucher });
+      return res.status(201).json(vouchers);
     }
 
-  } catch (error) {
-    console.error("Lỗi tạo voucher:", error);
-    return res.status(500).json({ error: "Đã xảy ra lỗi khi tạo voucher." });
+    // Nếu không phải cá nhân => tạo 1 bản voucher dùng chung
+    const voucher = new Voucher({
+      voucher_id,
+      discount_value,
+      usage_limit,
+      expiry_date,
+      status,
+    });
+
+    const saved = await voucher.save();
+    res.status(201).json(saved);
+  } catch (err) {
+    console.error("❌ Lỗi khi tạo voucher:", err);
+    res
+      .status(500)
+      .json({ error: err.message || "Lỗi server khi tạo voucher." });
   }
 };
 // Lấy danh sách voucher theo userId (có thể rỗng => lấy cả dùng chung)
@@ -91,30 +94,31 @@ exports.getVouchersByUserId = async (req, res) => {
     const query = userId
       ? {
           ...baseConditions,
-          $or: [
-            { User_id: null },
-            { User_id: userId },
-          ],
+          $or: [{ User_id: null }, { User_id: userId }],
         }
       : {
           ...baseConditions,
           User_id: null,
         };
 
-    const vouchers = await Voucher.find(query).populate('User_id', 'name email');
+    const vouchers = await Voucher.find(query).populate(
+      "User_id",
+      "name email",
+    );
 
     res.status(200).json(vouchers);
   } catch (err) {
     console.error("❌ Lỗi khi lấy voucher theo userId:", err);
-    res.status(500).json({ error: err.message || "Lỗi server khi lấy voucher." });
+    res
+      .status(500)
+      .json({ error: err.message || "Lỗi server khi lấy voucher." });
   }
 };
-
 
 // Lấy tất cả voucher (chưa gộp, trả về đầy đủ)
 exports.getAllVouchers = async (req, res) => {
   try {
-    const vouchers = await Voucher.find().populate('User_id', 'name email'); // chỉ lấy tên email user
+    const vouchers = await Voucher.find().populate("User_id", "name email"); // chỉ lấy tên email user
     res.status(200).json(vouchers);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -137,17 +141,23 @@ exports.updateVoucherByVoucherId = async (req, res) => {
     // Cập nhật tất cả voucher có voucher_id = voucher_id truyền vào
     const result = await Voucher.updateMany(
       { voucher_id: voucher_id },
-      { $set: updateData }
+      { $set: updateData },
     );
 
     if (result.matchedCount === 0) {
-      return res.status(404).json({ message: "Không tìm thấy voucher nào với voucher_id này." });
+      return res
+        .status(404)
+        .json({ message: "Không tìm thấy voucher nào với voucher_id này." });
     }
 
-    res.status(200).json({ message: `Đã cập nhật ${result.modifiedCount} voucher.` });
+    res
+      .status(200)
+      .json({ message: `Đã cập nhật ${result.modifiedCount} voucher.` });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: err.message || "Lỗi server khi cập nhật voucher." });
+    res
+      .status(500)
+      .json({ error: err.message || "Lỗi server khi cập nhật voucher." });
   }
 };
 
@@ -155,8 +165,8 @@ exports.updateVoucherByVoucherId = async (req, res) => {
 exports.deleteVoucher = async (req, res) => {
   try {
     const deleted = await Voucher.findByIdAndDelete(req.params.id);
-    if (!deleted) return res.status(404).json({ message: 'Voucher not found' });
-    res.status(200).json({ message: 'Voucher deleted' });
+    if (!deleted) return res.status(404).json({ message: "Voucher not found" });
+    res.status(200).json({ message: "Voucher deleted" });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -167,8 +177,11 @@ exports.deleteVoucherByVoucherId = async (req, res) => {
   try {
     const { voucher_id } = req.params;
     const result = await Voucher.deleteMany({ voucher_id });
-    if (result.deletedCount === 0) return res.status(404).json({ message: 'Voucher not found' });
-    res.status(200).json({ message: `Deleted ${result.deletedCount} vouchers` });
+    if (result.deletedCount === 0)
+      return res.status(404).json({ message: "Voucher not found" });
+    res
+      .status(200)
+      .json({ message: `Deleted ${result.deletedCount} vouchers` });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -182,20 +195,27 @@ exports.getVoucherByVoucherId = async (req, res) => {
     }
 
     // Tìm tất cả voucher có voucher_id truyền vào (có thể nhiều bản ghi nếu là voucher cá nhân)
-    const vouchers = await Voucher.find({ voucher_id }).populate('User_id', 'name email');
+    const vouchers = await Voucher.find({ voucher_id }).populate(
+      "User_id",
+      "name email",
+    );
 
     if (!vouchers || vouchers.length === 0) {
-      return res.status(404).json({ message: "Không tìm thấy voucher với voucher_id này." });
+      return res
+        .status(404)
+        .json({ message: "Không tìm thấy voucher với voucher_id này." });
     }
 
     // Trả về danh sách voucher tìm được (nếu muốn chỉ 1 bản đại diện có thể trả vouchers[0])
     res.status(200).json(vouchers);
   } catch (err) {
     console.error("❌ Lỗi khi lấy voucher theo voucher_id:", err);
-    res.status(500).json({ error: err.message || "Lỗi server khi lấy voucher." });
+    res
+      .status(500)
+      .json({ error: err.message || "Lỗi server khi lấy voucher." });
   }
 };
-//áp dụng voucher của người dùng 
+//áp dụng voucher của người dùng
 exports.applyVoucherToOrder = async (req, res) => {
   try {
     const { voucherId, userId } = req.params;
@@ -214,9 +234,11 @@ exports.applyVoucherToOrder = async (req, res) => {
       return res.status(404).json({ error: "Không tìm thấy voucher hợp lệ." });
     }
 
-    // Các kiểm tra 
-    if (voucher.status !== 'active') {
-      return res.status(400).json({ error: "Voucher không còn hiệu lực (status)." });
+    // Các kiểm tra
+    if (voucher.status !== "active") {
+      return res
+        .status(400)
+        .json({ error: "Voucher không còn hiệu lực (status)." });
     }
 
     if (new Date(voucher.expiry_date) < new Date()) {
@@ -238,5 +260,3 @@ exports.applyVoucherToOrder = async (req, res) => {
     res.status(500).json({ error: "Lỗi server khi áp dụng voucher." });
   }
 };
-
-
