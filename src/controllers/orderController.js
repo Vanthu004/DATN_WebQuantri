@@ -148,7 +148,7 @@ exports.getAllOrders = async (req, res) => {
     console.log('Sort option:', sortOption);
     
     const orders = await Order.find(query)
-      .populate("user_id", "name email phone")
+      .populate("user_id", "name email phone_number")
       .populate("shippingmethod_id", "name fee estimated_days")
       .populate("paymentmethod_id", "name code")
       .populate("voucher_id", "name title discount_value voucher_id")
@@ -220,7 +220,7 @@ exports.getOrderById = async (req, res) => {
     }
 
     const order = await Order.findById(id)
-      .populate("user_id", "name email phone address")
+      .populate("user_id", "name email phone_number address")
       .populate("shippingmethod_id", "name fee description estimated_days")
       .populate("paymentmethod_id", "name description code")
       .populate("voucher_id", "name title discount_value voucher_id");
@@ -274,6 +274,7 @@ exports.getOrdersByUser = async (req, res) => {
     const skip = (page - 1) * limit;
     
     const orders = await Order.find(query)
+      .populate("user_id", "name email phone_number")
       .populate("shippingmethod_id", "name fee estimated_days")
       .populate("paymentmethod_id", "name code")
       .populate("voucher_id", "name title discount_value voucher_id")
@@ -354,13 +355,19 @@ function getStatusUpdateData(currentStatus, newStatus, paymentMethodCode = null)
     case "Đã giao hàng":
       updateData.delivered_at = new Date();
       updateData.shipping_status = "delivered";
-      // Với COD, KHÔNG tự động cập nhật payment_status
-      // Admin sẽ cập nhật thủ công khi khách hàng thực sự thanh toán
+      // Với COD, tự động cập nhật payment_status thành "paid" khi giao hàng
+      if (paymentMethodCode && paymentMethodCode.toUpperCase() === 'COD') {
+        updateData.payment_status = "paid";
+        updateData.is_paid = true;
+      }
       break;
     case "Hoàn thành":
       updateData.shipping_status = "delivered";
-      // Với COD, KHÔNG tự động cập nhật payment_status
-      // Admin sẽ cập nhật thủ công khi khách hàng thực sự thanh toán
+      // Với COD, tự động cập nhật payment_status thành "paid" nếu chưa được cập nhật
+      if (paymentMethodCode && paymentMethodCode.toUpperCase() === 'COD') {
+        updateData.payment_status = "paid";
+        updateData.is_paid = true;
+      }
       break;
     case "Đã hủy":
       updateData.cancelled_at = new Date();
@@ -427,7 +434,7 @@ exports.updateOrder = async (req, res) => {
 
     const updated = await Order.findByIdAndUpdate(id, updateData, {
       new: true,
-    }).populate("user_id", "name email")
+    }).populate("user_id", "name email phone_number")
       .populate("shippingmethod_id", "name")
       .populate("paymentmethod_id", "name code");
 
@@ -467,7 +474,7 @@ exports.updatePaymentStatusForOnlinePayment = async (req, res) => {
         // Đơn hàng vẫn ở trạng thái "Chờ xử lý" cho đến khi nhân viên xác nhận
       },
       { new: true }
-    ).populate("user_id", "name email")
+    ).populate("user_id", "name email phone_number")
      .populate("shippingmethod_id", "name")
      .populate("paymentmethod_id", "name code");
 
@@ -540,7 +547,7 @@ exports.updatePaymentStatusForCOD = async (req, res) => {
         is_paid: true
       },
       { new: true }
-    ).populate("user_id", "name email")
+    ).populate("user_id", "name email phone_number")
      .populate("shippingmethod_id", "name")
      .populate("paymentmethod_id", "name code");
 
