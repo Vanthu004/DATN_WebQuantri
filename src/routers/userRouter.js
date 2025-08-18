@@ -25,7 +25,7 @@ router.put("/update-avatar", authMiddleware, userController.updateAvatar);
 router.put("/change-password", authMiddleware, userController.changePassword);
 
 // Protected routes with parameters (require authentication)
-router.get("/", authMiddleware, userController.getAllUsers);
+router.get("/all", userController.getAllUsers);
 router.get("/avatar/:id", authMiddleware, userController.getAvatar);
 
 router.get("/:id", authMiddleware, userController.getUserById);
