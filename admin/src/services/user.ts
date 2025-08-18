@@ -43,9 +43,7 @@ export const updateUserRole = async (
 
 // Hàm lấy danh sách toàn bộ user
 export const getAllUsers = async () => {
-  const token = localStorage.getItem('token');
-  const headers = token ? { Authorization: `Bearer ${token}` } : {};
-  const res = await api.get("/users/all", { headers });
-  return res.data; // giả sử API trả về mảng user
+  const res = await api.get("/users/all");
+  return res.data;
 };
 

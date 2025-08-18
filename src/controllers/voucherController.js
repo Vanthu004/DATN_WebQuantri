@@ -220,50 +220,39 @@ exports.getVoucherByVoucherId = async (req, res) => {
 // Áp dụng voucher cho đơn hàng (cá nhân + dùng chung)
 exports.applyVoucherToOrder = async (req, res) => {
   try {
-    const { voucherId, userId } = req.params;
-    if (!voucherId) return res.status(400).json({ error: "voucher_id là bắt buộc." });
+    const { voucherId } = req.params;
+    if (!voucherId) {
+      return res.status(400).json({ error: "voucherId là bắt buộc." });
+    }
 
-    const userObjectId = userId ? mongoose.Types.ObjectId(userId) : null;
-
-    // Atomic update, chỉ giảm usage_limit 1 lần, dùng $inc và $gt để chắc chắn
-    const query = {
+    // Query voucher theo voucher_id, status active, chưa hết hạn, usage_limit > 0
+    const voucher = await Voucher.findOne({
       voucher_id: voucherId,
-      usage_limit: { $gt: 0 },
       status: "active",
       expiry_date: { $gte: new Date() },
-    };
+      usage_limit: { $gt: 0 },
+    });
 
-    if (userObjectId) {
-      query.User_id = userObjectId; // ưu tiên voucher cá nhân
-    } else {
-      query.User_id = null; // voucher dùng chung
+    if (!voucher) {
+      return res.status(400).json({ error: "Voucher không hợp lệ hoặc đã hết lượt." });
     }
 
-    const voucher = await Voucher.findOneAndUpdate(
-      query,
-      { $inc: { usage_limit: -1, used_count: 1 } },
-      { new: true }
-    );
+    // Giảm usage_limit 1 và tăng used_count 1
+    voucher.usage_limit -= 1;
+    voucher.used_count += 1;
+    await voucher.save(); // Save document, bắt buộc mới giảm usage_limit
 
-    // Nếu không tìm thấy voucher cá nhân, thử voucher dùng chung
-    if (!voucher && userObjectId) {
-      const commonVoucher = await Voucher.findOneAndUpdate(
-        { ...query, User_id: null },
-        { $inc: { usage_limit: -1, used_count: 1 } },
-        { new: true }
-      );
-      if (!commonVoucher) return res.status(400).json({ error: "Voucher không hợp lệ hoặc đã hết lượt." });
-      return res.status(200).json({ message: "Áp dụng voucher thành công", voucher: commonVoucher });
-    }
-
-    if (!voucher) return res.status(400).json({ error: "Voucher không hợp lệ hoặc đã hết lượt." });
-
-    res.status(200).json({ message: "Áp dụng voucher thành công", voucher });
+    return res.status(200).json({
+      message: "Áp dụng voucher thành công",
+      voucher,
+    });
   } catch (err) {
     console.error("❌ applyVoucherToOrder error:", err);
     res.status(500).json({ error: "Lỗi server khi áp dụng voucher" });
   }
 };
+
+
 
 
 
