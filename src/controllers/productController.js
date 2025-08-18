@@ -333,6 +333,7 @@ exports.getProductById = async (req, res) => {
     // Đảm bảo các trường cần thiết
     const result = {
       ...product,
+      variants: variants, // <-- Trả về variants array
       colorGroups, // <-- Trả về nhóm màu, mỗi nhóm chứa các size
       reviews: reviews,
       rating: parseFloat(rating),
@@ -1161,5 +1162,51 @@ exports.getInventoryStats = async (req, res) => {
       message: "Lỗi server", 
       error: error.message 
     });
+  }
+};
+// Giảm tồn kho cho 1 hoặc nhiều sản phẩm
+exports.decreaseProductStock = async (req, res) => {
+  try {
+    const { items } = req.body; // [{ productId, quantity }, ...]
+
+    if (!items || !Array.isArray(items) || items.length === 0) {
+      return res.status(400).json({ message: "Danh sách sản phẩm không hợp lệ" });
+    }
+
+    const bulkOps = items.map(item => ({
+      updateOne: {
+        filter: { _id: item.productId },
+        update: { $inc: { stock_quantity: -item.quantity } }
+      }
+    }));
+
+    await Product.bulkWrite(bulkOps);
+
+    res.json({ message: "Cập nhật tồn kho thành công" });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+// Hoàn tồn kho cho 1 hoặc nhiều sản phẩm
+exports.increaseProductStock = async (req, res) => {
+  try {
+    const { items } = req.body; // [{ productId, quantity }, ...]
+
+    if (!items || !Array.isArray(items) || items.length === 0) {
+      return res.status(400).json({ message: "Danh sách sản phẩm không hợp lệ" });
+    }
+
+    const bulkOps = items.map(item => ({
+      updateOne: {
+        filter: { _id: item.productId },
+        update: { $inc: { stock_quantity: +item.quantity } }
+      }
+    }));
+
+    await Product.bulkWrite(bulkOps);
+
+    res.json({ message: "Cập nhật tồn kho thành công" });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 };
