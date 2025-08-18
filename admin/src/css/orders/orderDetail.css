@@ -66,6 +66,17 @@
   grid-column: 1 / -1;
 }
 
+.info-row {
+  display: flex;
+  gap: 20px;
+  grid-column: 1 / -1;
+}
+
+.info-row .info-item {
+  flex: 1;
+  min-width: 0;
+}
+
 .info-item label {
   font-weight: 600;
   color: #495057;

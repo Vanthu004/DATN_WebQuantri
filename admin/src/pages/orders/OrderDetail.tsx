@@ -176,18 +176,29 @@ const OrderDetail = () => {
           <div className="info-item">
             <label>Số điện thoại:</label>
             <span>
-              {typeof order.user_id === "object" &&
-              order.user_id !== null &&
-              "phone" in order.user_id
-                ? order.user_id.phone
-                : 'N/A'}
+              {order.shipping_address ? (() => {
+                // Thử nhiều cách để lấy số điện thoại từ địa chỉ giao hàng
+                const phoneMatch = order.shipping_address.match(/^(\d[\d\s\-\(\)]+)/);
+                if (phoneMatch) {
+                  return phoneMatch[1].trim();
+                }
+                
+                // Nếu không có số ở đầu, thử tìm số điện thoại trong chuỗi
+                const anyPhoneMatch = order.shipping_address.match(/(\d{10,11})/);
+                if (anyPhoneMatch) {
+                  return anyPhoneMatch[1];
+                }
+                
+                return 'N/A';
+              })() : 'N/A'}
             </span>
           </div>
           
           <div className="info-item">
             <label>Địa chỉ giao hàng:</label>
             <span>
-              {order.shipping_address || 'N/A'}
+              {order.shipping_address ? 
+                order.shipping_address.replace(/^[^-]*-\s*/, '').replace(/^[0-9\s\-\(\)]+/, '') : 'N/A'}
             </span>
           </div>
           
@@ -255,35 +266,37 @@ const OrderDetail = () => {
             <span>{order.total_price.toLocaleString()}₫</span>
           </div>
           
-          {order.voucher_id && (
-            <div className="info-item">
-              <label>Voucher sử dụng:</label>
-              <div className="voucher-display">
-                <span className="voucher-title">
-                  {typeof order.voucher_id === "object" && order.voucher_id ? (
-                    order.voucher_id.title
-                  ) : (
-                    'N/A'
-                  )}
-                </span>
-                <span className="voucher-discount">
-                  {typeof order.voucher_id === "object" && order.voucher_id ? (
-                    `(Giảm ${order.voucher_id.discount_value.toLocaleString()}₫)`
-                  ) : (
-                    'N/A'
-                  )}
-                </span>
+          <div className="info-row">
+            {order.voucher_id && (
+              <div className="info-item">
+                <label>Voucher sử dụng:</label>
+                <div className="voucher-display">
+                  <span className="voucher-title">
+                    {typeof order.voucher_id === "object" && order.voucher_id ? (
+                      order.voucher_id.title
+                    ) : (
+                      'N/A'
+                    )}
+                  </span>
+                  <span className="voucher-discount">
+                    {typeof order.voucher_id === "object" && order.voucher_id ? (
+                      `(Giảm ${order.voucher_id.discount_value.toLocaleString()}₫)`
+                    ) : (
+                      'N/A'
+                    )}
+                  </span>
+                </div>
               </div>
-            </div>
-          )}
-          
-          {/* Ghi chú nếu có */}
-          {order.note && (
-            <div className="info-item full-width">
-              <label>Ghi chú:</label>
-              <span>{order.note}</span>
-            </div>
-          )}
+            )}
+            
+            {/* Ghi chú nếu có */}
+            {order.note && (
+              <div className="info-item">
+                <label>Ghi chú:</label>
+                <span>{order.note}</span>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 

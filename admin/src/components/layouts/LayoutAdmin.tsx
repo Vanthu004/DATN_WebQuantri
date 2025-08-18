@@ -10,6 +10,7 @@ import {
   FaBook, // Thêm biểu tượng cho Guides
   FaChartBar, // Thêm biểu tượng cho Thống kê
   FaWarehouse, // Thêm biểu tượng cho Kho hàng
+  FaTruck, // Thêm biểu tượng cho Shipper
 } from "react-icons/fa";
 import { MdOutlineNotificationsActive } from "react-icons/md";
 import { RiDiscountPercentFill } from "react-icons/ri";
@@ -23,9 +24,83 @@ import { useOrderNotify } from "../../contexts/OrderNotifyContext";
 import { useOrderNotification } from "../../hooks/useOrderNotification";
 import OrderToast from "../OrderToast";
 
+const menuItems = [
+  {
+    path: "/",
+    icon: <FaChartBar />,
+    label: "Thống kê",
+  },
+  {
+    path: "/inventory",
+    icon: <FaWarehouse />,
+    label: "Kho hàng",
+  },
+  {
+    path: "/shippers",
+    icon: <FaTruck />,
+    label: "Quản lý Shipper",
+  },
+  {
+    path: "/notify",
+    icon: <MdOutlineNotificationsActive />,
+    label: "Thông báo",
+  },
+  {
+    path: "/users",
+    icon: <FaUser />,
+    label: "Người dùng",
+  },
+  {
+    path: "/products",
+    icon: <FaProductHunt />,
+    label: "Sản phẩm",
+  },
+  {
+    path: "/categories",
+    icon: <FaList />,
+    label: "Danh mục",
+  },
+  {
+    path: "/sizes",
+    icon: <FaList />,
+    label: "Kích thước",
+  },
+  {
+    path: "/colors",
+    icon: <FaList />,
+    label: "Màu sắc",
+  },
+  {
+    path: "/vouchers",
+    icon: <RiDiscountPercentFill />,
+    label: "Vouchers",
+  },
+  {
+    path: "/orders",
+    icon: <FaShoppingCart />,
+    label: "Đơn hàng",
+  },
+  {
+    path: "/comments",
+    icon: <BiSolidCommentDetail />,
+    label: "Bình luận - Đánh giá",
+  },
+  {
+    path: "/setting",
+    icon: <AiFillSetting />,
+    label: "Cài đặt",
+  },
+  {
+    path: "/guides",
+    icon: <FaBook />, // Biểu tượng cho Hướng dẫn sử dụng
+    label: "Hướng dẫn sử dụng",
+  },
+];
+
 interface User {
   role: string;
 }
+
 
 const LayoutAdmin = () => {
   const navigate = useNavigate();
