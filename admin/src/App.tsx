@@ -12,6 +12,7 @@ import AddProduct from "./pages/products/AddProduct";
 import UpdateProduct from "./pages/products/UpdateProduct";
 import PrivateRouter from "./hooks/PrivateRouter";
 import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import RegisterPage from "./pages/auths/Register";
 import Login from "./pages/auths/Login";
 import ListUser from "./pages/users/ListUser";
@@ -28,6 +29,14 @@ import EditVoucher from "./pages/vouchers/UpdateVoucher";
 import Comments from "./pages/comments/Comments";
 import SalesStatisticsPage from "./pages/statistics/SalesStatisticsPage";
 import InventoryPage from "./pages/inventory/InventoryPage";
+
+// Shipper Management Pages
+import ShipperManagementPage from "./pages/shippers/ShipperManagementPage";
+import ShipperListPage from "./pages/shippers/ShipperListPage";
+import OrderAssignmentPage from "./pages/shippers/OrderAssignmentPage";
+import ShipperStatisticsPage from "./pages/shippers/ShipperStatisticsPage";
+import AddShipper from "./pages/shippers/AddShipper";
+import ShipperReportsPage from "./pages/shippers/ShipperReportsPage";
 
 import ListSizes from "./pages/sizes/ListSizes";
 import AddSize from "./pages/sizes/AddSize";
@@ -48,6 +57,7 @@ import { ChatProvider } from "./contexts/ChatContext";
 function App() {
   return (
     <OrderNotifyProvider>
+
       <ChatProvider>
         <Routes>
           {/* Private routes */}
