@@ -60,7 +60,7 @@ exports.getMyChatRooms = async (req, res) => {
     }
 
     const skip = (page - 1) * limit;
-    
+
     const chatRooms = await ChatRoom.find(query)
       .populate('assignedStaff', 'name avatar_url role')
       .sort({ lastMessageAt: -1 })
@@ -94,11 +94,11 @@ exports.getAssignedChatRooms = async (req, res) => {
     const { status, page = 1, limit = 20 } = req.query;
     const staffId = req.user.userId;
 
-    const query = { 
-      assignedStaff: staffId, 
-      isActive: true 
+    const query = {
+      assignedStaff: staffId,
+      isActive: true
     };
-    
+
     if (status && ['open', 'assigned', 'resolved', 'closed'].includes(status)) {
       query.status = status;
     }
@@ -139,7 +139,7 @@ exports.getAllChatRooms = async (req, res) => {
     const { status, category, priority, assigned, page = 1, limit = 25 } = req.query;
 
     const query = { isActive: true };
-    
+
     if (status) query.status = status;
     if (category) query.category = category;
     if (priority) query.priority = priority;
@@ -151,10 +151,10 @@ exports.getAllChatRooms = async (req, res) => {
     const chatRooms = await ChatRoom.find(query)
       .populate('userId', 'name email phone_number avatar_url')
       .populate('assignedStaff', 'name avatar_url role')
-      .sort({ 
-        priority: -1, 
-        status: 1, 
-        lastMessageAt: -1 
+      .sort({
+        priority: -1,
+        status: 1,
+        lastMessageAt: -1
       })
       .limit(parseInt(limit))
       .skip(skip);
@@ -203,7 +203,7 @@ exports.getAllChatRooms = async (req, res) => {
 exports.getChatRoomById = async (req, res) => {
   try {
     const { roomId } = req.params;
-    
+
     const chatRoom = await ChatRoom.findOne({ roomId, isActive: true })
       .populate('userId', 'name email phone_number avatar_url')
       .populate('assignedStaff', 'name avatar_url role');
@@ -212,11 +212,14 @@ exports.getChatRoomById = async (req, res) => {
       return res.status(404).json({ message: 'Không tìm thấy phòng chat' });
     }
 
-    // Kiểm tra quyền truy cập
-    const hasAccess = 
+    const hasAccess =
       req.user.role === 'admin' ||
       chatRoom.userId._id.toString() === req.user.userId ||
       (chatRoom.assignedStaff && chatRoom.assignedStaff._id.toString() === req.user.userId);
+
+    console.log('🔍 Req user:', req.user);
+    console.log('🔍 Chat room:', chatRoom);
+    console.log('🔍 hasAccess:', hasAccess);
 
     if (!hasAccess) {
       return res.status(403).json({ message: 'Không có quyền truy cập phòng chat này' });
@@ -299,7 +302,7 @@ exports.updateRoomStatus = async (req, res) => {
     }
 
     // Kiểm tra quyền
-    const hasPermission = 
+    const hasPermission =
       req.user.role === 'admin' ||
       (req.user.role === 'staff' && chatRoom.assignedStaff?.toString() === req.user.userId);
 
@@ -311,7 +314,7 @@ exports.updateRoomStatus = async (req, res) => {
     if (status === 'closed') {
       chatRoom.isActive = false;
     }
-    
+
     await chatRoom.save();
 
     // Emit socket event
@@ -350,7 +353,7 @@ exports.sendMessage = async (req, res) => {
     }
 
     // Kiểm tra quyền gửi tin nhắn
-    const hasPermission = 
+    const hasPermission =
       req.user.role === 'admin' ||
       chatRoom.userId.toString() === req.user.userId ||
       (chatRoom.assignedStaff && chatRoom.assignedStaff.toString() === req.user.userId);
@@ -432,7 +435,7 @@ exports.getMessages = async (req, res) => {
       return res.status(404).json({ message: 'Không tìm thấy phòng chat' });
     }
 
-    const hasPermission = 
+    const hasPermission =
       req.user.role === 'admin' ||
       chatRoom.userId.toString() === req.user.userId ||
       (chatRoom.assignedStaff && chatRoom.assignedStaff.toString() === req.user.userId);
@@ -525,11 +528,11 @@ exports.getChatStatistics = async (req, res) => {
 
     // Staff performance
     const staffStats = await ChatRoom.aggregate([
-      { 
-        $match: { 
+      {
+        $match: {
           assignedStaff: { $ne: null },
-          isActive: true 
-        } 
+          isActive: true
+        }
       },
       {
         $group: {

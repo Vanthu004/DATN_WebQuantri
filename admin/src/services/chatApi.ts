@@ -117,17 +117,19 @@ export const chatApi = {
   },
 
   async getChatRoomById(roomId: string): Promise<ChatRoom> {
-    const response = await fetch(`${API_URL}/api/chat/rooms/${roomId}`, {
-      headers: getAuthHeaders(),
-    });
-    
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || 'Không thể tải thông tin phòng chat');
-    }
-    
-    return response.json();
-  },
+  const response = await fetch(`${API_URL}/api/chat/rooms/${roomId}`, {
+    headers: getAuthHeaders(),
+  });
+  
+  console.log('🔍 getChatRoomById response:', response.status, await response.clone().json());
+  
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || 'Không thể tải thông tin phòng chat');
+  }
+  
+  return response.json();
+},
 
   async assignStaffToRoom(roomId: string, staffId: string): Promise<{ chatRoom: ChatRoom }> {
     const response = await fetch(`${API_URL}/api/chat/rooms/${roomId}/assign`, {
