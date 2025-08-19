@@ -174,7 +174,7 @@ if (filterUsage === "available") {
           >
             <option value="all">Tất cả</option>
             <option value="available">Còn lượt dùng</option>
-            <option value="used_up">Hết lượt dùng</option>
+            <option value="used_up">Tổng</option>
           </select>
         </div>
 
@@ -208,7 +208,7 @@ if (filterUsage === "available") {
                 <th className="px-4 py-2 border-b">Loại</th>
                 <th className="px-4 py-2 border-b">Người dùng</th>
                 <th className="px-4 py-2 border-b">Giảm giá</th>
-                <th className="px-4 py-2 border-b">Đã dùng / Tổng</th>
+                <th className="px-4 py-2 border-b">Đã dùng /Số lần dùng</th>
                 <th className="px-4 py-2 border-b">HSD</th>
                 <th className="px-4 py-2 border-b">Thao tác</th>
               </tr>
