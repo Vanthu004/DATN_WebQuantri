@@ -1,10 +1,11 @@
 export default interface Order {
   _id: string;
-  user_id: string | { _id: string; name: string; email?: string; phone?: string; address?: string };
+  user_id: string | { _id: string; name: string; email?: string; phone_number?: string; address?: string };
   status: string;
   total_price: number;
-  shippingmethod_id: string | { _id: string; name: string; price?: number; description?: string };
-  paymentmethod_id: string | { _id: string; name: string; description?: string };
+  shippingmethod_id: string | { _id: string; name: string; price?: number; description?: string; estimated_days?: number };
+  paymentmethod_id: string | { _id: string; name: string; description?: string; code?: string };
+  voucher_id?: string | { _id: string; title: string; discount_value: number; voucher_id: string };
   is_paid: boolean;
   shipping_address: string;
   order_code: string;

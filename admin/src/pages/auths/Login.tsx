@@ -20,10 +20,16 @@ const Login = () => {
     e.preventDefault();
     setError("");
     try {
-      const res = (await LoginService(form)) as { token?: string; user?: unknown };
+      const res = (await LoginService(form)) as { token?: string; user?: any };
       if (res && res.token) {
+        const role = res.user?.role as string | undefined;
+        if (!role || !["admin", "user"].includes(role)) {
+          setError("Tài khoản của bạn không có quyền truy cập trang quản trị");
+          toast.error("Không có quyền truy cập admin");
+          return;
+        }
+
         localStorage.setItem("token", res.token);
-        // Lưu thông tin user để sử dụng cho role management
         if (res.user) {
           localStorage.setItem("user", JSON.stringify(res.user));
         }

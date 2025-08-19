@@ -1,3 +1,4 @@
+// admin/src/services/user.ts
 import api from "../configs/api";
 
 export const blockUser = async (
@@ -21,7 +22,7 @@ export const updateUser = async (
     phone_number?: string;
     address?: string;
     avatar?: string;
-    role?: "admin" | "customer" | "user";
+    role?: "admin" | "staff" | "user";
   },
   token?: string
 ) => {
@@ -32,19 +33,38 @@ export const updateUser = async (
 // Hàm cập nhật role cho user
 export const updateUserRole = async (
   id: string,
-  role: "admin" | "customer" | "user",
+  role: "admin" | "staff" | "user",
   token: string
 ) => {
-  return api.patch(`/users/${id}/role`, { role }, {
-    headers: { Authorization: `Bearer ${token}` },
+  // Log request data for debugging
+  console.log("Updating user role with:", {
+    id,
+    role,
+    hasToken: !!token,
   });
+
+  try {
+    const response = await api.patch(
+      `/users/${id}/role`,
+      { role: role }, // Ensure role is sent as an object
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+    return response;
+  } catch (error: any) {
+    console.error("Update role error:", error.response?.data || error.message);
+    throw error;
+  }
 };
 
 // Hàm lấy danh sách toàn bộ user
 export const getAllUsers = async () => {
-  const token = localStorage.getItem('token');
+  const token = localStorage.getItem("token");
   const headers = token ? { Authorization: `Bearer ${token}` } : {};
   const res = await api.get("/users/all", { headers });
   return res.data; // giả sử API trả về mảng user
 };
-
