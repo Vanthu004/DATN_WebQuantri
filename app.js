@@ -55,6 +55,7 @@ const notificationRouter = require("./src/routers/notificationRoutes");
 const refundRoutes = require("./src/routers/refundRequestRoutes");
 const sizeRouter = require("./src/routers/sizeRouter");
 const colorRouter = require("./src/routers/colorRouter");
+const searchHistoryRouter = require("./src/routers/searchHistoryRouter");
 
 const shiperRouter = require("./src/routers/shiperRouter");
 const adminShiperRouter = require("./src/routers/adminShiperRouter");
@@ -104,6 +105,7 @@ app.use("/api/notifications", notificationRouter);
 app.use("/api/addresses", addressRouter);
 app.use("/api/refund-requests", refundRoutes);
 app.use("/api", uploadRouter);
+app.use("/api/search-history", searchHistoryRouter);
 app.use('/api/chat', chatRoutes);
 app.set('chatNamespace', chatNamespace);
 // ====== Auth routes (forgot/reset password) ======
