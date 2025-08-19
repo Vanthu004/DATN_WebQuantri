@@ -1,9 +1,8 @@
-// admin/src/pages/chat/ChatRoomsList.tsx
 
 import React, { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { chatApi, ChatRoomsResponse } from '../../services/chatApi';
-import { ChatRoom } from '../../interfaces/chat';
+import { ChatRoom, Message } from '../../interfaces/chat';
 import { toast } from 'react-toastify';
 import '../../css/chat/chatRoomsList.css';
 
@@ -20,7 +19,6 @@ const ChatRoomsList: React.FC = () => {
     status: searchParams.get('status') || '',
     category: searchParams.get('category') || '',
     priority: searchParams.get('priority') || '',
-    assigned: searchParams.get('assigned') || '',
   });
 
   const [currentPage, setCurrentPage] = useState(1);
@@ -53,7 +51,6 @@ const ChatRoomsList: React.FC = () => {
         ...filters,
         page: currentPage,
         limit: pageSize,
-        assigned: filters.assigned === 'true' ? true : filters.assigned === 'false' ? false : undefined,
       };
 
       if (user.role === 'admin') {
@@ -201,22 +198,10 @@ const ChatRoomsList: React.FC = () => {
             </select>
           </div>
 
-          <div className="filter-group">
-            <label>Phân công:</label>
-            <select
-              value={filters.assigned}
-              onChange={(e) => handleFilterChange('assigned', e.target.value)}
-            >
-              <option value="">Tất cả</option>
-              <option value="true">Đã gán</option>
-              <option value="false">Chưa gán</option>
-            </select>
-          </div>
-
           <button
             className="btn btn-outline"
             onClick={() => {
-              setFilters({ status: '', category: '', priority: '', assigned: '' });
+              setFilters({ status: '', category: '', priority: '' });
               setSearchParams(new URLSearchParams());
             }}
           >

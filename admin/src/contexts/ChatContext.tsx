@@ -1,6 +1,4 @@
-// admin/src/contexts/ChatContext.tsx
-
-import React, { createContext, useContext, useReducer, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useReducer, useEffect, useState, ReactNode } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { ChatRoom, Message } from '../interfaces/chat';
 import { toast } from 'react-toastify';
@@ -41,21 +39,15 @@ const chatReducer = (state: ChatState, action: ChatAction): ChatState => {
   switch (action.type) {
     case 'SET_SOCKET':
       return { ...state, socket: action.payload };
-    
     case 'SET_CONNECTION_STATUS':
       return { ...state, isConnected: action.payload };
-    
     case 'SET_CURRENT_ROOM':
       return { ...state, currentRoom: action.payload };
-    
     case 'SET_MESSAGES':
       return { ...state, messages: action.payload };
-    
     case 'ADD_MESSAGE': {
-      // Avoid duplicates
       const messageExists = state.messages.find(m => m.id === action.payload.id);
       if (messageExists) return state;
-      
       return { 
         ...state, 
         messages: [...state.messages, action.payload].sort((a, b) => 
@@ -65,7 +57,6 @@ const chatReducer = (state: ChatState, action: ChatAction): ChatState => {
     }
     case 'SET_ROOMS':
       return { ...state, rooms: action.payload };
-    
     case 'UPDATE_ROOM':
       return {
         ...state,
@@ -78,19 +69,15 @@ const chatReducer = (state: ChatState, action: ChatAction): ChatState => {
           ? { ...state.currentRoom, ...action.payload.updates }
           : state.currentRoom
       };
-    
     case 'SET_UNREAD_COUNT':
       return { ...state, unreadCount: action.payload };
-    
     case 'SET_ONLINE_USERS':
       return { ...state, onlineUsers: action.payload };
-    
     case 'DISCONNECT_SOCKET':
       if (state.socket) {
         state.socket.disconnect();
       }
       return { ...state, socket: null, isConnected: false };
-    
     default:
       return state;
   }
@@ -113,35 +100,65 @@ interface ChatProviderProps {
 
 export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
   const [state, dispatch] = useReducer(chatReducer, initialState);
+  const [token, setToken] = useState<string | null>(localStorage.getItem('token'));
 
   const connectSocket = () => {
-    const token = localStorage.getItem('token');
-    if (!token || state.socket?.connected) return;
+    if (state.socket?.connected) {
+      console.log('🔍 Socket already connected, skipping');
+      return;
+    }
+
+    const currentToken = localStorage.getItem('token');
+    if (!currentToken) {
+      console.error('🔍 No token found, cannot connect socket');
+      toast.error('Vui lòng đăng nhập để kết nối chat');
+      return;
+    }
+
+    let decodedToken = null;
+    try {
+      decodedToken = JSON.parse(atob(currentToken.split('.')[1]));
+      console.log('🔍 Connecting to namespace /chat with token:', decodedToken);
+    } catch (error) {
+      console.error('🔍 Token decode error:', error);
+      toast.error('Token không hợp lệ, vui lòng đăng nhập lại');
+      return;
+    }
 
     const newSocket = io(`${import.meta.env.VITE_API_URL}/chat`, {
-      auth: { token },
+      auth: (cb) => {
+        const latestToken = localStorage.getItem('token');
+        let authTokenPayload = null;
+        try {
+          authTokenPayload = latestToken ? JSON.parse(atob(latestToken.split('.')[1])) : null;
+          console.log('🔍 Socket auth token:', authTokenPayload);
+        } catch (error) {
+          console.error('🔍 Socket auth token decode error:', error);
+        }
+        cb({ token: latestToken });
+      },
       transports: ['websocket', 'polling'],
+      reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000,
     });
 
     newSocket.on('connect', () => {
-      console.log('✅ Connected to chat server');
+      console.log('✅ Connected to chat server (/chat)');
       dispatch({ type: 'SET_CONNECTION_STATUS', payload: true });
-      
-      // Auto join user rooms
       newSocket.emit('join_user_rooms');
     });
 
     newSocket.on('disconnect', () => {
-      console.log('❌ Disconnected from chat server');
+      console.log('❌ Disconnected from chat server (/chat)');
       dispatch({ type: 'SET_CONNECTION_STATUS', payload: false });
     });
 
     newSocket.on('connect_error', (error) => {
-      console.error('❌ Socket connection error:', error);
-      toast.error('Không thể kết nối đến server chat');
+      console.error('❌ Socket connection error:', error.message);
+      toast.error(`Không thể kết nối đến server chat: ${error.message}`);
     });
 
-    // Chat events
     newSocket.on('rooms_joined', (data) => {
       console.log('📱 Joined rooms:', data);
     });
@@ -151,10 +168,15 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
     });
 
     newSocket.on('new_message', (message: Message) => {
+      console.log('🔍 Received new_message:', message);
       dispatch({ type: 'ADD_MESSAGE', payload: message });
-      
-      // Show notification if message is not from current user
-      const currentUserId = JSON.parse(atob(token.split('.')[1])).userId;
+      const token = localStorage.getItem('token');
+      let currentUserId = null;
+      try {
+        currentUserId = token ? JSON.parse(atob(token.split('.')[1])).userId : null;
+      } catch (error) {
+        console.error('🔍 Token decode error in new_message:', error);
+      }
       if (message.sender_id !== currentUserId) {
         toast.info(`Tin nhắn mới từ ${message.sender_name}`);
       }
@@ -174,7 +196,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
       dispatch({ 
         type: 'UPDATE_ROOM', 
         payload: { 
-          roomId: data.roomId, 
+          roomId: data.roomId,
           updates: { assignedStaff: data.assignedStaff, status: 'assigned' } 
         } 
       });
@@ -213,29 +235,75 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
 
   const joinRoom = (roomId: string) => {
     if (state.socket?.connected) {
+      console.log('🔍 Emitting join_room:', { roomId });
       state.socket.emit('join_room', { roomId });
+    } else {
+      console.log('🔍 Cannot join room, socket not connected:', { roomId });
+      connectSocket();
+      setTimeout(() => {
+        if (state.socket?.connected) {
+          console.log('🔍 Retry join_room:', { roomId });
+          state.socket.emit('join_room', { roomId });
+        }
+      }, 1000);
     }
   };
 
   const leaveRoom = (roomId: string) => {
     if (state.socket?.connected) {
+      console.log('🔍 Emitting leave_room:', { roomId });
       state.socket.emit('leave_room', { roomId });
     }
   };
 
   const sendMessage = (roomId: string, content: string, type: 'text' | 'image' = 'text') => {
     if (state.socket?.connected) {
+      const token = localStorage.getItem('token');
+      let userInfo = null;
+      try {
+        userInfo = token ? JSON.parse(atob(token.split('.')[1])) : null;
+      } catch (error) {
+        console.error('🔍 Token decode error in sendMessage:', error);
+      }
+      console.log('🔍 Emitting send_message:', { roomId, content, type, user: userInfo });
       state.socket.emit('send_message', { roomId, content, type });
+    } else {
+      console.log('🔍 Cannot send message, socket not connected:', { roomId });
     }
   };
 
-  // Connect on mount, disconnect on unmount
   useEffect(() => {
     connectSocket();
-    
     return () => {
       disconnectSocket();
     };
+  }, []);
+
+  useEffect(() => {
+    const checkToken = () => {
+      const currentToken = localStorage.getItem('token');
+      if (currentToken !== token) {
+        console.log('🔍 Token changed in same tab, reconnecting socket');
+        setToken(currentToken);
+        disconnectSocket();
+        connectSocket();
+      }
+    };
+
+    const interval = setInterval(checkToken, 1000); // Kiểm tra token mỗi 1s
+    return () => clearInterval(interval);
+  }, [token]);
+
+  useEffect(() => {
+    const handleStorageChange = () => {
+      console.log('🔍 Token changed in another tab, reconnecting socket');
+      setToken(localStorage.getItem('token'));
+      disconnectSocket();
+      connectSocket();
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
   const contextValue: ChatContextType = {

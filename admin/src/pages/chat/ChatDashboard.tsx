@@ -1,5 +1,3 @@
-// admin/src/pages/chat/ChatDashboard.tsx
-
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { chatApi, ChatRoomsResponse } from '../../services/chatApi';
@@ -18,7 +16,6 @@ const ChatDashboard: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
-    // Get user role from token
     const token = localStorage.getItem('token');
     if (token) {
       try {
@@ -28,34 +25,48 @@ const ChatDashboard: React.FC = () => {
         console.error('Error parsing token:', error);
       }
     }
-
-    loadDashboardData();
   }, []);
 
-  const loadDashboardData = async () => {
-    setLoading(true);
-    try {
-      // Load statistics (admin only)
-      if (user?.role === 'admin') {
-        const stats = await chatApi.getChatStatistics('7d');
-        setStatistics(stats);
-      }
+  useEffect(() => {
+    if (!user) return;
 
-      // Load recent rooms based on role
-      let roomsData;
-      if (user?.role === 'admin') {
-        roomsData = await chatApi.getAllChatRooms({ limit: 10 });
-      } else {
-        roomsData = await chatApi.getAssignedChatRooms({ limit: 10 });
+    const loadDashboardData = async () => {
+      setLoading(true);
+      try {
+        if (user.role === 'admin') {
+          const stats = await chatApi.getChatStatistics('7d');
+          setStatistics(stats);
+        }
+
+        let roomsData;
+        if (user.role === 'admin') {
+          roomsData = await chatApi.getAllChatRooms({
+            status: 'open',
+            assigned: 'false',
+            limit: 10,
+          });
+        } else {
+          roomsData = await chatApi.getAssignedChatRooms({
+            status: 'assigned',
+            limit: 10,
+          });
+        }
+        // Sort client-side theo createdAt mới nhất
+        roomsData.chatRooms = roomsData.chatRooms.sort((a, b) => {
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        });
+        setRecentRooms(roomsData);
+        console.log('🔍 Recent rooms response:', roomsData);
+      } catch (error) {
+        console.error('Load dashboard error:', error);
+        toast.error('Không thể tải dữ liệu dashboard');
+      } finally {
+        setLoading(false);
       }
-      setRecentRooms(roomsData);
-    } catch (error) {
-      console.error('Load dashboard error:', error);
-      toast.error('Không thể tải dữ liệu dashboard');
-    } finally {
-      setLoading(false);
-    }
-  };
+    };
+
+    loadDashboardData();
+  }, [user]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -149,9 +160,12 @@ const ChatDashboard: React.FC = () => {
       <div className="recent-rooms-section">
         <div className="section-header">
           <h2>
-            {user?.role === 'admin' ? 'Phòng chat gần đây' : 'Phòng được gán cho bạn'}
+            {user?.role === 'admin' ? 'Phòng chat mới chưa gán' : 'Phòng được gán chưa xử lý xong'}
           </h2>
-          <Link to="/chat/rooms" className="view-all-link">
+          <Link 
+            to={user?.role === 'admin' ? '/chat/rooms?status=open&assigned=false' : '/chat/rooms?status=assigned'} 
+            className="view-all-link"
+          >
             Xem tất cả
           </Link>
         </div>
@@ -159,7 +173,11 @@ const ChatDashboard: React.FC = () => {
         <div className="rooms-list">
           {recentRooms?.chatRooms.length === 0 ? (
             <div className="empty-state">
-              <p>Không có phòng chat nào</p>
+              <p>
+                {user?.role === 'admin' 
+                  ? 'Không có phòng chat mới chưa gán' 
+                  : 'Bạn chưa được gán phòng chat nào chưa xử lý xong'}
+              </p>
             </div>
           ) : (
             recentRooms?.chatRooms.map((room) => (
@@ -221,7 +239,7 @@ const ChatDashboard: React.FC = () => {
       {user?.role === 'admin' && statistics?.staff && (
         <div className="staff-performance-section">
           <div className="section-header">
-            <h2>Hiệu suất Staff</h2>
+            <h2>Hiệu suất Nhân viên</h2>
           </div>
           
           <div className="staff-list">
