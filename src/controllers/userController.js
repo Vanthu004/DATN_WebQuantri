@@ -171,6 +171,7 @@ exports.createUser = async (req, res) => {
     });
     const emailSent = await sendVerificationEmail(email, verificationOtp);
     if (!emailSent) {
+
       console.warn(
         "⚠️ Không thể gửi email xác nhận, nhưng user vẫn được tạo thành công"
       );
