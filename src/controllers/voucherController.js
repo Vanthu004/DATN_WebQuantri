@@ -17,43 +17,56 @@ exports.createVoucher = async (req, res) => {
       usage_limit,
       expiry_date,
       status = "active",
-      isPersonal = false, // true: tạo voucher cá nhân cho tất cả user
+      isPersonal = false,
+      userIds = [],
     } = req.body;
 
     if (!title || !usage_limit || !expiry_date) {
       return res.status(400).json({ error: "Thiếu thông tin bắt buộc." });
     }
 
+    // Xác định giá trị giảm giá cuối cùng
     let finalDiscount = discount_value;
-
     if (title === "Miễn phí vận chuyển") {
       finalDiscount = 0;
     } else if (title === "Giảm giá sản phẩm") {
       if (!discount_value || discount_value <= 0) {
-        return res.status(400).json({ error: "Giảm giá phải lớn hơn 0 cho loại Giảm giá sản phẩm." });
+        return res.status(400).json({
+          error: "Giảm giá phải lớn hơn 0 cho loại Giảm giá sản phẩm.",
+        });
       }
     }
 
+    // Nếu là voucher cá nhân
     if (isPersonal) {
-      const users = await User.find({}, "_id");
+      let users = [];
+
+      if (userIds && Array.isArray(userIds) && userIds.length > 0) {
+        // Lấy đúng các user trong danh sách được gửi lên (chỉ role user)
+        users = await User.find({ _id: { $in: userIds }, role: "user" }, "_id");
+      } else {
+        // Nếu không truyền userIds -> lấy tất cả user có role = "user"
+        users = await User.find({ role: "user" }, "_id");
+      }
+
       if (!users || users.length === 0) {
         return res
           .status(404)
-          .json({ error: "Không tìm thấy user nào để tạo voucher cá nhân." });
+          .json({ error: "Không tìm thấy user hợp lệ để tạo voucher cá nhân." });
       }
 
       const vouchers = await Promise.all(
         users.map((user) => {
           return new Voucher({
             voucher_id: generateVoucherId(),
-            User_id: user._id,
+            User_id: user._id, // ⚠️ đúng với schema của bạn
             title,
-            discount_value,
+            discount_value: finalDiscount,
             usage_limit,
             expiry_date,
             status,
           }).save();
-        }),
+        })
       );
 
       return res.status(201).json(vouchers);
@@ -63,21 +76,22 @@ exports.createVoucher = async (req, res) => {
     const voucher = new Voucher({
       voucher_id: generateVoucherId(),
       title,
-      discount_value,
+      discount_value: finalDiscount,
       usage_limit,
       expiry_date,
       status,
     });
 
     const saved = await voucher.save();
-    res.status(201).json(saved);
+    return res.status(201).json(saved);
   } catch (err) {
     console.error("❌ Lỗi khi tạo voucher:", err);
-    res
+    return res
       .status(500)
       .json({ error: err.message || "Lỗi server khi tạo voucher." });
   }
 };
+
 // Lấy danh sách voucher theo userId (có thể rỗng => lấy cả dùng chung)
 exports.getVouchersByUserId = async (req, res) => {
   try {

@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { getInventoryStats, type InventoryStats } from '../services/inventory';
+import { LoadingSkeleton } from './common/LoadingSkeleton';
+import { ErrorBoundary } from './common/ErrorBoundary';
 
 const InventoryStatsComponent: React.FC = () => {
   const [stats, setStats] = useState<InventoryStats | null>(null);
@@ -38,28 +40,17 @@ const InventoryStatsComponent: React.FC = () => {
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center p-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-        <span className="ml-2 text-gray-600">Đang tải thống kê...</span>
-      </div>
-    );
+    return <LoadingSkeleton type="dashboard" />;
   }
 
   if (error) {
     return (
-      <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-        <div className="flex items-center">
-          <div className="text-red-500 text-xl mr-2">❌</div>
-          <p className="text-red-700">{error}</p>
-        </div>
-        <button
-          onClick={fetchInventoryStats}
-          className="mt-2 bg-red-600 text-white px-3 py-1 rounded text-sm hover:bg-red-700"
-        >
-          🔄 Thử lại
-        </button>
-      </div>
+      <ErrorBoundary
+        error={error}
+        onRetry={fetchInventoryStats}
+        title="Lỗi tải thống kê kho hàng"
+        retryText="Thử lại"
+      />
     );
   }
 
