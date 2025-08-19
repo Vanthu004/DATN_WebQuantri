@@ -1,9 +1,17 @@
 require("dotenv").config();
+
+// kiểm tra cấu hình
+console.log('MONGODB_URI:', process.env.MONGODB_URI);
+console.log('SUPABASE_URL:', process.env.SUPABASE_URL);
+console.log('SUPABASE_ANON_KEY:', process.env.SUPABASE_ANON_KEY);
+console.log('SUPABASE_SERVICE_ROLE_KEY:', process.env.SUPABASE_SERVICE_ROLE_KEY);
+
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
 const http = require("http");
 const { Server } = require("socket.io");
+
 
 // Khởi tạo app và server
 const app = express();
@@ -15,6 +23,8 @@ const io = new Server(server, {
     methods: ["GET", "POST"],
   },
 });
+
+
 
 // Lưu io vào app để sử dụng trong controllers
 app.set("io", io);
@@ -47,6 +57,14 @@ const sizeRouter = require("./src/routers/sizeRouter");
 const colorRouter = require("./src/routers/colorRouter");
 const searchHistoryRouter = require("./src/routers/searchHistoryRouter");
 
+const shiperRouter = require("./src/routers/shiperRouter");
+const adminShiperRouter = require("./src/routers/adminShiperRouter");
+
+const chatRoutes = require("./src/routers/chatRoutes.js");
+const chatSocketHandler = require('./src/sockets/chatSocket');
+const { chatNamespace } = chatSocketHandler(io);
+
+
 // ====== Kiểm tra biến môi trường bắt buộc ======
 if (!process.env.JWT_SECRET) {
   console.error("❌ Lỗi: JWT_SECRET không được định nghĩa trong file .env");
@@ -78,6 +96,8 @@ app.use("/api/sales-statistics", salesStatisticsRouter);
 app.use("/api/favorites", favoriteRouter);
 app.use("/api/sizes", sizeRouter);
 app.use("/api/colors", colorRouter);
+app.use("/api/shipers", shiperRouter);
+app.use("/api/admin/shipers", adminShiperRouter);
 app.use("/api/vouchers", voucherRouter);
 app.use("/api/uploads", uploadRouter);
 app.use("/api/category-types", categoryTypeRouter);
@@ -86,6 +106,8 @@ app.use("/api/addresses", addressRouter);
 app.use("/api/refund-requests", refundRoutes);
 app.use("/api", uploadRouter);
 app.use("/api/search-history", searchHistoryRouter);
+app.use('/api/chat', chatRoutes);
+app.set('chatNamespace', chatNamespace);
 // ====== Auth routes (forgot/reset password) ======
 app.post("/api/forgot-password", authController.forgotPassword);
 app.post("/api/reset-password", authController.resetPassword);
@@ -129,3 +151,5 @@ const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
   console.log(`🚀 Server đang chạy tại http://localhost:${PORT}`);
 });
+
+module.exports = app;

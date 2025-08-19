@@ -16,6 +16,7 @@ export interface Variant {
   size_name?: string;
   color_name?: string;
   variant_key?: string;
+  createdAt?: string;
 }
 
 // Interface cho dữ liệu sản phẩm tối ưu cho Frontend

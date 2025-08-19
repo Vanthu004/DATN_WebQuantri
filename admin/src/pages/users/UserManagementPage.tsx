@@ -71,7 +71,7 @@ const UserManagementPage: React.FC = () => {
     switch (role) {
       case 'admin':
         return 'bg-red-100 text-red-800';
-      case 'customer':
+      case 'staff':
         return 'bg-blue-100 text-blue-800';
       case 'user':
         return 'bg-gray-100 text-gray-800';
@@ -84,10 +84,10 @@ const UserManagementPage: React.FC = () => {
     switch (role) {
       case 'admin':
         return '👑 Admin';
-      case 'customer':
-        return '🛒 Khách hàng';
+      case 'staff':
+        return '👤 Nhân viên';
       case 'user':
-        return '👤 Người dùng';
+        return '🛒 Khách hàng';
       default:
         return role;
     }
@@ -305,7 +305,7 @@ const UserManagementPage: React.FC = () => {
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Khách hàng</p>
               <p className="text-2xl font-semibold text-gray-900">
-                {users.filter(u => u.role === 'customer').length}
+                {users.filter(u => u.role === 'user').length}
               </p>
             </div>
           </div>

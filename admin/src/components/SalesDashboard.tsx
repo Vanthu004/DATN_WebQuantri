@@ -3,6 +3,10 @@ import SalesStatisticsService, {
   DashboardData,
 } from "../services/salesStatistics";
 import { DateRangePicker } from "./DateRangePicker";
+import { LoadingSkeleton } from "./common/LoadingSkeleton";
+import { ErrorBoundary } from "./common/ErrorBoundary";
+import { PeriodSelector } from "./common/PeriodSelector";
+import { SummaryCard } from "./common/SummaryCard";
 
 interface SalesDashboardProps {
   className?: string;
@@ -48,43 +52,18 @@ export const SalesDashboard: React.FC<SalesDashboardProps> = ({
   };
 
   if (loading) {
-    return (
-      <div className={`space-y-6 ${className}`}>
-        <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-bold">Thống kê doanh thu</h2>
-          <div className="h-10 w-32 bg-gray-200 animate-pulse rounded"></div>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {[...Array(4)].map((_, i) => (
-            <div
-              key={i}
-              className="bg-white rounded-lg shadow p-6 animate-pulse"
-            >
-              <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-              <div className="h-8 bg-gray-200 rounded w-1/2"></div>
-            </div>
-          ))}
-        </div>
-      </div>
-    );
+    return <LoadingSkeleton type="dashboard" className={className} />;
   }
 
   if (error) {
     return (
-      <div className={`space-y-6 ${className}`}>
-        <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-bold">Thống kê doanh thu</h2>
-          <button
-            onClick={fetchDashboardData}
-            className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
-          >
-            Thử lại
-          </button>
-        </div>
-        <div className="bg-white rounded-lg shadow p-6">
-          <p className="text-red-500">{error}</p>
-        </div>
-      </div>
+      <ErrorBoundary
+        error={error}
+        onRetry={fetchDashboardData}
+        className={className}
+        title="Lỗi tải dữ liệu thống kê"
+        retryText="Thử lại"
+      />
     );
   }
 
@@ -98,24 +77,21 @@ export const SalesDashboard: React.FC<SalesDashboardProps> = ({
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold">Thống kê doanh thu</h2>
+          <h2 className="text-2xl font-bold text-gray-900">Thống kê doanh thu</h2>
           <p className="text-gray-600">
             Dữ liệu thống kê {SalesStatisticsService.getPeriodLabel(period)}
           </p>
         </div>
-        <div className="flex items-center space-x-2">
-          <select
+        <div className="flex items-center space-x-4">
+          <PeriodSelector
             value={period}
-            onChange={(e) => setPeriod(e.target.value as "7d" | "30d" | "90d")}
-            className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="7d">7 ngày</option>
-            <option value="30d">30 ngày</option>
-            <option value="90d">90 ngày</option>
-          </select>
+            onChange={setPeriod}
+            label=""
+          />
           <button
             onClick={fetchDashboardData}
-            className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+            className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+            title="Làm mới dữ liệu"
           >
             🔄
           </button>
@@ -127,69 +103,51 @@ export const SalesDashboard: React.FC<SalesDashboardProps> = ({
         startDate={startDate}
         endDate={endDate}
         onDateChange={handleDateChange}
-        className="mb-6"
+        showQuickSelect={true}
+        showValidation={true}
       />
 
       {/* Revenue Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-medium text-gray-600">
-              Tổng doanh thu
-            </h3>
-            <span className="text-gray-400">💰</span>
-          </div>
-          <div className="text-2xl font-bold">
-            {SalesStatisticsService.formatCurrency(revenue.total_revenue)}
-          </div>
-          <p className="text-xs text-gray-500 mt-1">
-            {revenue.order_count} đơn hàng
-          </p>
-        </div>
+        <SummaryCard
+          title="Tổng doanh thu"
+          value={SalesStatisticsService.formatCurrency(revenue.total_revenue)}
+          subtitle={`${revenue.order_count} đơn hàng`}
+          icon="💰"
+          iconBgColor="bg-blue-100"
+          iconColor="text-blue-600"
+        />
 
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-medium text-gray-600">Số đơn hàng</h3>
-            <span className="text-gray-400">🛒</span>
-          </div>
-          <div className="text-2xl font-bold">
-            {SalesStatisticsService.formatNumber(revenue.order_count)}
-          </div>
-          <p className="text-xs text-gray-500 mt-1">
-            Trung bình{" "}
-            {SalesStatisticsService.formatCurrency(revenue.avg_order_value)}/đơn
-          </p>
-        </div>
+        <SummaryCard
+          title="Số đơn hàng"
+          value={SalesStatisticsService.formatNumber(revenue.order_count)}
+          subtitle={`Trung bình ${SalesStatisticsService.formatCurrency(revenue.avg_order_value)}/đơn`}
+          icon="🛒"
+          iconBgColor="bg-green-100"
+          iconColor="text-green-600"
+        />
 
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-medium text-gray-600">Khách hàng</h3>
-            <span className="text-gray-400">👥</span>
-          </div>
-          <div className="text-2xl font-bold">
-            {SalesStatisticsService.formatNumber(
-              customer_stats.total_customers
-            )}
-          </div>
-          <p className="text-xs text-gray-500 mt-1">
-            Trung bình{" "}
-            {SalesStatisticsService.formatCurrency(
-              customer_stats.average_order_value
-            )}
-            /khách
-          </p>
-        </div>
+        <SummaryCard
+          title="Khách hàng"
+          value={SalesStatisticsService.formatNumber(
+            customer_stats.total_customers
+          )}
+          subtitle={`Trung bình ${SalesStatisticsService.formatCurrency(
+            customer_stats.average_order_value
+          )}/khách`}
+          icon="👥"
+          iconBgColor="bg-purple-100"
+          iconColor="text-purple-600"
+        />
 
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-medium text-gray-600">
-              Sản phẩm bán chạy
-            </h3>
-            <span className="text-gray-400">📈</span>
-          </div>
-          <div className="text-2xl font-bold">{top_products.length}</div>
-          <p className="text-xs text-gray-500 mt-1">Top sản phẩm</p>
-        </div>
+        <SummaryCard
+          title="Sản phẩm bán chạy"
+          value={top_products.length}
+          subtitle="Top sản phẩm"
+          icon="📈"
+          iconBgColor="bg-orange-100"
+          iconColor="text-orange-600"
+        />
       </div>
 
       {/* Top Products and Category Stats */}

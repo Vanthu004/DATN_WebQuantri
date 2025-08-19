@@ -4,6 +4,85 @@ const CryptoJS = require('crypto-js');
 const moment = require('moment');
 const qs = require('qs');
 const CartItem = require("../models/cartItem");
+const Order  = require("../models/Order");
+
+// Hàm helper để cập nhật trạng thái đơn hàng khi thanh toán online thành công
+const updateOrderStatusAfterOnlinePayment = async (orderCode) => {
+  try {
+    // Chỉ cập nhật trạng thái thanh toán, KHÔNG thay đổi trạng thái đơn hàng
+    const updatedOrder = await Order.findOneAndUpdate(
+      { order_code: orderCode },
+      { 
+        payment_status: 'paid', 
+        is_paid: true
+        // KHÔNG cập nhật status và confirmed_at
+      },
+      { new: true }
+    );
+    
+    if (updatedOrder) {
+      console.log('Cập nhật trạng thái thanh toán thành công:', updatedOrder.order_code);
+      return updatedOrder;
+    } else {
+      console.log('Không tìm thấy order với order_code:', orderCode);
+      return null;
+    }
+  } catch (error) {
+    console.log('Lỗi khi cập nhật trạng thái thanh toán:', error);
+    return null;
+  }
+};
+
+// Hàm xử lý thanh toán online thành công
+exports.handleOnlinePaymentSuccess = async (req, res) => {
+  try {
+    const { order_code, payment_method, transaction_code, amount_paid } = req.body;
+    
+    if (!order_code || !payment_method || !amount_paid) {
+      return res.status(400).json({
+        success: false,
+        msg: "Thiếu thông tin bắt buộc"
+      });
+    }
+
+    // Lưu thông tin thanh toán
+    const payment = await Payment.create({
+      payment_id: `PAY${Date.now()}`,
+      order_id: order_code,
+      payment_method: payment_method.toUpperCase(),
+      transaction_code: transaction_code || null,
+      payment_status: 'success',
+      amount_paid: amount_paid,
+      note: `Thanh toán qua ${payment_method} thành công`,
+      payment_date: new Date()
+    });
+
+    // Cập nhật trạng thái thanh toán (không thay đổi trạng thái đơn hàng)
+    const updatedOrder = await updateOrderStatusAfterOnlinePayment(order_code);
+    
+    if (updatedOrder) {
+      res.json({
+        success: true,
+        msg: "Xử lý thanh toán online thành công",
+        data: {
+          payment: payment,
+          order: updatedOrder
+        }
+      });
+    } else {
+      res.status(404).json({
+        success: false,
+        msg: "Không tìm thấy đơn hàng để cập nhật"
+      });
+    }
+  } catch (error) {
+    console.error("Lỗi xử lý thanh toán online:", error);
+    res.status(500).json({
+      success: false,
+      msg: "Lỗi server khi xử lý thanh toán online"
+    });
+  }
+};
 
 exports.createPayment = async (req, res) => {
   try {
@@ -76,13 +155,15 @@ const zaloConfig = {
 exports.createZaloPayOrder = async (req, res) => {
   // Log dữ liệu nhận từ frontend
   console.log("[ZaloPay] Received from FE:", req.body);
-  
-  // Lấy cart_id từ frontend và thêm vào embed_data
+
+  // Lấy cart_id và order_code từ frontend và thêm vào embed_data
   const cartId = req.body.cart_id;
-  const embed_data = { 
-    cart_id: cartId // Thêm cart_id vào embed_data để callback có thể lấy
+  const orderCode = req.body.order_code; // Thêm order_code từ frontend
+  const embed_data = {
+    cart_id: cartId, // Thêm cart_id vào embed_data để callback có thể lấy
+    order_code: orderCode // Thêm order_code vào embed_data để callback có thể cập nhật order
   };
-  
+
   const items = req.body.items || [];
   const transID = Math.floor(Math.random() * 1000000);
 
@@ -110,7 +191,7 @@ exports.createZaloPayOrder = async (req, res) => {
     item: JSON.stringify(items),
     embed_data: JSON.stringify(embed_data),
     amount: amount,
-    callback_url: 'https://1b22efdef50c.ngrok-free.app/api/payments/zalopay/callback', // Đảm bảo đúng URL public
+    callback_url: 'https://c8a966b2ef09.ngrok-free.app/api/payments/zalopay/callback', // Đảm bảo đúng URL public
     description: `Thanh toán ZaloPay cho đơn hàng #${transID}`,
     bank_code: '',
   };
@@ -148,6 +229,7 @@ exports.createZaloPayOrder = async (req, res) => {
       shipping_fee: shippingFee,
       app_trans_id: order.app_trans_id // trả về để kiểm tra trạng thái sau này
     });
+
   } catch (error) {
     console.log("[ZaloPay] Error from ZaloPay:", error?.response?.data || error);
     return res.status(500).json({ error: 'Create ZaloPay order failed', detail: error?.response?.data || error });
@@ -162,7 +244,13 @@ exports.zaloPayCallback = async (req, res) => {
     let reqMac = req.body.mac;
     let mac = CryptoJS.HmacSHA256(dataStr, zaloConfig.key2).toString();
 
+    console.log('Request body:', req.body);
+    console.log('Data string:', dataStr);
+    console.log('Request MAC:', reqMac);
+    console.log('Calculated MAC:', mac);
+
     if (reqMac !== mac) {
+      console.log('MAC không khớp!');
       result.return_code = -1;
       result.return_message = 'mac not equal';
     } else {
@@ -170,6 +258,7 @@ exports.zaloPayCallback = async (req, res) => {
 
       // Thêm log trước khi lưu
       console.log('ZaloPay callback data:', dataJson);
+      console.log('Embed data:', dataJson.embed_data);
 
       // Lưu vào collection payments
       try {
@@ -183,6 +272,38 @@ exports.zaloPayCallback = async (req, res) => {
           note: 'Thanh toán qua ZaloPay thành công',
           payment_date: new Date()
         });
+        console.log('Lưu payment thành công!');
+        
+        // Lấy order_code từ embed_data để cập nhật order
+        let embedData = {};
+        try {
+          embedData = JSON.parse(dataJson.embed_data || '{}');
+        } catch (e) {
+          console.log('Lỗi parse embed_data:', e);
+        }
+        
+        const orderCode = embedData.order_code;
+        console.log('Order Code từ embed_data:', orderCode);
+        
+        if (orderCode) {
+          // Cập nhật trạng thái thanh toán của order
+          const updatedOrder = await updateOrderStatusAfterOnlinePayment(orderCode);
+          
+          if (updatedOrder) {
+            console.log('Cập nhật order thành công!');
+            console.log('Order đã cập nhật:', {
+              order_code: updatedOrder.order_code,
+              status: updatedOrder.status,
+              payment_status: updatedOrder.payment_status,
+              is_paid: updatedOrder.is_paid
+            });
+          } else {
+            console.log('Không tìm thấy order với order_code:', orderCode);
+          }
+        } else {
+          console.log('Không tìm thấy order_code trong embed_data');
+        }
+        
         console.log('Lưu payment ZALOPAY thành công!');
       } catch (err) {
         console.log('Lỗi khi lưu payment ZALOPAY:', err);
@@ -197,7 +318,7 @@ exports.zaloPayCallback = async (req, res) => {
         } catch (e) {
           console.log('Lỗi parse embed_data:', e);
         }
-        
+
         const cartId = embedData.cart_id;
         console.log('Cart ID từ embed_data:', cartId);
 
@@ -213,7 +334,7 @@ exports.zaloPayCallback = async (req, res) => {
           // Log sau khi xóa
           const afterDelete = await CartItem.find({ cart_id: cartId });
           console.log('CartItem sau khi xóa:', afterDelete);
-          
+
           console.log(`Đã xóa ${deleteResult.deletedCount} cart items cho cart_id: ${cartId}`);
         } else {
           console.log('Không tìm thấy cart_id trong embed_data');
@@ -225,10 +346,14 @@ exports.zaloPayCallback = async (req, res) => {
       result.return_code = 1;
       result.return_message = 'success';
     }
+    
+    console.log('=== ZALOPAY CALLBACK END ===');
+    console.log('Result:', result);
   } catch (ex) {
     result.return_code = 0;
     result.return_message = ex.message;
     console.log('Lỗi callback ngoài:', ex);
+    console.log('=== ZALOPAY CALLBACK ERROR ===');
   }
   res.json(result);
 };
@@ -287,7 +412,7 @@ exports.calculateVoucherForPayment = async (req, res) => {
     if (voucher_id) {
       const Voucher = require("../models/Voucher");
       const voucher = await Voucher.findById(voucher_id);
-      
+
       if (!voucher) {
         return res.status(400).json({
           success: false,
@@ -319,7 +444,7 @@ exports.calculateVoucherForPayment = async (req, res) => {
 
       // Tính toán discount
       voucherDiscount = voucher.discount_value;
-      
+
       voucherInfo = {
         voucher_id: voucher_id,
         discount_value: voucher.discount_value,

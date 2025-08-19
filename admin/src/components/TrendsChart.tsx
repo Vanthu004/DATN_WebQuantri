@@ -3,6 +3,9 @@ import SalesStatisticsService, {
   RevenueStatistics,
 } from "../services/salesStatistics";
 import { DateRangePicker } from "./DateRangePicker";
+import { LoadingSkeleton } from "./common/LoadingSkeleton";
+import { ErrorBoundary } from "./common/ErrorBoundary";
+import { PeriodSelector } from "./common/PeriodSelector";
 
 interface TrendsChartProps {
   className?: string;
@@ -117,38 +120,18 @@ export const TrendsChart: React.FC<TrendsChartProps> = ({ className }) => {
   };
 
   if (loading) {
-    return (
-      <div className={`bg-white rounded-lg shadow ${className}`}>
-        <div className="p-6">
-          <div className="flex items-center justify-between mb-4">
-            <div className="h-6 bg-gray-200 rounded w-48 animate-pulse"></div>
-            <div className="h-10 bg-gray-200 rounded w-32 animate-pulse"></div>
-          </div>
-          <div className="h-64 bg-gray-200 rounded animate-pulse"></div>
-        </div>
-      </div>
-    );
+    return <LoadingSkeleton type="chart" className={className} />;
   }
 
   if (error) {
     return (
-      <div className={`bg-white rounded-lg shadow ${className}`}>
-        <div className="p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold flex items-center">
-              <span className="mr-2">📈</span>
-              Xu hướng tăng trưởng
-            </h3>
-            <button
-              onClick={fetchData}
-              className="px-3 py-1 border border-gray-300 rounded hover:bg-gray-50 text-sm"
-            >
-              Thử lại
-            </button>
-          </div>
-          <p className="text-red-500">{error}</p>
-        </div>
-      </div>
+      <ErrorBoundary
+        error={error}
+        onRetry={fetchData}
+        className={className}
+        title="Lỗi tải dữ liệu xu hướng"
+        retryText="Thử lại"
+      />
     );
   }
 
@@ -197,19 +180,11 @@ export const TrendsChart: React.FC<TrendsChartProps> = ({ className }) => {
             <span className="mr-2">📈</span>
             Xu hướng tăng trưởng
           </h3>
-          <div className="flex items-center space-x-2">
-            <select
-              value={period}
-              onChange={(e) =>
-                setPeriod(e.target.value as "7d" | "30d" | "90d")
-              }
-              className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="7d">7 ngày</option>
-              <option value="30d">30 ngày</option>
-              <option value="90d">90 ngày</option>
-            </select>
-          </div>
+          <PeriodSelector
+            value={period}
+            onChange={setPeriod}
+            label=""
+          />
         </div>
 
         {/* Date Range Picker */}
@@ -217,6 +192,8 @@ export const TrendsChart: React.FC<TrendsChartProps> = ({ className }) => {
           startDate={startDate}
           endDate={endDate}
           onDateChange={handleDateChange}
+          showQuickSelect={true}
+          showValidation={true}
           className="mb-6"
         />
 
