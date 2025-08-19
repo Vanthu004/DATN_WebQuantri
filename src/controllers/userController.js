@@ -949,4 +949,17 @@ exports.getTopCustomers = async (req, res) => {
     });
   }
 };
+// Lấy tất cả người dùng có role = "user"
+exports.getAllUsersByRole = async (req, res) => {
+  try {
+    const users = await User.find({ role: "user", "ban.isBanned": false })
+      .select("-password")
+      .populate("avatar");
+
+    res.status(200).json(users);
+  } catch (error) {
+    console.error(`Get all users by role error: ${error.message}`);
+    res.status(500).json({ message: "Lỗi server", error: error.message });
+  }
+};
 

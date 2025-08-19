@@ -24,6 +24,9 @@ router.put("/update-profile", authMiddleware, userController.updateProfile);
 router.put("/update-avatar", authMiddleware, userController.updateAvatar);
 router.put("/change-password", authMiddleware, userController.changePassword);
 
+//lấy danh sách user
+router.get("/roleUser", userController.getAllUsersByRole);
+
 // Protected routes (yêu cầu xác thực)
 router.get("/", authMiddleware, userController.getAllUsers);
 router.get("/all", userController.getAllUsers);
@@ -31,6 +34,7 @@ router.get("/all", userController.getAllUsers);
 router.get("/statistics", authMiddleware, userController.getCustomerStatistics);
 router.get("/top-customers", authMiddleware, userController.getTopCustomers);
 router.get("/avatar/:id", userController.getAvatar);
+
 
 router.get("/:id", authMiddleware, userController.getUserById);
 router.put("/:id", authMiddleware, userController.updateUser);

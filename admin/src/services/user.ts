@@ -68,3 +68,8 @@ export const getAllUsers = async () => {
   const res = await api.get("/users/all", { headers });
   return res.data; // giả sử API trả về mảng user
 };
+// Lấy danh sách user có role = "user"
+export const getAllUsersByRole = async () => {
+  const res = await api.get("/users/roleUser"); // không gửi token
+  return res.data; // API trả về mảng user
+};
