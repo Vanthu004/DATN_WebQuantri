@@ -14,12 +14,11 @@ const ListProduct = () => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [showDeleted, setShowDeleted] = useState(false);
   const [expandedRows, setExpandedRows] = useState<{ [key: string]: boolean }>({});
-  const [includeVariants, setIncludeVariants] = useState(false);
 
   useEffect(() => {
     fetchAllProducts();
     fetchCategories();
-  }, [showDeleted, includeVariants]);
+  }, [showDeleted]);
 
   const fetchCategories = async () => {
     try {
@@ -33,7 +32,8 @@ const ListProduct = () => {
 
   const fetchAllProducts = async () => {
     try {
-      const data = await getAllProducts(showDeleted, false, includeVariants);
+      // Luôn load biến thể để có thể hiển thị khi cần
+      const data = await getAllProducts(showDeleted, false, true);
       setProducts(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error("Error fetching products:", error);
@@ -154,12 +154,6 @@ const ListProduct = () => {
           onClick={() => setShowDeleted(true)}
         >
           Sản phẩm đã xóa
-        </button>
-        <button
-          className={`option-btn ${includeVariants ? "active" : ""}`}
-          onClick={() => setIncludeVariants(!includeVariants)}
-        >
-          {includeVariants ? "Ẩn biến thể" : "Hiện biến thể"}
         </button>
         <button
           className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition duration-300 ml-auto"

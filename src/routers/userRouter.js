@@ -24,13 +24,20 @@ router.put("/update-profile", authMiddleware, userController.updateProfile);
 router.put("/update-avatar", authMiddleware, userController.updateAvatar);
 router.put("/change-password", authMiddleware, userController.changePassword);
 
-// Protected routes with parameters (require authentication)
+//lấy danh sách user
+router.get("/roleUser", userController.getAllUsersByRole);
+
+// Protected routes (yêu cầu xác thực)
+router.get("/", authMiddleware, userController.getAllUsers);
 router.get("/all", userController.getAllUsers);
-router.get("/avatar/:id", authMiddleware, userController.getAvatar);
+// Routes cho thống kê khách hàng (đặt trước routes có :id để tránh conflict)
+router.get("/statistics", authMiddleware, userController.getCustomerStatistics);
+router.get("/top-customers", authMiddleware, userController.getTopCustomers);
+router.get("/avatar/:id", userController.getAvatar);
+
 
 router.get("/:id", authMiddleware, userController.getUserById);
 router.put("/:id", authMiddleware, userController.updateUser);
 router.delete("/:id", authMiddleware, userController.deleteUser);
 router.patch("/:id/block", authMiddleware, userController.blockUser);
-
 module.exports = router;
