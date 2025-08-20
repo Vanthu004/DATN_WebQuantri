@@ -4,10 +4,30 @@ const Category = require("../models/category");
 const CategoryType = require("../models/categoryType");
 const mongoose = require('mongoose');
 const ProductVariant = require('../models/productVariant');
+const Review = require('../models/review');
 
 // Escape regex function
 function escapeRegex(text) {
   return text.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&');
+}
+
+// Helper: Lấy thống kê rating và số lượng review theo danh sách productIds
+async function getReviewStatsForProducts(productIds) {
+  try {
+    if (!Array.isArray(productIds) || productIds.length === 0) return new Map();
+    const stats = await Review.aggregate([
+      { $match: { product_id: { $in: productIds.map(id => new mongoose.Types.ObjectId(id)) } } },
+      { $group: { _id: '$product_id', averageRating: { $avg: '$rating' }, reviewCount: { $sum: 1 } } }
+    ]);
+    const map = new Map();
+    for (const s of stats) {
+      const avg = typeof s.averageRating === 'number' ? parseFloat(s.averageRating.toFixed(1)) : 0;
+      map.set(String(s._id), { averageRating: avg, reviewCount: s.reviewCount || 0 });
+    }
+    return map;
+  } catch (e) {
+    return new Map();
+  }
 }
 
 exports.searchProducts = async (req, res) => {
@@ -765,10 +785,16 @@ exports.getBestSellers = async (req, res) => {
       .limit(limit)
       .select("name price image_url sold_quantity category_id")
       .populate("category_id", "name");
-    
+
+    const reviewStats = await getReviewStatsForProducts(bestSellers.map(p => p._id));
+
     res.json({
       success: true,
-      data: bestSellers,
+      data: bestSellers.map(p => ({
+        ...p.toObject(),
+        rating: reviewStats.get(String(p._id))?.averageRating || 0,
+        ratingCount: reviewStats.get(String(p._id))?.reviewCount || 0
+      })),
       message: "Lấy danh sách sản phẩm bán chạy thành công"
     });
   } catch (err) {
@@ -792,10 +818,16 @@ exports.getNewestProducts = async (req, res) => {
       .limit(limit)
       .select("name price image_url createdAt category_id")
       .populate("category_id", "name");
-    
+
+    const reviewStats = await getReviewStatsForProducts(newestProducts.map(p => p._id));
+
     res.json({
       success: true,
-      data: newestProducts,
+      data: newestProducts.map(p => ({
+        ...p.toObject(),
+        rating: reviewStats.get(String(p._id))?.averageRating || 0,
+        ratingCount: reviewStats.get(String(p._id))?.reviewCount || 0
+      })),
       message: "Lấy danh sách sản phẩm mới nhất thành công"
     });
   } catch (err) {
@@ -851,10 +883,16 @@ exports.getPopularProducts = async (req, res) => {
         }
       }
     ]);
-    
+
+    const reviewStats = await getReviewStatsForProducts(popularProducts.map(p => p._id));
+
     res.json({
       success: true,
-      data: popularProducts,
+      data: popularProducts.map(p => ({
+        ...p,
+        rating: reviewStats.get(String(p._id))?.averageRating || 0,
+        ratingCount: reviewStats.get(String(p._id))?.reviewCount || 0
+      })),
       message: "Lấy danh sách sản phẩm phổ biến thành công"
     });
   } catch (err) {
@@ -1234,6 +1272,8 @@ exports.suggestProducts = async (req, res) => {
       .limit(parseInt(limit))
       .sort({ sold_quantity: -1, views: -1 });
 
+    const reviewStats = await getReviewStatsForProducts(suggestions.map(p => p._id));
+
     res.json({
       success: true,
       suggestions: suggestions.map(product => ({
@@ -1242,7 +1282,9 @@ exports.suggestProducts = async (req, res) => {
         name: product.name,
         price: product.has_variants ? `${product.min_price.toLocaleString('vi-VN')} - ${product.max_price.toLocaleString('vi-VN')}đ` : product.min_price.toLocaleString('vi-VN') + 'đ',
         image_url: product.image_url,
-        category: product.category_id?.name || 'Không phân loại'
+        category: product.category_id?.name || 'Không phân loại',
+        rating: reviewStats.get(String(product._id))?.averageRating || 0,
+        ratingCount: reviewStats.get(String(product._id))?.reviewCount || 0
       }))
     });
   } catch (err) {
@@ -1372,6 +1414,8 @@ exports.getTrendingProducts = async (req, res) => {
         'sales_stats.monthly': -1 
       });
 
+    const reviewStats = await getReviewStatsForProducts(trendingProducts.map(p => p._id));
+
     res.json({
       success: true,
       trendingProducts: trendingProducts.map(product => ({
@@ -1383,7 +1427,9 @@ exports.getTrendingProducts = async (req, res) => {
         category: product.category_id?.name || 'Không phân loại',
         sold_quantity: product.sold_quantity,
         views: product.views,
-        popularity_score: (product.sold_quantity * 0.7) + (product.views * 0.3)
+        popularity_score: (product.sold_quantity * 0.7) + (product.views * 0.3),
+        rating: reviewStats.get(String(product._id))?.averageRating || 0,
+        ratingCount: reviewStats.get(String(product._id))?.reviewCount || 0
       }))
     });
   } catch (err) {
@@ -1417,6 +1463,8 @@ exports.getPersonalizedSuggestions = async (req, res) => {
       .limit(parseInt(limit))
       .sort({ sold_quantity: -1 });
 
+    const reviewStats = await getReviewStatsForProducts(personalizedProducts.map(p => p._id));
+
     res.json({
       success: true,
       message: "Tính năng đang phát triển, hiện tại hiển thị sản phẩm phổ biến",
@@ -1426,7 +1474,9 @@ exports.getPersonalizedSuggestions = async (req, res) => {
         name: product.name,
         price: product.has_variants ? `${product.min_price.toLocaleString('vi-VN')} - ${product.max_price.toLocaleString('vi-VN')}đ` : product.min_price.toLocaleString('vi-VN') + 'đ',
         image_url: product.image_url,
-        category: product.category_id?.name || 'Không phân loại'
+        category: product.category_id?.name || 'Không phân loại',
+        rating: reviewStats.get(String(product._id))?.averageRating || 0,
+        ratingCount: reviewStats.get(String(product._id))?.reviewCount || 0
       }))
     });
   } catch (err) {
@@ -1509,6 +1559,10 @@ exports.enhancedSearchProducts = async (req, res) => {
       .limit(4)
       .sort({ sold_quantity: -1 });
 
+    const reviewStatsForSuggestions = await getReviewStatsForProducts(suggestions.map(p => p._id));
+
+    const reviewStatsForList = await getReviewStatsForProducts(products.map(p => p._id));
+
     res.json({
       success: true,
       total,
@@ -1525,7 +1579,9 @@ exports.enhancedSearchProducts = async (req, res) => {
         available_colors: product.available_colors?.map(c => c.name) || [],
         available_sizes: product.available_sizes?.map(s => s.name) || [],
         sold_quantity: product.sold_quantity,
-        views: product.views
+        views: product.views,
+        rating: reviewStatsForList.get(String(product._id))?.averageRating || 0,
+        ratingCount: reviewStatsForList.get(String(product._id))?.reviewCount || 0
       })),
       suggestions: suggestions.map(product => ({
         id: product._id,
@@ -1533,7 +1589,9 @@ exports.enhancedSearchProducts = async (req, res) => {
         name: product.name,
         price: product.has_variants ? `${product.min_price.toLocaleString('vi-VN')} - ${product.max_price.toLocaleString('vi-VN')}đ` : product.min_price.toLocaleString('vi-VN') + 'đ',
         image_url: product.image_url,
-        category: product.category_id?.name || 'Không phân loại'
+        category: product.category_id?.name || 'Không phân loại',
+        rating: reviewStatsForSuggestions.get(String(product._id))?.averageRating || 0,
+        ratingCount: reviewStatsForSuggestions.get(String(product._id))?.reviewCount || 0
       }))
     });
   } catch (err) {
@@ -1582,6 +1640,8 @@ exports.suggestProducts = async (req, res) => {
       }
     }
 
+    const reviewStats = await getReviewStatsForProducts(suggestions.map(p => p._id));
+
     res.json({
       success: true,
       suggestions: suggestions.map(product => ({
@@ -1590,7 +1650,9 @@ exports.suggestProducts = async (req, res) => {
         name: product.name,
         price: product.has_variants ? `${product.min_price.toLocaleString('vi-VN')} - ${product.max_price.toLocaleString('vi-VN')}đ` : product.min_price.toLocaleString('vi-VN') + 'đ',
         image_url: product.image_url,
-        category: product.category_id?.name || 'Không phân loại'
+        category: product.category_id?.name || 'Không phân loại',
+        rating: reviewStats.get(String(product._id))?.averageRating || 0,
+        ratingCount: reviewStats.get(String(product._id))?.reviewCount || 0
       }))
     });
   } catch (err) {
