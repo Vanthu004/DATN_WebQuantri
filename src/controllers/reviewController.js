@@ -21,9 +21,15 @@ exports.createReview = async (req, res) => {
       return res.status(400).json({ message: "Bạn đã đánh giá sản phẩm này rồi." });
     }
 
-    let image_url = "";
-    if (req.file) {
-      image_url = `${req.protocol}://${req.get("host")}/uploads/reviews/${req.file.filename}`;
+    const imageUrls = [];
+    if (req.files && req.files.images && Array.isArray(req.files.images)) {
+      for (const file of req.files.images) {
+        imageUrls.push(`${req.protocol}://${req.get("host")}/uploads/reviews/${file.filename}`);
+      }
+    } else if (req.files && req.files.image && Array.isArray(req.files.image) && req.files.image.length > 0) {
+      imageUrls.push(`${req.protocol}://${req.get("host")}/uploads/reviews/${req.files.image[0].filename}`);
+    } else if (req.file) {
+      imageUrls.push(`${req.protocol}://${req.get("host")}/uploads/reviews/${req.file.filename}`);
     }
 
     const review = new Review({
@@ -31,7 +37,7 @@ exports.createReview = async (req, res) => {
       product_id: new ObjectId(product_id),
       rating,
       comment,
-      image_url,
+      image_urls: imageUrls,
       create_date: new Date(),
     });
 

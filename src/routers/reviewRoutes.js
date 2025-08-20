@@ -7,8 +7,8 @@ const reviewController = require("../controllers/reviewController");
 // Review chính
 // ============================
 
-// Tạo review mới (có thể kèm ảnh)
-router.post("/", upload.single("image"), reviewController.createReview);
+// Tạo review mới (hỗ trợ nhiều ảnh: field "images" và tương thích "image")
+router.post("/", upload.fields([{ name: "images", maxCount: 10 }, { name: "image", maxCount: 1 }]), reviewController.createReview);
 
 // Lấy danh sách tất cả reviews
 router.get("/", reviewController.getReviews);
