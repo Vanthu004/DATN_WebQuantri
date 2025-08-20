@@ -27,15 +27,18 @@ import EditVoucher from "./pages/vouchers/UpdateVoucher";
 import Comments from "./pages/comments/Comments";
 import SalesStatisticsPage from "./pages/statistics/SalesStatisticsPage";
 import InventoryPage from "./pages/inventory/InventoryPage";
-
-// Shipper Management Pages
+{/* Chat Support Routes */}
+// Chat Support Pages
+import ChatDashboard from "./pages/chat/ChatDashboard";
+import ChatRoomsList from "./pages/chat/ChatRoomsList";
+import ChatRoomDetail from "./pages/chat/ChatRoomDetail";
 import ShipperManagementPage from "./pages/shippers/ShipperManagementPage";
 import ShipperListPage from "./pages/shippers/ShipperListPage";
 import OrderAssignmentPage from "./pages/shippers/OrderAssignmentPage";
 import ShipperStatisticsPage from "./pages/shippers/ShipperStatisticsPage";
 import AddShipper from "./pages/shippers/AddShipper";
 import ShipperReportsPage from "./pages/shippers/ShipperReportsPage";
-
+import { ChatProvider } from "./contexts/ChatContext";
 import ListSizes from "./pages/sizes/ListSizes";
 import AddSize from "./pages/sizes/AddSize";
 import UpdateSize from "./pages/sizes/UpdateSize";
@@ -49,6 +52,7 @@ import { OrderNotifyProvider } from "./contexts/OrderNotifyContext";
 function App() {
   return (
     <OrderNotifyProvider>
+      <ChatProvider>
       <Routes>
         {/* Private routes */}
         <Route element={<PrivateRouter />}>
@@ -70,9 +74,13 @@ function App() {
             <Route path="/addvouchers" element={<AddVoucher />} />
             <Route path="//updatevouchers/:voucher_id" element={<EditVoucher />} />
             <Route path="/updatevouchers/:voucher_id" element={<EditVoucher />} />
-
             <Route path="/comments" element={<Comments />} />
-
+              <Route path="/chat/dashboard" element={<ChatDashboard />} />
+              <Route path="/chat/rooms" element={<ChatRoomsList />} />
+              <Route path="/chat/room/:roomId" element={<ChatRoomDetail />} />
+              
+              {/* Redirect /chat to dashboard */}
+              <Route path="/chat" element={<ChatDashboard />} />
             {/* Product Path */}
             <Route path="/products" element={<ListProduct />} />
             <Route path="/products/add" element={<AddProduct />} />
@@ -116,6 +124,7 @@ function App() {
         <Route path="*" element={<PageNotFound />} />
       </Routes>
       <ToastContainer position="top-right" autoClose={3000} />
+      </ChatProvider>
     </OrderNotifyProvider>
   );
 }
