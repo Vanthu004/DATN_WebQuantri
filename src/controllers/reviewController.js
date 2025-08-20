@@ -32,10 +32,16 @@ exports.createReview = async (req, res) => {
       imageUrls.push(`${req.protocol}://${req.get("host")}/uploads/reviews/${req.file.filename}`);
     }
 
+    // Validate rating range (1-5)
+    const numericRating = Number(rating);
+    if (!Number.isFinite(numericRating) || numericRating < 1 || numericRating > 5) {
+      return res.status(400).json({ message: "rating phải từ 1 đến 5" });
+    }
+
     const review = new Review({
       user_id: new ObjectId(user_id),
       product_id: new ObjectId(product_id),
-      rating,
+      rating: numericRating,
       comment,
       image_urls: imageUrls,
       create_date: new Date(),
