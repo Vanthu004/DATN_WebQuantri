@@ -33,11 +33,7 @@ const chatRoomSchema = new mongoose.Schema({
     enum: ['open', 'assigned', 'resolved', 'closed'],
     default: 'open'
   },
-  priority: {
-    type: String,
-    enum: ['low', 'medium', 'high'],
-    default: 'medium'
-  },
+  priority: { type: String, enum: ['low', 'medium', 'high'], default: 'medium' },
   lastMessageAt: {
     type: Date,
     default: Date.now
