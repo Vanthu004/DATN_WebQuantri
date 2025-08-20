@@ -7,36 +7,32 @@ const mongoose = require('mongoose');
 // Tạo phòng chat mới (User only)
 exports.createChatRoom = async (req, res) => {
   try {
-    const { subject, category = 'general', metadata = {} } = req.body;
+    const { subject, category = 'general', priority = 'medium', metadata = {} } = req.body;
     const userId = req.user.userId;
 
+    // Kiểm tra thông tin đầu vào
     if (!subject?.trim()) {
       return res.status(400).json({ message: 'Vui lòng nhập chủ đề chat' });
     }
-
-    // Kiểm tra user có phòng nào đang mở không
-    const existingOpenRoom = await ChatRoom.findOne({
-      userId,
-      status: { $in: ['open', 'assigned'] },
-      isActive: true
-    });
-
-    if (existingOpenRoom) {
-      return res.status(400).json({
-        message: 'Bạn đã có phòng chat đang mở, vui lòng đóng phòng cũ trước khi tạo phòng mới',
-        existingRoom: existingOpenRoom
-      });
+    const validPriorities = ['low', 'medium', 'high'];
+    if (!validPriorities.includes(priority)) {
+      return res.status(400).json({ message: 'Mức độ ưu tiên không hợp lệ' });
     }
+
+    
 
     const chatRoom = new ChatRoom({
       userId,
       subject: subject.trim(),
       category,
+      priority, // Thêm priority
       metadata
     });
 
     await chatRoom.save();
     await chatRoom.populate('userId', 'name email phone_number avatar_url');
+
+    console.log(' @Backend created room:', { message: 'Tạo phòng chat thành công', chatRoom });
 
     res.status(201).json({
       message: 'Tạo phòng chat thành công',
@@ -50,6 +46,7 @@ exports.createChatRoom = async (req, res) => {
 
 // Lấy danh sách phòng chat của user
 exports.getMyChatRooms = async (req, res) => {
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
   try {
     const { status, page = 1, limit = 10 } = req.query;
     const userId = req.user.userId;
@@ -68,6 +65,12 @@ exports.getMyChatRooms = async (req, res) => {
       .skip(skip);
 
     const total = await ChatRoom.countDocuments(query);
+    console.log('Backend getMyChatRooms:', {
+      userId,
+      query,
+      chatRooms: chatRooms.map(r => ({ roomId: r.roomId, status: r.status, updatedAt: r.updatedAt })),
+      total
+    });
 
     res.json({
       chatRooms,
@@ -301,7 +304,6 @@ exports.updateRoomStatus = async (req, res) => {
       return res.status(404).json({ message: 'Không tìm thấy phòng chat' });
     }
 
-    // Kiểm tra quyền
     const hasPermission =
       req.user.role === 'admin' ||
       (req.user.role === 'staff' && chatRoom.assignedStaff?.toString() === req.user.userId);
@@ -314,22 +316,25 @@ exports.updateRoomStatus = async (req, res) => {
     if (status === 'closed') {
       chatRoom.isActive = false;
     }
-
+    chatRoom.updatedAt = new Date();
     await chatRoom.save();
+    await chatRoom.populate('assignedStaff', 'name avatar_url role');
 
-    // Emit socket event
+    console.log('Backend updateRoomStatus:', { roomId, status, updatedBy: req.user.userId });
+
     const io = req.app.get('io');
     if (io) {
-      io.to(roomId).emit('room_status_updated', {
+      io.of('/chat').to(roomId).emit('room_status_updated', {
         roomId,
         status,
-        updatedBy: req.user.userId
+        updatedBy: req.user.userId,
+        updatedAt: chatRoom.updatedAt
       });
     }
 
     res.json({
       message: 'Cập nhật trạng thái thành công',
-      chatRoom: { ...chatRoom.toObject(), status }
+      chatRoom
     });
   } catch (error) {
     console.error('Update room status error:', error);
