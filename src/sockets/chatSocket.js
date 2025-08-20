@@ -8,27 +8,27 @@ const chatSocketHandler = (io) => {
   const chatNamespace = io.of('/chat');
 
   chatNamespace.use(async (socket, next) => {
-  try {
-    const token = socket.handshake.auth.token || socket.handshake.headers.authorization?.split(' ')[1];
-    console.log('🔍 Socket auth attempt:', { token: token ? 'present' : 'missing' });
-    if (!token) {
-      return next(new Error('Authentication error: No token provided'));
+    try {
+      const token = socket.handshake.auth.token || socket.handshake.headers.authorization?.split(' ')[1];
+      console.log('🔍 Socket auth attempt:', { token: token ? 'present' : 'missing' });
+      if (!token) {
+        return next(new Error('Authentication error: No token provided'));
+      }
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      console.log('🔍 Socket auth decoded:', decoded);
+      const user = await User.findById(decoded.userId).select('name avatar_url');
+      if (!user || user.ban?.isBanned) {
+        return next(new Error('Authentication error: User not found or banned'));
+      }
+      socket.userId = user._id.toString();
+      socket.userRole = decoded.role; // Dùng role từ token
+      socket.userName = user.name;
+      next();
+    } catch (error) {
+      console.error('🔍 Socket auth error:', error.message);
+      next(new Error(`Authentication error: ${error.message}`));
     }
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    console.log('🔍 Socket auth decoded:', decoded);
-    const user = await User.findById(decoded.userId).select('name avatar_url');
-    if (!user || user.ban?.isBanned) {
-      return next(new Error('Authentication error: User not found or banned'));
-    }
-    socket.userId = user._id.toString();
-    socket.userRole = decoded.role; // Dùng role từ token
-    socket.userName = user.name;
-    next();
-  } catch (error) {
-    console.error('🔍 Socket auth error:', error.message);
-    next(new Error(`Authentication error: ${error.message}`));
-  }
-});
+  });
 
   chatNamespace.on('connection', (socket) => {
     console.log(`👤 User connected to /chat: ${socket.userName} (${socket.userRole})`);
@@ -39,14 +39,14 @@ const chatSocketHandler = (io) => {
         if (socket.userRole === 'admin') {
           rooms = await ChatRoom.find({ isActive: true }).select('roomId');
         } else if (socket.userRole === 'staff') {
-          rooms = await ChatRoom.find({ 
-            assignedStaff: socket.userId, 
-            isActive: true 
+          rooms = await ChatRoom.find({
+            assignedStaff: socket.userId,
+            isActive: true
           }).select('roomId');
         } else {
-          rooms = await ChatRoom.find({ 
-            userId: socket.userId, 
-            isActive: true 
+          rooms = await ChatRoom.find({
+            userId: socket.userId,
+            isActive: true
           }).select('roomId');
         }
 
@@ -67,6 +67,22 @@ const chatSocketHandler = (io) => {
       }
     });
 
+    socket.on('room_status_updated', data => {
+      console.log('Received room_status_updated:', data);
+      const { roomId, status } = data;
+      if (!roomId || !status) {
+        socket.emit('error', { message: 'Thiếu thông tin cập nhật trạng thái phòng' });
+        return;
+      }
+      socket.to(roomId).emit('room_status_updated', data);
+      console.log(`🔄 Room ${roomId} status updated to ${status} by ${socket.userName}`)
+      socket.emit('room_status_updated', {
+        roomId,
+        status,
+        message: `Trạng thái phòng ${roomId} đã được cập nhật thành ${status}`
+      })
+    });
+
     socket.on('join_room', async (data) => {
       try {
         const { roomId } = data;
@@ -78,13 +94,13 @@ const chatSocketHandler = (io) => {
         const chatRoom = await ChatRoom.findOne({ roomId, isActive: true })
           .populate('userId', 'name')
           .populate('assignedStaff', 'name');
-        
+
         if (!chatRoom) {
           socket.emit('error', { message: 'Không tìm thấy phòng chat' });
           return;
         }
 
-        const hasAccess = 
+        const hasAccess =
           socket.userRole === 'admin' ||
           chatRoom.userId._id.toString() === socket.userId ||
           (chatRoom.assignedStaff && chatRoom.assignedStaff._id.toString() === socket.userId);
@@ -109,8 +125,8 @@ const chatSocketHandler = (io) => {
           joinedAt: new Date()
         });
 
-        socket.emit('room_joined', { 
-          roomId, 
+        socket.emit('room_joined', {
+          roomId,
           message: 'Đã tham gia phòng chat',
           roomInfo: {
             subject: chatRoom.subject,
@@ -145,80 +161,80 @@ const chatSocketHandler = (io) => {
     });
 
     socket.on('send_message', async (data) => {
-  try {
-    const { roomId, content, type = 'text', metadata = {} } = data;
-    console.log('🔍 Received send_message:', { roomId, content, type, user: { id: socket.userId, role: socket.userRole, name: socket.userName } });
-    if (!roomId || !content?.trim()) {
-      socket.emit('error', { message: 'Thiếu thông tin tin nhắn' });
-      return;
-    }
-    const chatRoom = await ChatRoom.findOne({ roomId, isActive: true });
-    if (!chatRoom) {
-      socket.emit('error', { message: 'Không tìm thấy phòng chat' });
-      return;
-    }
-    const hasPermission = 
-      socket.userRole === 'admin' ||
-      chatRoom.userId.toString() === socket.userId ||
-      (chatRoom.assignedStaff && chatRoom.assignedStaff.toString() === socket.userId);
-    console.log('🔍 Socket send_message:', {
-      roomId,
-      user: { id: socket.userId, role: socket.userRole, name: socket.userName },
-      hasPermission,
-      chatRoom: { userId: chatRoom.userId.toString(), assignedStaff: chatRoom.assignedStaff?.toString() }
-    });
-    if (!hasPermission) {
-      socket.emit('error', { message: 'Không có quyền gửi tin nhắn' });
-      return;
-    }
-    const user = await User.findById(socket.userId).select('name avatar_url');
-    console.log('🔍 User data from MongoDB:', { id: user._id, role: socket.userRole, name: user.name });
-    const messageData = {
-      room_id: roomId,
-      sender_id: socket.userId,
-      sender_role: socket.userRole, // Dùng socket.userRole từ token
-      sender_name: user.name,
-      sender_avatar: user.avatar_url,
-      content: content.trim(),
-      type,
-      metadata,
-      created_at: new Date().toISOString()
-    };
-    const { data: message, error } = await supabase
-      .from('messages')
-      .insert([messageData])
-      .select()
-      .single();
-    if (error) {
-      console.error('Supabase message error:', error);
-      socket.emit('error', { message: 'Lỗi lưu tin nhắn' });
-      return;
-    }
-    chatRoom.lastMessageAt = new Date();
-    await chatRoom.save();
-    const messageWithSender = {
-      ...message,
-      sender: {
-        id: socket.userId,
-        name: user.name,
-        avatar_url: user.avatar_url,
-        role: socket.userRole // Dùng socket.userRole từ token
+      try {
+        const { roomId, content, type = 'text', metadata = {} } = data;
+        console.log('🔍 Received send_message:', { roomId, content, type, user: { id: socket.userId, role: socket.userRole, name: socket.userName } });
+        if (!roomId || !content?.trim()) {
+          socket.emit('error', { message: 'Thiếu thông tin tin nhắn' });
+          return;
+        }
+        const chatRoom = await ChatRoom.findOne({ roomId, isActive: true });
+        if (!chatRoom) {
+          socket.emit('error', { message: 'Không tìm thấy phòng chat' });
+          return;
+        }
+        const hasPermission =
+          socket.userRole === 'admin' ||
+          chatRoom.userId.toString() === socket.userId ||
+          (chatRoom.assignedStaff && chatRoom.assignedStaff.toString() === socket.userId);
+        console.log('🔍 Socket send_message:', {
+          roomId,
+          user: { id: socket.userId, role: socket.userRole, name: socket.userName },
+          hasPermission,
+          chatRoom: { userId: chatRoom.userId.toString(), assignedStaff: chatRoom.assignedStaff?.toString() }
+        });
+        if (!hasPermission) {
+          socket.emit('error', { message: 'Không có quyền gửi tin nhắn' });
+          return;
+        }
+        const user = await User.findById(socket.userId).select('name avatar_url');
+        console.log('🔍 User data from MongoDB:', { id: user._id, role: socket.userRole, name: user.name });
+        const messageData = {
+          room_id: roomId,
+          sender_id: socket.userId,
+          sender_role: socket.userRole, // Dùng socket.userRole từ token
+          sender_name: user.name,
+          sender_avatar: user.avatar_url,
+          content: content.trim(),
+          type,
+          metadata,
+          created_at: new Date().toISOString()
+        };
+        const { data: message, error } = await supabase
+          .from('messages')
+          .insert([messageData])
+          .select()
+          .single();
+        if (error) {
+          console.error('Supabase message error:', error);
+          socket.emit('error', { message: 'Lỗi lưu tin nhắn' });
+          return;
+        }
+        chatRoom.lastMessageAt = new Date();
+        await chatRoom.save();
+        const messageWithSender = {
+          ...message,
+          sender: {
+            id: socket.userId,
+            name: user.name,
+            avatar_url: user.avatar_url,
+            role: socket.userRole // Dùng socket.userRole từ token
+          }
+        };
+        console.log('🔍 Emitting new_message:', messageWithSender);
+        chatNamespace.to(roomId).emit('new_message', messageWithSender);
+        chatNamespace.emit('room_updated', {
+          roomId,
+          lastMessageAt: chatRoom.lastMessageAt,
+          updatedBy: socket.userId
+        });
+        console.log(`💬 Message sent by ${socket.userName} in room ${roomId}`);
+      } catch (error) {
+        console.error('Send message error:', error);
+        socket.emit('error', { message: 'Lỗi gửi tin nhắn' });
       }
-    };
-    console.log('🔍 Emitting new_message:', messageWithSender);
-    chatNamespace.to(roomId).emit('new_message', messageWithSender);
-    chatNamespace.emit('room_updated', {
-      roomId,
-      lastMessageAt: chatRoom.lastMessageAt,
-      updatedBy: socket.userId
     });
-    console.log(`💬 Message sent by ${socket.userName} in room ${roomId}`);
-  } catch (error) {
-    console.error('Send message error:', error);
-    socket.emit('error', { message: 'Lỗi gửi tin nhắn' });
-  }
-});
-   
+
     socket.on('typing_start', (data) => {
       const { roomId } = data;
       socket.to(roomId).emit('user_typing', {
@@ -277,12 +293,12 @@ const chatSocketHandler = (io) => {
   const setupSupabaseRealtime = () => {
     const messageChannel = supabase
       .channel('chat_messages')
-      .on('postgres_changes', 
-        { 
-          event: 'INSERT', 
-          schema: 'public', 
-          table: 'messages' 
-        }, 
+      .on('postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'messages'
+        },
         async (payload) => {
           try {
             const message = payload.new;
