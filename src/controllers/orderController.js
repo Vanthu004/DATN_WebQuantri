@@ -11,7 +11,7 @@ exports.createOrder = async (req, res) => {
   session.startTransaction();
   
   try {
-    const { user_id, total_price, shippingmethod_id, paymentmethod_id, voucher_id, shipping_address, note } = req.body;
+    const { user_id, total_price, shippingmethod_id, paymentmethod_id, voucher_ids, shipping_address, note } = req.body;
 
     // Validation
     if (!user_id || !total_price || !shippingmethod_id || !paymentmethod_id || !shipping_address) {
@@ -74,7 +74,7 @@ exports.createOrder = async (req, res) => {
       total_price,
       shippingmethod_id,
       paymentmethod_id,
-      voucher_id,
+      voucher_ids,
       shipping_address,
       note,
       order_code,
@@ -151,7 +151,7 @@ exports.getAllOrders = async (req, res) => {
       .populate("user_id", "name email phone_number")
       .populate("shippingmethod_id", "name fee estimated_days")
       .populate("paymentmethod_id", "name code")
-      .populate("voucher_id", "name title discount_value voucher_id")
+      .populate("voucher_ids", "name title discount_value voucher_id")
       .sort(sortOption)
       .skip(skip)
       .limit(parseInt(limit));
@@ -223,7 +223,7 @@ exports.getOrderById = async (req, res) => {
       .populate("user_id", "name email phone_number address")
       .populate("shippingmethod_id", "name fee description estimated_days")
       .populate("paymentmethod_id", "name description code")
-      .populate("voucher_id", "name title discount_value voucher_id");
+      .populate("voucher_ids", "name title discount_value voucher_id");
 
     if (!order) {
       return res.status(404).json({ 
@@ -277,7 +277,7 @@ exports.getOrdersByUser = async (req, res) => {
       .populate("user_id", "name email phone_number")
       .populate("shippingmethod_id", "name fee estimated_days")
       .populate("paymentmethod_id", "name code")
-      .populate("voucher_id", "name title discount_value voucher_id")
+      .populate("voucher_ids", "name title discount_value voucher_id")
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(parseInt(limit));
@@ -643,54 +643,23 @@ exports.createOrderWithDetails = async (req, res) => {
     let finalTotalPrice = orderData.total_price;
     let voucherInfo = null;
     
-    if (orderData.voucher_id) {
-      const Voucher = require("../models/Voucher");
-      const voucher = await Voucher.findById(orderData.voucher_id);
-      
-      if (!voucher) {
-        return res.status(400).json({
-          success: false,
-          msg: "Voucher không hợp lệ"
-        });
-      }
+if (Array.isArray(orderData.voucher_ids) && orderData.voucher_ids.length > 0) {
+  const Voucher = require("../models/Voucher");
+  const vouchers = await Voucher.find({ _id: { $in: orderData.voucher_ids } });
 
-      // Kiểm tra voucher có hợp lệ không
-      if (voucher.status !== 'active') {
-        return res.status(400).json({
-          success: false,
-          msg: "Voucher không còn hiệu lực"
-        });
-      }
+  let totalDiscount = 0;
+  for (const voucher of vouchers) {
+    if (voucher.status !== 'active') continue;
+    if (new Date(voucher.expiry_date) < new Date()) continue;
+    if (voucher.usage_limit <= voucher.used_count) continue;
 
-      if (new Date(voucher.expiry_date) < new Date()) {
-        return res.status(400).json({
-          success: false,
-          msg: "Voucher đã hết hạn"
-        });
-      }
+    totalDiscount += voucher.discount_value;
+    voucher.used_count += 1;
+    await voucher.save({ session });
+  }
+  finalTotalPrice = Math.max(0, orderData.total_price - totalDiscount);
+}
 
-      if (voucher.usage_limit <= voucher.used_count) {
-        return res.status(400).json({
-          success: false,
-          msg: "Voucher đã hết lượt sử dụng"
-        });
-      }
-
-      // Tính toán discount
-      const discount = voucher.discount_value;
-      finalTotalPrice = Math.max(0, orderData.total_price - discount);
-      
-      // Cập nhật usage count
-      voucher.used_count += 1;
-      await voucher.save({ session });
-      
-      voucherInfo = {
-        voucher_id: orderData.voucher_id,
-        discount_applied: discount,
-        original_total: orderData.total_price,
-        final_total: finalTotalPrice
-      };
-    }
 
     // Tạo order_code tự động
     const now = new Date();
