@@ -1,16 +1,20 @@
-// admin/src/configs/api.tsx
-import axios from "axios";
+import axios from 'axios';
+import { toast } from 'react-toastify';
+import { logoutGlobal } from '../contexts/AuthContext';
 
 const api = axios.create({
-  baseURL: "http://localhost:3000/api",
+  baseURL: 'http://localhost:3000/api',
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
-// Add request interceptor for debugging
 api.interceptors.request.use(
   (config) => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
     console.log('API Request:', config.method?.toUpperCase(), config.url);
     return config;
   },
@@ -20,14 +24,28 @@ api.interceptors.request.use(
   }
 );
 
-// Add response interceptor for debugging
 api.interceptors.response.use(
   (response) => {
     console.log('API Response:', response.status, response.config.url);
     return response;
   },
-  (error) => {
-    console.error('API Response Error:', error.response?.status, error.response?.data);
+  async (error) => {
+    const status = error.response?.status;
+    const message = error.response?.data?.message || 'Lỗi không xác định';
+
+    if (status === 401 && message === 'Token đã hết hạn') {
+      await logoutGlobal();
+      toast.error('Phiên hết hạn, vui lòng đăng nhập lại.');
+      return Promise.reject(error);
+    }
+
+    if (status === 403 && message === 'Token không hợp lệ') {
+      await logoutGlobal();
+      toast.error('Token không hợp lệ, vui lòng đăng nhập lại.');
+      return Promise.reject(error);
+    }
+
+    console.error('API Response Error:', status, message);
     return Promise.reject(error);
   }
 );
