@@ -182,7 +182,7 @@ exports.createUser = async (req, res) => {
     const token = jwt.sign(
       { userId: user._id, role: user.role },
       process.env.JWT_SECRET,
-      { expiresIn: process.env.JWT_EXPIRES_IN || "1d" }
+      { expiresIn: process.env.JWT_EXPIRES_IN || "15d" }
     );
 
     const populated = await User.findById(user._id)

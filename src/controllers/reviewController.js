@@ -2,6 +2,39 @@ const Review = require("../models/review");
 const User = require("../models/user");
 const mongoose = require("mongoose");
 const { ObjectId } = mongoose.Types;
+const { S3Client, PutObjectCommand } = require("@aws-sdk/client-s3");
+const crypto = require("crypto");
+const path = require("path");
+
+// Cấu hình S3 client
+const s3 = new S3Client({
+  region: process.env.AWS_REGION,
+  credentials: {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+  },
+});
+
+// Helper function để upload ảnh lên S3
+async function uploadToS3(file) {
+  try {
+    const fileExt = path.extname(file.originalname);
+    const fileName = `reviews/${crypto.randomBytes(16).toString("hex")}${fileExt}`;
+
+    const command = new PutObjectCommand({
+      Bucket: process.env.AWS_BUCKET_NAME || "datn2",
+      Key: fileName,
+      Body: file.buffer,
+      ContentType: file.mimetype,
+    });
+
+    await s3.send(command);
+    return `https://${process.env.AWS_BUCKET_NAME || "datn2"}.s3.${process.env.AWS_REGION}.amazonaws.com/${fileName}`;
+  } catch (error) {
+    console.error("S3 upload error:", error);
+    throw new Error("Failed to upload image to S3");
+  }
+}
 
 // ✅ Tạo review mới
 exports.createReview = async (req, res) => {
@@ -21,21 +54,31 @@ exports.createReview = async (req, res) => {
       return res.status(400).json({ message: "Bạn đã đánh giá sản phẩm này rồi." });
     }
 
-    const imageUrls = [];
-    if (req.files && req.files.images && Array.isArray(req.files.images)) {
-      for (const file of req.files.images) {
-        imageUrls.push(`${req.protocol}://${req.get("host")}/uploads/reviews/${file.filename}`);
-      }
-    } else if (req.files && req.files.image && Array.isArray(req.files.image) && req.files.image.length > 0) {
-      imageUrls.push(`${req.protocol}://${req.get("host")}/uploads/reviews/${req.files.image[0].filename}`);
-    } else if (req.file) {
-      imageUrls.push(`${req.protocol}://${req.get("host")}/uploads/reviews/${req.file.filename}`);
-    }
-
     // Validate rating range (1-5)
     const numericRating = Number(rating);
     if (!Number.isFinite(numericRating) || numericRating < 1 || numericRating > 5) {
       return res.status(400).json({ message: "rating phải từ 1 đến 5" });
+    }
+
+    // Xử lý upload ảnh giống như sản phẩm - sử dụng AWS S3
+    const imageUrls = [];
+    if (req.body.image_urls && Array.isArray(req.body.image_urls)) {
+      // Nếu đã có URLs từ S3 upload
+      imageUrls.push(...req.body.image_urls);
+    } else if (req.files && req.files.images && Array.isArray(req.files.images)) {
+      // Upload nhiều ảnh lên S3
+      for (const file of req.files.images) {
+        const uploadedUrl = await uploadToS3(file);
+        imageUrls.push(uploadedUrl);
+      }
+    } else if (req.files && req.files.image && Array.isArray(req.files.image) && req.files.image.length > 0) {
+      // Upload một ảnh lên S3
+      const uploadedUrl = await uploadToS3(req.files.image[0]);
+      imageUrls.push(uploadedUrl);
+    } else if (req.file) {
+      // Upload một ảnh lên S3
+      const uploadedUrl = await uploadToS3(req.file);
+      imageUrls.push(uploadedUrl);
     }
 
     const review = new Review({
