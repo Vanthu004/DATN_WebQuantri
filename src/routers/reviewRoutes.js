@@ -1,7 +1,11 @@
 const express = require("express");
 const router = express.Router();
-const upload = require("../middlewares/upload");
+const multer = require("multer");
 const reviewController = require("../controllers/reviewController");
+
+// Cấu hình multer để nhận file từ form-data (giống như sản phẩm)
+const storage = multer.memoryStorage();
+const upload = multer({ storage });
 
 // ============================
 // Review chính

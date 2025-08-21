@@ -99,7 +99,7 @@ app.use("/api/colors", colorRouter);
 app.use("/api/shipers", shiperRouter);
 app.use("/api/admin/shipers", adminShiperRouter);
 app.use("/api/vouchers", voucherRouter);
-app.use("/api/uploads", uploadRouter);
+// app.use("/api/uploads", uploadRouter);
 app.use("/api/category-types", categoryTypeRouter);
 app.use("/api/notifications", notificationRouter);
 app.use("/api/addresses", addressRouter);
