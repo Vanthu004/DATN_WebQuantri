@@ -267,33 +267,39 @@ const OrderDetail = () => {
           </div>
           
           <div className="info-row">
-            {order.voucher_id && (
-              <div className="info-item">
-                <label>Voucher sử dụng:</label>
-                <div className="voucher-display">
-                  <span className="voucher-title">
-                    {typeof order.voucher_id === "object" && order.voucher_id ? (
-                      order.voucher_id.title
-                    ) : (
-                      'N/A'
-                    )}
-                  </span>
-                  <span className="voucher-discount">
-                    {typeof order.voucher_id === "object" && order.voucher_id ? (
-                      `(Giảm ${order.voucher_id.discount_value.toLocaleString()}₫)`
-                    ) : (
-                      'N/A'
-                    )}
-                  </span>
-                </div>
-              </div>
-            )}
+{order.voucher_ids && order.voucher_ids.length > 0 && (
+  <div className="info-item">
+    <label>Voucher sử dụng:</label>
+    <div className="voucher-display">
+      {order.voucher_ids.map((voucher, index) => (
+        <div key={index} className="voucher-item">
+          <span className="voucher-title">
+            {voucher.title || "N/A"}
+          </span>
+          <span className="voucher-discount">
+            {voucher.title?.toLowerCase().includes("miễn phí vận chuyển")
+              ? "(Miễn phí vận chuyển)"
+              : `(Giảm ${voucher.discount_value?.toLocaleString() || 0}%)`
+            }
+          </span>
+        </div>
+      ))}
+    </div>
+  </div>
+)}
             
             {/* Ghi chú nếu có */}
             {order.note && (
               <div className="info-item">
                 <label>Ghi chú:</label>
                 <span>{order.note}</span>
+              </div>
+            )}
+            {/* Lý do hủy đơn nếu có */}
+            {order.cancel_reason && (
+              <div className="info-item">
+                <label>Lý do hủy đơn:</label>
+                <span>{order.cancel_reason}</span>
               </div>
             )}
           </div>
