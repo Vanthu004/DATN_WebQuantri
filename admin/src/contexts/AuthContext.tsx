@@ -1,4 +1,3 @@
-// admin/src/contexts/AuthContext.tsx
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
@@ -7,6 +6,7 @@ export let logoutGlobal = async () => {};
 interface AuthContextType {
   user: { role: string } | null;
   isLoading: boolean;
+  login: (token: string, userData?: any) => void; // Thêm hàm login
   logout: () => void;
 }
 
@@ -40,17 +40,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     checkLoginState();
-  }, []);
+  }, []); // Vẫn giữ [] vì check ban đầu, update động qua hàm login/logout
+
+  const login = (token: string, userData?: any) => {
+    localStorage.setItem('token', token);
+    if (userData) {
+      localStorage.setItem('user', JSON.stringify(userData));
+    }
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      setUser({ role: payload.role || 'user' });
+    } catch (error) {
+      console.error('Error parsing token in login:', error);
+      logout();
+    }
+  };
 
   const logout = async () => {
     localStorage.removeItem('token');
+    localStorage.removeItem('user'); // Thêm: Xóa 'user' để tránh rác
     setUser(null);
     navigate('/login', { replace: true });
     console.log('Logged out successfully');
   };
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, logout }}>
+    <AuthContext.Provider value={{ user, isLoading, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

@@ -111,7 +111,6 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
     const currentToken = localStorage.getItem('token');
     if (!currentToken) {
       console.error('🔍 No token found, cannot connect socket');
-      toast.error('Vui lòng đăng nhập để kết nối chat');
       return;
     }
 

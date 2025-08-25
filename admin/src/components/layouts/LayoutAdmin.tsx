@@ -17,7 +17,6 @@ import { BsChatDots } from 'react-icons/bs';
 import { AiFillSetting } from 'react-icons/ai';
 import '../../css/layouts/layoutAdmin.css';
 import '../../css/notify/orderToast.css';
-
 import logo from '../../assets/LogoSwear.png';
 import { useOrderNotify } from '../../contexts/OrderNotifyContext';
 import { useOrderNotification } from '../../hooks/useOrderNotification';
@@ -69,12 +68,6 @@ const LayoutAdmin = () => {
       label: 'Kho hàng',
       roles: ['admin'],
     },
-      {
-    path: "/shippers",
-    icon: <FaTruck />,
-    label: "Quản lý Shipper",
-    roles: ["admin", "staff"]
-  },
     {
       path: '/notify',
       icon: <MdOutlineNotificationsActive />,
@@ -125,7 +118,6 @@ const LayoutAdmin = () => {
     },
     {
       path: '/comments',
-
       icon: <BiSolidCommentDetail />,
       label: 'Bình luận - Đánh giá',
       roles: ['admin', 'staff'],
@@ -203,7 +195,6 @@ const LayoutAdmin = () => {
                     {item.icon}
                     <span>{item.label}</span>
                     {item.path === '/notify' && newOrderCount > 0 && (
-
                       <span className="menu-dot"></span>
                     )}
                     {item.path === '/chat' && false && (
