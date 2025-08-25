@@ -14,7 +14,6 @@ import { MdOutlineNotificationsActive } from 'react-icons/md';
 import { RiDiscountPercentFill } from 'react-icons/ri';
 import { BiSolidCommentDetail } from 'react-icons/bi';
 import { BsChatDots } from 'react-icons/bs';
-import { AiFillSetting } from 'react-icons/ai';
 import '../../css/layouts/layoutAdmin.css';
 import '../../css/notify/orderToast.css';
 
@@ -69,12 +68,6 @@ const LayoutAdmin = () => {
       label: 'Kho hàng',
       roles: ['admin'],
     },
-      {
-    path: "/shippers",
-    icon: <FaTruck />,
-    label: "Quản lý Shipper",
-    roles: ["admin", "staff"]
-  },
     {
       path: '/notify',
       icon: <MdOutlineNotificationsActive />,
@@ -134,12 +127,6 @@ const LayoutAdmin = () => {
       path: '/chat',
       icon: <BsChatDots />,
       label: 'Chat Support',
-      roles: ['admin', 'staff'],
-    },
-    {
-      path: '/setting',
-      icon: <AiFillSetting />,
-      label: 'Cài đặt',
       roles: ['admin', 'staff'],
     },
     {
