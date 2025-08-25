@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { chatApi, ChatRoomsResponse } from '../../services/chatApi';
@@ -20,12 +19,10 @@ const ChatRoomsList: React.FC = () => {
     category: searchParams.get('category') || '',
     priority: searchParams.get('priority') || '',
   });
-
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 20;
 
   useEffect(() => {
-    // Get user role from token
     const token = localStorage.getItem('token');
     if (token) {
       try {
@@ -33,6 +30,7 @@ const ChatRoomsList: React.FC = () => {
         setUser({ role: payload.role || 'staff' });
       } catch (error) {
         console.error('Error parsing token:', error);
+        toast.error('Không thể xác thực người dùng');
       }
     }
   }, []);
@@ -43,7 +41,7 @@ const ChatRoomsList: React.FC = () => {
 
   const loadRooms = async () => {
     if (!user) return;
-    
+
     setLoading(true);
     try {
       let roomsData;
@@ -73,7 +71,6 @@ const ChatRoomsList: React.FC = () => {
     setFilters(newFilters);
     setCurrentPage(1);
 
-    // Update URL params
     const newSearchParams = new URLSearchParams();
     Object.entries(newFilters).forEach(([k, v]) => {
       if (v) newSearchParams.set(k, v);
@@ -108,7 +105,7 @@ const ChatRoomsList: React.FC = () => {
     const now = new Date();
     const date = new Date(dateString);
     const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
-    
+
     if (diffInHours < 1) return 'Vừa xong';
     if (diffInHours < 24) return `${diffInHours} giờ trước`;
     return `${Math.floor(diffInHours / 24)} ngày trước`;
@@ -146,7 +143,7 @@ const ChatRoomsList: React.FC = () => {
             {rooms?.pagination.total || 0} phòng chat
           </p>
         </div>
-        
+
         <div className="header-actions">
           <Link to="/chat/dashboard" className="btn btn-outline">
             ← Quay lại Dashboard
@@ -154,7 +151,6 @@ const ChatRoomsList: React.FC = () => {
         </div>
       </div>
 
-      {/* Filters */}
       {user?.role === 'admin' && (
         <div className="filters-bar">
           <div className="filter-group">
@@ -210,17 +206,15 @@ const ChatRoomsList: React.FC = () => {
         </div>
       )}
 
-      {/* Rooms List */}
       <div className="rooms-container">
         {rooms?.chatRooms.length === 0 ? (
           <div className="empty-state">
             <div className="empty-icon">💬</div>
             <h3>Không có phòng chat nào</h3>
             <p>
-              {user?.role === 'admin' 
-                ? 'Chưa có phòng chat nào được tạo.' 
-                : 'Bạn chưa được gán phòng chat nào.'
-              }
+              {user?.role === 'admin'
+                ? 'Chưa có phòng chat nào được tạo.'
+                : 'Bạn chưa được gân phòng chat nào.'}
             </p>
           </div>
         ) : (
@@ -234,22 +228,29 @@ const ChatRoomsList: React.FC = () => {
                 <div className="room-header">
                   <div className="customer-info">
                     <div className="customer-avatar">
-                      {room.userId.avatar_url ? (
-                        <img src={room.userId.avatar_url} alt={room.userId.name} />
+                      {room.userId && room.userId.avatar_url ? (
+                        <img
+                          src={room.userId.avatar_url}
+                          alt={room.userId.name || 'Người dùng'}
+                        />
                       ) : (
                         <div className="avatar-placeholder">
-                          {room.userId.name.charAt(0).toUpperCase()}
+                          {(room.userId?.name?.charAt(0) || '?').toUpperCase()}
                         </div>
                       )}
                     </div>
                     <div className="customer-details">
-                      <h3 className="customer-name">{room.userId.name}</h3>
-                      <p className="customer-email">{room.userId.email}</p>
+                      <h3 className="customer-name">
+                        {room.userId?.name || 'Người dùng ẩn danh'}
+                      </h3>
+                      <p className="customer-email">
+                        {room.userId?.email || 'Không có email'}
+                      </p>
                     </div>
                   </div>
-                  
+
                   <div className="room-badges">
-                    <span 
+                    <span
                       className="status-badge"
                       style={{ backgroundColor: getStatusColor(room.status) }}
                     >
@@ -258,7 +259,7 @@ const ChatRoomsList: React.FC = () => {
                       {room.status === 'resolved' && 'Đã giải quyết'}
                       {room.status === 'closed' && 'Đã đóng'}
                     </span>
-                    <span 
+                    <span
                       className="priority-badge"
                       style={{ backgroundColor: getPriorityColor(room.priority) }}
                     >
@@ -274,7 +275,7 @@ const ChatRoomsList: React.FC = () => {
                   <p className="room-category">
                     {getCategoryLabel(room.category)}
                   </p>
-                  
+
                   {room.assignedStaff && (
                     <div className="assigned-staff">
                       <span className="staff-label">Được gán cho:</span>
@@ -295,7 +296,6 @@ const ChatRoomsList: React.FC = () => {
         )}
       </div>
 
-      {/* Pagination */}
       {rooms && rooms.pagination.totalPages > 1 && (
         <div className="pagination">
           <button
@@ -305,12 +305,12 @@ const ChatRoomsList: React.FC = () => {
           >
             ← Trước
           </button>
-          
+
           <div className="pagination-info">
             Trang {currentPage} / {rooms.pagination.totalPages}
             ({rooms.pagination.total} phòng)
           </div>
-          
+
           <button
             className="pagination-btn"
             disabled={currentPage === rooms.pagination.totalPages}
@@ -324,4 +324,45 @@ const ChatRoomsList: React.FC = () => {
   );
 };
 
-export default ChatRoomsList;
+// Error Boundary Component
+import { Component, ReactNode } from 'react';
+
+class ChatRoomsListErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
+  state = { hasError: false };
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    console.error('Error in ChatRoomsList:', error, errorInfo);
+    toast.error('Đã xảy ra lỗi khi hiển thị danh sách phòng chat');
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="error-state">
+          <h3>Đã xảy ra lỗi</h3>
+          <p>Vui lòng làm mới trang hoặc thử lại sau.</p>
+          <button
+            className="btn btn-outline"
+            onClick={() => window.location.reload()}
+          >
+            Làm mới
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
+// Wrap ChatRoomsList with ErrorBoundary
+const WrappedChatRoomsList: React.FC = () => (
+  <ChatRoomsListErrorBoundary>
+    <ChatRoomsList />
+  </ChatRoomsListErrorBoundary>
+);
+
+export default WrappedChatRoomsList;
