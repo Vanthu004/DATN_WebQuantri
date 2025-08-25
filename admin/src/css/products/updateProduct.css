@@ -170,3 +170,669 @@
   font-weight: 500;
   margin-top: 16px;
 }
+
+/* Variant List Section Styles - Chỉ áp dụng cho trang UpdateProduct */
+.form-container .variant-list-section {
+  margin-top: 32px;
+  padding: 24px;
+  background: #f8fafc;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+}
+
+.form-container .variant-header {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.form-container .variant-title {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #1a202c;
+  margin-bottom: 8px;
+}
+
+.form-container .variant-icon {
+  font-size: 1.75rem;
+}
+
+.form-container .variant-subtitle {
+  color: #718096;
+  font-size: 0.875rem;
+  margin: 0;
+}
+
+.form-container .variant-container {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.form-container .color-variant-group {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  border: 1px solid #e2e8f0;
+}
+
+.form-container .color-header {
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 2px solid #f1f5f9;
+}
+
+.form-container .color-info {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.form-container .color-preview {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 2px solid #e2e8f0;
+}
+
+.form-container .color-name {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1a202c;
+  margin: 0;
+}
+
+.form-container .variant-count {
+  background: #e2e8f0;
+  color: #4a5568;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.form-container .variants-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.form-container .variant-card {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 16px;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.form-container .variant-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border-color: #cbd5e0;
+}
+
+.form-container .variant-card .variant-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.form-container .variant-size .size-badge {
+  background: #3182ce;
+  color: white;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.form-container .variant-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.form-container .status-indicator {
+  font-size: 1.25rem;
+}
+
+.form-container .status-indicator.active {
+  color: #38a169;
+}
+
+.form-container .status-indicator.inactive {
+  color: #e53e3e;
+}
+
+.form-container .status-text {
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.form-container .status-text.active {
+  color: #38a169;
+}
+
+.form-container .status-text.inactive {
+  color: #e53e3e;
+}
+
+.form-container .variant-image {
+  text-align: center;
+  margin-bottom: 16px;
+}
+
+.form-container .variant-img {
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 2px solid #e2e8f0;
+}
+
+.form-container .no-image {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 20px;
+  background: #f7fafc;
+  border: 2px dashed #cbd5e0;
+  border-radius: 8px;
+}
+
+.form-container .no-image-icon {
+  font-size: 1.5rem;
+  color: #a0aec0;
+}
+
+.form-container .no-image-text {
+  font-size: 0.75rem;
+  color: #718096;
+  font-weight: 500;
+}
+
+.form-container .variant-details {
+  margin-bottom: 16px;
+}
+
+.form-container .detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.form-container .detail-row:last-child {
+  border-bottom: none;
+}
+
+.form-container .detail-label {
+  font-size: 0.875rem;
+  color: #718096;
+  font-weight: 500;
+}
+
+.form-container .detail-value {
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.form-container .detail-value.price {
+  color: #38a169;
+}
+
+.form-container .detail-value.stock.high {
+  color: #38a169;
+}
+
+.form-container .detail-value.stock.medium {
+  color: #d69e2e;
+}
+
+.form-container .detail-value.stock.low {
+  color: #e53e3e;
+}
+
+.form-container .detail-value.sku {
+  color: #4a5568;
+  font-family: 'Courier New', monospace;
+  background: #f7fafc;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+}
+
+.form-container .variant-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+
+.form-container .action-btn {
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+}
+
+.form-container .edit-btn {
+  background: #ebf8ff;
+  color: #3182ce;
+}
+
+.form-container .edit-btn:hover {
+  background: #bee3f8;
+  transform: scale(1.05);
+}
+
+.form-container .delete-btn {
+  background: #fef2f2;
+  color: #e53e3e;
+}
+
+.form-container .delete-btn:hover {
+  background: #fee2e2;
+  transform: scale(1.05);
+}
+
+/* No Variants State - Chỉ áp dụng cho trang UpdateProduct */
+.form-container .no-variants {
+  text-align: center;
+  padding: 48px 24px;
+  background: white;
+  border-radius: 12px;
+  border: 2px dashed #e2e8f0;
+}
+
+.form-container .no-variants-icon {
+  font-size: 3rem;
+  margin-bottom: 16px;
+  display: block;
+}
+
+.form-container .no-variants-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #4a5568;
+  margin: 0 0 12px 0;
+}
+
+.form-container .no-variants-description {
+  color: #718096;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  margin: 0 0 24px 0;
+  max-width: 400px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.form-container .add-first-variant-btn {
+  background: #3182ce;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.form-container .add-first-variant-btn:hover {
+  background: #2b6cb0;
+  transform: translateY(-1px);
+}
+
+/* Responsive Design - Chỉ áp dụng cho trang UpdateProduct */
+@media (max-width: 768px) {
+  .form-container .variants-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .form-container .color-info {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  
+  .form-container .variant-card {
+    padding: 12px;
+  }
+  
+  .form-container .variant-card .variant-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  
+  .form-container .variant-actions {
+    justify-content: flex-end;
+  }
+}
+
+@media (max-width: 480px) {
+  .form-container .variant-list-section {
+    padding: 16px;
+    margin-top: 24px;
+  }
+  
+  .form-container .color-variant-group {
+    padding: 16px;
+  }
+  
+  .form-container .no-variants {
+    padding: 32px 16px;
+  }
+}
+
+/* Additional styles for variant management */
+.add-variant-btn {
+  background: #3182ce;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-top: 16px;
+  width: 100%;
+}
+
+.add-variant-btn:hover {
+  background: #2b6cb0;
+  transform: translateY(-1px);
+}
+
+.variant-count {
+  color: #3182ce;
+  font-weight: 600;
+  margin-left: 8px;
+}
+
+/* Variant Form Styles */
+.variant-form-section {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 20px;
+  margin: 16px 0;
+}
+
+.variant-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.variant-form > div {
+  margin-bottom: 16px;
+}
+
+.variant-form label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 500;
+  color: #4a5568;
+}
+
+.variant-form select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #cbd5e0;
+  border-radius: 6px;
+  font-size: 1rem;
+  background-color: #fff;
+}
+
+.variant-form select:focus {
+  outline: none;
+  border-color: #4299e1;
+  box-shadow: 0 0 0 2px rgba(66, 153, 225, 0.5);
+}
+
+/* Size Selection */
+.size-selection {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.size-selection label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background: #f7fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.875rem;
+}
+
+.size-selection label:hover {
+  background: #edf2f7;
+  border-color: #cbd5e0;
+}
+
+.size-selection input[type="checkbox"] {
+  margin: 0;
+}
+
+.size-selection input[type="checkbox"]:checked + span {
+  color: #3182ce;
+  font-weight: 600;
+}
+
+.size-selection label.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.size-selection label.disabled:hover {
+  background: #f7fafc;
+  border-color: #e2e8f0;
+}
+
+/* Color Image Section */
+.color-image-section {
+  margin-bottom: 16px;
+  padding: 16px;
+  background-color: #f9f9f9;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.color-image-section h4 {
+  margin: 0 0 12px 0;
+  color: #333;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.color-image-section p {
+  margin: 0 0 12px 0;
+  font-size: 0.875rem;
+  color: #666;
+  line-height: 1.4;
+}
+
+.color-image-inputs {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+
+.color-image-inputs > div {
+  flex: 1;
+}
+
+.color-image-inputs label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+.color-image-inputs input {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 0.875rem;
+}
+
+.color-image-inputs input:focus {
+  outline: none;
+  border-color: #4299e1;
+  box-shadow: 0 0 0 2px rgba(66, 153, 225, 0.3);
+}
+
+.color-image-preview {
+  margin-top: 12px;
+}
+
+.color-image-preview label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+.color-image-preview img {
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+  border: 2px solid #ddd;
+  border-radius: 8px;
+}
+
+/* Size Details Table */
+.size-details-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 8px;
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.size-details-table th {
+  padding: 12px 8px;
+  background-color: #f5f5f5;
+  border: 1px solid #e2e8f0;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #4a5568;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.size-details-table td {
+  padding: 8px;
+  border: 1px solid #e2e8f0;
+  vertical-align: top;
+}
+
+.size-details-table input {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 0.875rem;
+}
+
+.size-details-table input:focus {
+  outline: none;
+  border-color: #4299e1;
+  box-shadow: 0 0 0 2px rgba(66, 153, 225, 0.3);
+}
+
+.size-details-table input.error {
+  border-color: #e53e3e;
+}
+
+.size-details-table .error-message {
+  color: #e53e3e;
+  font-size: 0.75rem;
+  margin-top: 4px;
+  display: block;
+}
+
+.size-details-table .auto-sku-btn {
+  padding: 4px 8px;
+  font-size: 0.75rem;
+  background: #3182ce;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.size-details-table .auto-sku-btn:hover {
+  background: #2b6cb0;
+}
+
+.size-details-table .remove-size-btn {
+  padding: 4px 8px;
+  background-color: #ff4444;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.75rem;
+  transition: background-color 0.2s;
+}
+
+.size-details-table .remove-size-btn:hover {
+  background-color: #e53e3e;
+}
+
+/* Selected Sizes Info */
+.selected-sizes-info {
+  margin-bottom: 16px;
+  color: #666;
+  font-size: 0.875rem;
+  padding: 8px 12px;
+  background: #f0f9ff;
+  border: 1px solid #bae6fd;
+  border-radius: 6px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .color-image-inputs {
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .size-details-table {
+    font-size: 0.75rem;
+  }
+  
+  .size-details-table th,
+  .size-details-table td {
+    padding: 6px 4px;
+  }
+}

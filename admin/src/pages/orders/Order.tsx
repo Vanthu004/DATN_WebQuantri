@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
-import { getAllOrders, updateOrder } from "../../services/order";
+import { getAllOrders, updateOrder, updateCODPaymentStatus } from "../../services/order";
 import Order from "../../interfaces/order";
 import "../../css/orders/order.css";
 import ToastMessage from "../../components/ToastMessage";
 import { useNavigate } from "react-router-dom";
 
-type PopulatedUser = { name: string; email?: string; phone?: string; address?: string; _id: string };
+type PopulatedUser = { name: string; email?: string; phone_number?: string; address?: string; _id: string };
 
 const statusOptions = [
   "Chờ xử lý",
@@ -100,7 +100,33 @@ const OrderPage = () => {
       if (response.success) {
         setOrders((orders) =>
           orders.map((order) =>
-            order._id === id ? { ...order, status: response.data.status } : order
+            order._id === id ? { 
+              ...order, 
+              status: response.data.status,
+              // Cập nhật payment_status nếu là COD và chuyển sang "Đã giao hàng"
+              ...(typeof order.paymentmethod_id === 'object' && 
+                  order.paymentmethod_id.code === 'COD' && 
+                  status === 'Đã giao hàng' && {
+                    payment_status: 'paid',
+                    is_paid: true
+                  }),
+              // Cập nhật shipping_status dựa trên status mới
+              ...(status === 'Đã giao hàng' && {
+                shipping_status: 'delivered'
+              }),
+              ...(status === 'Hoàn thành' && {
+                shipping_status: 'delivered'
+              }),
+              ...(status === 'Đang vận chuyển' && {
+                shipping_status: 'shipped'
+              }),
+              ...(status === 'Đã xác nhận' && {
+                shipping_status: 'pending'
+              }),
+              ...(status === 'Chờ xử lý' && {
+                shipping_status: 'pending'
+              })
+            } : order
           )
         );
         setToast({
@@ -112,6 +138,34 @@ const OrderPage = () => {
       setToast({
         type: "error",
         message: error?.response?.data?.msg || "Cập nhật trạng thái thất bại!",
+      });
+    }
+  };
+
+
+
+  const handleCODPaymentUpdate = async (orderId: string) => {
+    try {
+      const response = await updateCODPaymentStatus(orderId);
+      if (response.success) {
+        setOrders((orders) =>
+          orders.map((order) =>
+            order._id === orderId ? { 
+              ...order, 
+              payment_status: response.data.payment_status,
+              is_paid: response.data.is_paid 
+            } : order
+          )
+        );
+        setToast({
+          type: "success",
+          message: "Cập nhật trạng thái thanh toán COD thành công!",
+        });
+      }
+    } catch (error: any) {
+      setToast({
+        type: "error",
+        message: error?.response?.data?.msg || "Cập nhật trạng thái thanh toán COD thất bại!",
       });
     }
   };
@@ -141,6 +195,16 @@ const OrderPage = () => {
       "refunded": "payment-refunded",
     };
     return statusClasses[status as keyof typeof statusClasses] || "payment-default";
+  };
+
+  const getShippingStatusBadgeClass = (status?: string) => {
+    const statusClasses = {
+      "pending": "status-pending",
+      "shipped": "status-shipping",
+      "delivered": "status-delivered",
+      "returned": "status-cancelled",
+    };
+    return statusClasses[status as keyof typeof statusClasses] || "status-default";
   };
 
   if (loading) return <div className="loading">Đang tải...</div>;
@@ -236,21 +300,33 @@ const OrderPage = () => {
               orders.map((order) => (
                 <tr key={order._id}>
                   <td className="order-code">{order.order_code}</td>
-                  <td className="customer-info">
-                    {typeof order.user_id === "object" &&
-                    order.user_id !== null &&
-                    "name" in order.user_id
-                      ? (order.user_id as PopulatedUser).name
-                      : order.user_id}
-                    {typeof order.user_id === "object" &&
-                    order.user_id !== null &&
-                    "phone" in order.user_id &&
-                    (order.user_id as PopulatedUser).phone && (
-                      <div className="customer-phone">
-                        {(order.user_id as PopulatedUser).phone}
-                      </div>
-                    )}
-                  </td>
+                                     <td className="customer-info">
+                     {typeof order.user_id === "object" &&
+                     order.user_id !== null &&
+                     "name" in order.user_id
+                       ? (order.user_id as PopulatedUser).name
+                       : order.user_id}
+                     {/* Lấy số điện thoại từ địa chỉ giao hàng */}
+                     {order.shipping_address && (
+                       <div className="customer-phone">
+                         {(() => {
+                           // Thử nhiều cách để lấy số điện thoại
+                           const phoneMatch = order.shipping_address.match(/^(\d[\d\s\-\(\)]+)/);
+                           if (phoneMatch) {
+                             return phoneMatch[1].trim();
+                           }
+                           
+                           // Nếu không có số ở đầu, thử tìm số điện thoại trong chuỗi
+                           const anyPhoneMatch = order.shipping_address.match(/(\d{10,11})/);
+                           if (anyPhoneMatch) {
+                             return anyPhoneMatch[1];
+                           }
+                           
+                           return 'N/A';
+                         })()}
+                       </div>
+                     )}
+                   </td>
                   <td>
                     <select
                       value={order.status}
@@ -277,13 +353,26 @@ const OrderPage = () => {
                       })}
                     </select>
                   </td>
+                                     <td>
+                     {/* Chỉ hiển thị trạng thái thanh toán cho đơn hàng COD */}
+                     {typeof order.paymentmethod_id === 'object' && 
+                      order.paymentmethod_id.code === 'COD' && 
+                      order.status === 'Đã giao hàng' ? (
+                       <div className="cod-payment-status">
+                         {order.payment_status === 'paid' ? (
+                           <span className="status-badge payment-paid">Đã thanh toán</span>
+                         ) : (
+                           <span className="status-badge payment-pending">Chờ thanh toán</span>
+                         )}
+                       </div>
+                     ) : (
+                       <span className={`status-badge ${getPaymentStatusBadgeClass(order.payment_status)}`}>
+                         {paymentStatusOptions.find(opt => opt.value === order.payment_status)?.label || "N/A"}
+                       </span>
+                     )}
+                   </td>
                   <td>
-                    <span className={`status-badge ${getPaymentStatusBadgeClass(order.payment_status)}`}>
-                      {paymentStatusOptions.find(opt => opt.value === order.payment_status)?.label || "N/A"}
-                    </span>
-                  </td>
-                  <td>
-                    <span className={`status-badge ${getPaymentStatusBadgeClass(order.shipping_status)}`}>
+                    <span className={`status-badge ${getShippingStatusBadgeClass(order.shipping_status)}`}>
                       {shippingStatusOptions.find(opt => opt.value === order.shipping_status)?.label || "N/A"}
                     </span>
                   </td>
@@ -291,7 +380,7 @@ const OrderPage = () => {
                     {order.total_price.toLocaleString()}₫
                   </td>
                   <td className="item-count">
-                    {order.item_count || 0} SP
+                    {order.total_quantity || order.item_count || 0} SP
                     {order.has_variants && <span className="variant-indicator">*</span>}
                   </td>
                   <td className="created-date">

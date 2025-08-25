@@ -55,9 +55,15 @@ const notificationRouter = require("./src/routers/notificationRoutes");
 const refundRoutes = require("./src/routers/refundRequestRoutes");
 const sizeRouter = require("./src/routers/sizeRouter");
 const colorRouter = require("./src/routers/colorRouter");
+const searchHistoryRouter = require("./src/routers/searchHistoryRouter");
+
+const shiperRouter = require("./src/routers/shiperRouter");
+const adminShiperRouter = require("./src/routers/adminShiperRouter");
+
 const chatRoutes = require("./src/routers/chatRoutes.js");
 const chatSocketHandler = require('./src/sockets/chatSocket');
 const { chatNamespace } = chatSocketHandler(io);
+
 
 // ====== Kiểm tra biến môi trường bắt buộc ======
 if (!process.env.JWT_SECRET) {
@@ -90,13 +96,16 @@ app.use("/api/sales-statistics", salesStatisticsRouter);
 app.use("/api/favorites", favoriteRouter);
 app.use("/api/sizes", sizeRouter);
 app.use("/api/colors", colorRouter);
+app.use("/api/shipers", shiperRouter);
+app.use("/api/admin/shipers", adminShiperRouter);
 app.use("/api/vouchers", voucherRouter);
-app.use("/api/uploads", uploadRouter);
+// app.use("/api/uploads", uploadRouter);
 app.use("/api/category-types", categoryTypeRouter);
 app.use("/api/notifications", notificationRouter);
 app.use("/api/addresses", addressRouter);
 app.use("/api/refund-requests", refundRoutes);
 app.use("/api", uploadRouter);
+app.use("/api/search-history", searchHistoryRouter);
 app.use('/api/chat', chatRoutes);
 app.set('chatNamespace', chatNamespace);
 // ====== Auth routes (forgot/reset password) ======

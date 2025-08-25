@@ -1,13 +1,14 @@
 // src/controllers/userController.js
-const User = require('../models/user');
-const EmailVerificationToken = require('../models/EmailVerificationToken');
-const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken');
-const nodemailer = require('nodemailer');
-const multer = require('multer');
-const path = require('path');
+const User = require("../models/user");
+const EmailVerificationToken = require("../models/EmailVerificationToken");
+const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
+const nodemailer = require("nodemailer");
+const multer = require("multer");
+const path = require("path");
 const { validationResult } = require("express-validator");
-const crypto = require('crypto');
+const crypto = require("crypto");
+
 const mongoose = require("mongoose");
 const createError = require("http-errors");
 const { S3Client, PutObjectCommand } = require("@aws-sdk/client-s3");
@@ -20,7 +21,9 @@ const { supabase, supabaseClient } = require('../config/supabase');
 // Hàm tạo transporter email
 const createEmailTransporter = () => {
   if (!process.env.EMAIL_USERNAME || !process.env.EMAIL_PASSWORD) {
-    throw new Error("EMAIL_USERNAME và EMAIL_PASSWORD phải được cấu hình trong file .env");
+    throw new Error(
+      "EMAIL_USERNAME và EMAIL_PASSWORD phải được cấu hình trong file .env"
+    );
   }
 
   return nodemailer.createTransport({
@@ -60,10 +63,23 @@ const sendVerificationEmail = async (email, otp) => {
     console.log(`Email sent successfully: ${info.messageId}`);
     return true;
   } catch (error) {
-    console.error(`Lỗi gửi email: ${error.message}`, {
-      code: error.code,
-      details: error
-    });
+    console.error("❌ Lỗi gửi email:", error.message);
+
+    // Xử lý các lỗi cụ thể
+    if (error.code === "EAUTH") {
+      console.error("🔐 Lỗi xác thực email. Vui lòng kiểm tra:");
+      console.error("   - EMAIL_USERNAME trong file .env");
+      console.error(
+        "   - EMAIL_PASSWORD phải là App Password (không phải password thường)"
+      );
+      console.error("   - Bật 2FA cho Gmail và tạo App Password");
+    } else if (error.code === "ECONNECTION") {
+      console.error("🌐 Lỗi kết nối email server");
+    } else {
+      console.error("📧 Lỗi gửi email khác:", error);
+    }
+
+
     return false;
   }
 };
@@ -154,11 +170,20 @@ exports.createUser = async (req, res) => {
       otp: verificationOtp,
     });
     const emailSent = await sendVerificationEmail(email, verificationOtp);
+    if (!emailSent) {
+
+      console.warn(
+        "⚠️ Không thể gửi email xác nhận, nhưng user vẫn được tạo thành công"
+      );
+    }
+
+    // Tạo token
 
     const token = jwt.sign(
       { userId: user._id, role: user.role },
       process.env.JWT_SECRET,
       { expiresIn: process.env.JWT_EXPIRES_IN || "30d" }
+
     );
 
     const populated = await User.findById(user._id)
@@ -173,7 +198,8 @@ exports.createUser = async (req, res) => {
       message: responseMessage,
       user: populated,
       token,
-      emailSent
+      emailSent: emailSent,
+
     });
   } catch (error) {
     console.error(`Create user error: ${error.message}`);
@@ -378,6 +404,7 @@ exports.updateUser = async (req, res) => {
     const { password, avatar, avatar_url, role, ...updateData } = req.body;
 
     // Kiểm tra quyền - chỉ admin mới được cập nhật role
+
     if (role && req.user.role !== 'admin') {
       return res.status(403).json({
         message: "Bạn không có quyền thay đổi role của người dùng"
@@ -392,6 +419,7 @@ exports.updateUser = async (req, res) => {
     }
 
     // Không cho phép admin tự hạ cấp chính mình
+
     if (role && req.params.id === req.user.userId && role !== 'admin') {
       return res.status(400).json({
         message: "Bạn không thể hạ cấp chính mình"
@@ -482,15 +510,17 @@ exports.blockUser = async (req, res, next) => {
     const { isBanned, bannedUntil, reason } = req.body;
 
     // Kiểm tra quyền - chỉ admin mới được ban user
-    if (req.user.role !== 'admin') {
+    if (req.user.role !== "admin") {
       return res.status(403).json({
-        message: "Bạn không có quyền khóa/mở khóa người dùng"
+        message: "Bạn không có quyền khóa/mở khóa người dùng",
+
       });
     }
 
     // Không cho phép admin tự ban chính mình
     if (id === req.user.userId) {
       return res.status(400).json({
+
         message: "Bạn không thể khóa chính mình"
       });
     }
@@ -501,7 +531,11 @@ exports.blockUser = async (req, res, next) => {
       reason: isBanned ? reason || "" : "",
     };
 
-    const user = await User.findByIdAndUpdate(id, { ban: banData }, { new: true })
+    const user = await User.findByIdAndUpdate(
+      id,
+      { ban: banData },
+      { new: true }
+    )
       .select("-password")
       .populate("avatar");
 
@@ -513,7 +547,12 @@ exports.blockUser = async (req, res, next) => {
       const io = req.app.get("io");
       if (io) {
         io.to(id).emit("banned", {
-          message: `Tài khoản của bạn đã bị khóa${banData.bannedUntil ? ` đến ${new Date(banData.bannedUntil).toLocaleString("vi-VN")}` : " vĩnh viễn"}${banData.reason ? ` vì: ${banData.reason}` : ""}`,
+          message: `Tài khoản của bạn đã bị khóa${
+            banData.bannedUntil
+              ? ` đến ${new Date(banData.bannedUntil).toLocaleString("vi-VN")}`
+              : " vĩnh viễn"
+          }${banData.reason ? ` vì: ${banData.reason}` : ""}`,
+
         });
         console.log(`WebSocket: Sent banned event to user ${id}`);
       } else {
@@ -522,7 +561,10 @@ exports.blockUser = async (req, res, next) => {
     }
 
     res.status(200).json({
-      message: isBanned ? "Đã khóa tài khoản người dùng" : "Đã mở khóa tài khoản người dùng",
+      message: isBanned
+        ? "Đã khóa (ban) tài khoản người dùng"
+        : "Đã mở khóa (unban) tài khoản người dùng",
+
       user,
     });
   } catch (error) {
@@ -538,6 +580,7 @@ exports.updateUserRole = async (req, res) => {
     const { role } = req.body;
 
     // Kiểm tra quyền - chỉ admin mới được cập nhật role
+
     if (req.user.role !== 'admin') {
       return res.status(403).json({
         message: "Bạn không có quyền thay đổi role của người dùng"
@@ -545,6 +588,7 @@ exports.updateUserRole = async (req, res) => {
     }
 
     // Validate role
+
     if (!role || !['admin', 'customer', 'user'].includes(role)) {
       return res.status(400).json({
         message: "Role không hợp lệ. Role phải là: admin, customer, hoặc user"
@@ -574,7 +618,7 @@ exports.updateUserRole = async (req, res) => {
       message: `Đã cập nhật role của người dùng thành ${role}`,
       user,
       previousRole: user.role,
-      newRole: role
+      newRole: role,
     });
   } catch (error) {
     console.error(`Update user role error: ${error.message}`);
@@ -603,20 +647,39 @@ exports.login = async (req, res) => {
 
     const user = await User.findOne({ email }).populate("avatar");
     if (!user) {
-      return res.status(401).json({ message: "Email hoặc mật khẩu không đúng" });
+      return res
+        .status(401)
+        .json({ message: "Email hoặc mật khẩu không đúng" });
     }
 
     await checkAndUpdateBanStatus(user);
 
     if (user.ban?.isBanned) {
-      return res.status(403).json({
-        message: `Tài khoản của bạn đã bị khóa${user.ban.bannedUntil ? ` đến ${new Date(user.ban.bannedUntil).toLocaleString("vi-VN")}` : " vĩnh viễn"}${user.ban.reason ? `. Lý do: ${user.ban.reason}` : ""}`,
-      });
+      if (user.ban.bannedUntil && user.ban.bannedUntil < new Date()) {
+        user.ban = {
+          isBanned: false,
+          bannedUntil: null,
+          reason: "",
+        };
+        await user.save();
+      } else {
+        return res.status(403).json({
+          message:
+            `Tài khoản của bạn đã bị khóa` +
+            (user.ban.bannedUntil
+              ? ` đến ${new Date(user.ban.bannedUntil).toLocaleString("vi-VN")}`
+              : " vĩnh viễn") +
+            (user.ban.reason ? `. Lý do: ${user.ban.reason}` : ""),
+        });
+      }
+
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      return res.status(401).json({ message: "Email hoặc mật khẩu không đúng" });
+      return res
+        .status(401)
+        .json({ message: "Email hoặc mật khẩu không đúng" });
     }
 
     const token = jwt.sign(
@@ -676,6 +739,7 @@ exports.updateAvatar = async (req, res) => {
     const user = await User.findByIdAndUpdate(
       userId,
       { avatar: uploadId, avatar_url: upload.url },
+
       { new: true, runValidators: true }
     )
       .select("-password")
@@ -711,12 +775,20 @@ exports.getCurrentUser = async (req, res, next) => {
       throw createError(404, "Không tìm thấy người dùng");
     }
 
-    await checkAndUpdateBanStatus(user);
-
-    if (user.ban?.isBanned) {
+    const now = new Date();
+    if (
+      user.ban?.isBanned &&
+      user.ban.bannedUntil &&
+      new Date(user.ban.bannedUntil) > now
+    ) {
       throw createError(
         403,
-        `Tài khoản của bạn đã bị khóa${user.ban.bannedUntil ? ` đến ${new Date(user.ban.bannedUntil).toLocaleString("vi-VN")}` : ""}${user.ban.reason ? ` vì: ${user.ban.reason}` : ""}`
+        `Tài khoản của bạn đã bị khóa đến ${new Date(
+          user.ban.bannedUntil
+        ).toLocaleString("vi-VN")}${
+          user.ban.reason ? ` vì: ${user.ban.reason}` : ""
+        }`
+
       );
     }
 
@@ -727,9 +799,168 @@ exports.getCurrentUser = async (req, res, next) => {
   }
 };
 
+// Lấy thống kê khách hàng
+exports.getCustomerStatistics = async (req, res) => {
+  try {
+    const { timeRange = "month" } = req.query;
 
+    // Tính toán thời gian dựa trên timeRange
+    const now = new Date();
+    let startDate;
 
+    switch (timeRange) {
+      case "week":
+        startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        break;
+      case "month":
+        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+        break;
+      case "quarter":
+        const quarter = Math.floor(now.getMonth() / 3);
+        startDate = new Date(now.getFullYear(), quarter * 3, 1);
+        break;
+      case "year":
+        startDate = new Date(now.getFullYear(), 0, 1);
+        break;
+      default:
+        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+    }
 
+    // Lấy tổng số khách hàng (tính cả role 'user' và 'customer')
+    const totalCustomers = await User.countDocuments({
+      role: { $in: ["user", "customer"] },
+    });
 
+    // Lấy số khách hàng có đơn hàng
+    const Order = require("../models/Order");
+    const customersWithOrders = await Order.distinct("user_id");
+    const customersWithOrdersCount = customersWithOrders.length;
 
+    // Lấy số khách hàng mới trong khoảng thời gian
+    const newCustomersThisMonth = await User.countDocuments({
+      role: "customer",
+      createdAt: { $gte: startDate },
+    });
+
+    // Lấy số khách hàng tích cực (có đơn hàng trong 3 tháng gần đây)
+    const threeMonthsAgo = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+    const activeCustomers = await Order.distinct("user_id", {
+      createdAt: { $gte: threeMonthsAgo },
+    });
+    const activeCustomersCount = activeCustomers.length;
+
+    // Tính tổng doanh thu từ khách hàng (từ các đơn đã giao/hoàn thành)
+    const totalRevenue = await Order.aggregate([
+      { $match: { status: { $in: ["Đã giao hàng", "Hoàn thành"] } } },
+      { $group: { _id: null, total: { $sum: "$total_price" } } },
+    ]);
+
+    // Tính giá trị đơn hàng trung bình
+    const averageOrderValue = await Order.aggregate([
+      { $match: { status: { $in: ["Đã giao hàng", "Hoàn thành"] } } },
+      { $group: { _id: null, average: { $avg: "$total_price" } } },
+    ]);
+
+    // Tính tỷ lệ giữ chân khách hàng (đơn giản: khách có >1 đơn hàng)
+    const customersWithMultipleOrders = await Order.aggregate([
+      { $group: { _id: "$user_id", orderCount: { $sum: 1 } } },
+      { $match: { orderCount: { $gt: 1 } } },
+    ]);
+
+    const customerRetentionRate =
+      customersWithOrdersCount > 0
+        ? (customersWithMultipleOrders.length / customersWithOrdersCount) * 100
+        : 0;
+
+    const stats = {
+      totalCustomers,
+      customersWithOrders: customersWithOrdersCount,
+      newCustomersThisMonth,
+      activeCustomers: activeCustomersCount,
+      totalRevenue: totalRevenue[0]?.total || 0,
+      averageOrderValue: Math.round(averageOrderValue[0]?.average || 0),
+      customerRetentionRate: Math.round(customerRetentionRate * 100) / 100,
+    };
+
+    res.status(200).json({
+      success: true,
+      data: stats,
+    });
+  } catch (error) {
+    console.error("Get customer statistics error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Lỗi server",
+      error: error.message,
+    });
+  }
+};
+
+// Lấy top khách hàng tiềm năng
+exports.getTopCustomers = async (req, res) => {
+  try {
+    const Order = require("../models/Order");
+
+    // Lấy top khách hàng theo số lượng đơn hàng và tổng chi tiêu
+    const topCustomers = await Order.aggregate([
+      { $match: { status: { $in: ["Đã giao hàng", "Hoàn thành"] } } },
+      {
+        $group: {
+          _id: "$user_id",
+          orderCount: { $sum: 1 },
+          totalSpent: { $sum: "$total_amount" },
+        },
+      },
+      { $sort: { totalSpent: -1 } },
+      { $limit: 10 },
+    ]);
+
+    // Lấy thông tin chi tiết của khách hàng
+    const customerIds = topCustomers.map((c) => c._id);
+    const customers = await User.find({ _id: { $in: customerIds } }).select(
+      "name email role createdAt"
+    );
+
+    // Kết hợp thông tin
+    const result = customers.map((customer) => {
+      const orderInfo = topCustomers.find(
+        (o) => o._id.toString() === customer._id.toString()
+      );
+      return {
+        _id: customer._id,
+        name: customer.name,
+        email: customer.email,
+        role: customer.role,
+        createdAt: customer.createdAt,
+        orderCount: orderInfo?.orderCount || 0,
+        totalSpent: orderInfo?.totalSpent || 0,
+      };
+    });
+
+    res.status(200).json({
+      success: true,
+      data: result,
+    });
+  } catch (error) {
+    console.error("Get top customers error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Lỗi server",
+      error: error.message,
+    });
+  }
+};
+// Lấy tất cả người dùng có role = "user"
+exports.getAllUsersByRole = async (req, res) => {
+  try {
+    const users = await User.find({ role: "user", "ban.isBanned": false })
+      .select("-password")
+      .populate("avatar");
+
+    res.status(200).json(users);
+  } catch (error) {
+    console.error(`Get all users by role error: ${error.message}`);
+    res.status(500).json({ message: "Lỗi server", error: error.message });
+  }
+};
 

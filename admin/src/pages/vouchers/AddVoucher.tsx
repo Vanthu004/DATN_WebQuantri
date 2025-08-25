@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { createVoucher } from "../../services/voucher";
-import { getAllUsers } from "../../services/user";
+import { getAllUsersByRole } from "../../services/user";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import "../../css/voucher/addVoucher.css";
@@ -20,7 +20,7 @@ const AddVoucher = () => {
   const fetchUsers = async () => {
     setLoadingUsers(true);
     try {
-      const data = await getAllUsers();
+      const data = await getAllUsersByRole();
       setUsers(data);
     } catch (error) {
       toast.error("Không tải được danh sách người dùng");
