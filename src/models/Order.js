@@ -41,11 +41,12 @@ const orderSchema = new mongoose.Schema(
       ref: "PaymentMethod",
       required: true,
     },
-    voucher_id: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Voucher",
-      required: false,
-    },
+    voucher_ids: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Voucher",
+      },
+    ],
     is_paid: {
       type: Boolean,
       default: false,
