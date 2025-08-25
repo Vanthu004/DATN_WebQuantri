@@ -21,6 +21,7 @@ import OrderDetail from "./pages/orders/OrderDetail";
 import ManageCategoryType from "./pages/categoryTypes/ManageCategoryType";
 import ProductsByCategoryType from "./pages/products/ProductsByCategoryType";
 import Notify from "./pages/notify/Notify";
+import SendNotification from "./pages/notify/SendNotification";
 import Vouchers from "./pages/vouchers/Vouchers";
 import AddVoucher from "./pages/vouchers/AddVoucher";
 import EditVoucher from "./pages/vouchers/UpdateVoucher";
@@ -59,6 +60,7 @@ function App() {
           <Route element={<LayoutAdmin />}>
             <Route path="/" index element={<SalesStatisticsPage />} />
             <Route path="/notify" element={<Notify />} />
+            <Route path="/send-notification" element={<SendNotification />} />
             <Route path="/statistics" element={<SalesStatisticsPage />} />
             <Route path="/inventory" element={<InventoryPage />} />
             
