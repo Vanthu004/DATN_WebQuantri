@@ -1,3 +1,4 @@
+
 import axios from 'axios';
 import { toast } from 'react-toastify';
 import { logoutGlobal } from '../contexts/AuthContext';
@@ -47,7 +48,6 @@ api.interceptors.response.use(
     }
 
     console.error('API Response Error:', status, message);
-
     return Promise.reject(error);
   }
 );

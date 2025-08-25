@@ -1,3 +1,4 @@
+
 // admin/src/components/layouts/LayoutAdmin.tsx
 import { Link, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useEffect } from 'react';
@@ -50,6 +51,7 @@ const LayoutAdmin = () => {
     setShowToast(false);
   };
 
+  // Check if chat menu item should have notification badge
   const getChatPath = () => {
     const chatPaths = ['/chat', '/chat/dashboard', '/chat/rooms'];
     return chatPaths.includes(location.pathname) || location.pathname.startsWith('/chat/room/');
@@ -170,7 +172,10 @@ const LayoutAdmin = () => {
           </button>
         </div>
       </header>
+
+
       <div className="layout-body">
+        {/* Sidebar */}
         <aside className="sidebar">
           <div className="sidebar-account-section">
             <span className="account-title">Tài khoản</span>

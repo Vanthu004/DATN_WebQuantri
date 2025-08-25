@@ -227,7 +227,6 @@ const OrderDetail = () => {
           
           <div className="info-item">
             <label>Số lượng sản phẩm:</label>
-  
             <span>{order.total_quantity || order.item_count || 0} sản phẩm</span>
           </div>
           

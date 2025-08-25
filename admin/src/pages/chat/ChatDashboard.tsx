@@ -206,6 +206,7 @@ const ChatDashboard: React.FC = () => {
                   
                   <div className="room-meta">
                     <span className="customer-name">{room?.userId?.name || 'Unknown User'}</span>
+
                     <div className="room-badges">
                       <span 
                         className="status-badge"
@@ -246,6 +247,7 @@ const ChatDashboard: React.FC = () => {
             {statistics.staff.map((staff) => (
               <div key={staff.id} className="staff-card">
                 <div className="staff-avatar">
+
                   {staff?.avatar_url ? (
                     <img src={staff.avatar_url} alt={staff.name || 'Staff'} />
                   ) : (

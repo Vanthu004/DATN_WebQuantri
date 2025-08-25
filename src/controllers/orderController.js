@@ -171,6 +171,7 @@ exports.getAllOrders = async (req, res) => {
           orderObj.item_count = orderDetails.length;
           // Thêm field mới để hiển thị tổng số lượng sản phẩm thực tế
           orderObj.total_quantity = orderDetails.reduce((total, detail) => total + (detail.quantity || 0), 0);
+
           orderObj.has_variants = orderDetails.some(detail => detail.product_variant_id);
           
           return orderObj;
@@ -244,6 +245,7 @@ exports.getOrderById = async (req, res) => {
     orderObj.item_count = orderDetails.length;
     // Thêm field mới để hiển thị tổng số lượng sản phẩm thực tế
     orderObj.total_quantity = orderDetails.reduce((total, detail) => total + (detail.quantity || 0), 0);
+
     orderObj.has_variants = orderDetails.some(detail => detail.product_variant_id);
 
     res.json({

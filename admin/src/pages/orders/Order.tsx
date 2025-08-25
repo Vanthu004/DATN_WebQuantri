@@ -207,6 +207,7 @@ const OrderPage = () => {
     return statusClasses[status as keyof typeof statusClasses] || "status-default";
   };
 
+
   if (loading) return <div className="loading">Đang tải...</div>;
 
   return (
@@ -373,6 +374,7 @@ const OrderPage = () => {
                    </td>
                   <td>
                     <span className={`status-badge ${getShippingStatusBadgeClass(order.shipping_status)}`}>
+
                       {shippingStatusOptions.find(opt => opt.value === order.shipping_status)?.label || "N/A"}
                     </span>
                   </td>
@@ -381,6 +383,7 @@ const OrderPage = () => {
                   </td>
                   <td className="item-count">
                     {order.total_quantity || order.item_count || 0} SP
+
                     {order.has_variants && <span className="variant-indicator">*</span>}
                   </td>
                   <td className="created-date">
