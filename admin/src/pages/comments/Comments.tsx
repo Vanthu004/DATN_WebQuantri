@@ -14,7 +14,7 @@ interface Review {
   product_id?: { _id: string; name: string; main_image?: string };
   rating: number;
   comment: string;
-  image_url?: string;
+  image_urls?: string[];
   create_date: string;
   replies?: Reply[];
 }
@@ -155,16 +155,17 @@ const Comments: React.FC = () => {
                     ) : null}
                   </td>
                   <td>
-                    {r.image_url ? (
-                      <img
-                        src={r.image_url}
-                        alt="review"
-                        style={{
-                          width: 60,
-                          height: 60,
-                          objectFit: "cover",
-                        }}
-                      />
+                    {r.image_urls && r.image_urls.length > 0 ? (
+                      <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                        {r.image_urls.map((url) => (
+                          <img
+                            key={url}
+                            src={url}
+                            alt="review"
+                            style={{ width: 60, height: 60, objectFit: "cover" }}
+                          />
+                        ))}
+                      </div>
                     ) : (
                       "—"
                     )}

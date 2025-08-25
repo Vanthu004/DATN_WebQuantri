@@ -128,7 +128,7 @@ const ListUser = () => {
           <span className="stat-label">Admin</span>
         </div>
         <div className="stat-item">
-          <span className="stat-number">{users.filter(u => u.role === 'customer').length}</span>
+          <span className="stat-number">{users.filter(u => u.role === 'user').length}</span>
           <span className="stat-label">Khách hàng</span>
         </div>
         <div className="stat-item">

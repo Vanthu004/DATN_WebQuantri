@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { getProductById, updateProduct, deleteVariant, createVariant, Variant } from "../../services/product";
+import { getProductById, updateProduct, deleteVariant, createVariant } from "../../services/product";
+import { ProductVariant } from "../../interfaces/product";
 import { getAllCategories } from "../../services/category";
 import { uploadImage } from "../../services/upload";
 import { getAllSizes } from "../../services/size";
@@ -59,7 +60,7 @@ const UpdateProduct = () => {
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
 
   // Biến thể
-  const [variants, setVariants] = useState<Variant[]>([]);
+  const [variants, setVariants] = useState<ProductVariant[]>([]);
   const [showVariantForm, setShowVariantForm] = useState(false);
   const [variantForm, setVariantForm] = useState<VariantForm>({
     size: "",
@@ -94,7 +95,9 @@ const UpdateProduct = () => {
     if (!id) return;
     const fetchProduct = async () => {
       try {
+        console.log("Fetching product with ID:", id);
         const data = await getProductById(id, true); // Include variants
+        console.log("Product data received:", data);
         if (!data) throw new Error();
         setForm({
           name: data.name || "",
@@ -120,16 +123,30 @@ const UpdateProduct = () => {
         }
         setImageFiles([]);
         // Lấy variants từ product nếu có
-        setVariants(Array.isArray(data.variants) ? data.variants : []);
+        if (data.variants && Array.isArray(data.variants)) {
+          console.log("Variants loaded successfully:", data.variants.length);
+          console.log("Variants data:", data.variants);
+          setVariants(data.variants);
+        } else {
+          console.log("No variants found or invalid format");
+          setVariants([]);
+        }
       } catch (err) {
+        console.error("Error fetching product:", err);
         setError("Không tìm thấy sản phẩm");
         toast.error("Không thể tải thông tin sản phẩm!");
       }
     };
     fetchProduct();
     // Fetch size, color
-    getAllSizes().then((data: Size[]) => setSizes(Array.isArray(data) ? data : []));
-    getAllColors().then((data: Color[]) => setColors(Array.isArray(data) ? data : []));
+    getAllSizes().then((data: Size[]) => {
+      console.log("Sizes loaded:", data);
+      setSizes(Array.isArray(data) ? data : []);
+    });
+    getAllColors().then((data: Color[]) => {
+      console.log("Colors loaded:", data);
+      setColors(Array.isArray(data) ? data : []);
+    });
   }, [id]);
 
   useEffect(() => {
@@ -251,7 +268,9 @@ const UpdateProduct = () => {
       await createVariant([payload]);
       // Sau khi thêm biến thể, reload lại variants bằng getProductById
       const data = await getProductById(id, true);
-      setVariants(Array.isArray(data?.variants) ? data.variants : []);
+      if (data?.variants && Array.isArray(data.variants)) {
+        setVariants(data.variants);
+      }
       setVariantForm({ size: "", color: "", price: 0, stock_quantity: 0, sku: "", image_url: "" });
       setVariantImageFile(null);
       setVariantImagePreview("");
@@ -270,7 +289,9 @@ const UpdateProduct = () => {
       await deleteVariant(variantId);
       // Sau khi xóa biến thể, reload lại variants bằng getProductById
       const data = await getProductById(id, true);
-      setVariants(Array.isArray(data?.variants) ? data.variants : []);
+      if (data?.variants && Array.isArray(data.variants)) {
+        setVariants(data.variants);
+      }
       toast.success("Xóa biến thể thành công!");
     } catch (error) {
       toast.error("Xóa biến thể thất bại!");
@@ -327,14 +348,14 @@ const UpdateProduct = () => {
     return colors.find(c => c._id === colorId)?.name || colorId;
   };
 
-  const getVariantSizeName = (variant: Variant) => {
+  const getVariantSizeName = (variant: ProductVariant) => {
     if (variant.size_name) return variant.size_name;
     if (isSizeObject(variant.attributes.size)) return variant.attributes.size.name;
     if (typeof variant.attributes.size === "string") return getSizeName(variant.attributes.size);
     return "";
   };
 
-  const getVariantColorName = (variant: Variant) => {
+  const getVariantColorName = (variant: ProductVariant) => {
     if (variant.color_name) return variant.color_name;
     if (isColorObject(variant.attributes.color)) return variant.attributes.color.name;
     if (typeof variant.attributes.color === "string") return getColorName(variant.attributes.color);
@@ -470,8 +491,8 @@ const UpdateProduct = () => {
     const duplicates = selectedSizes.filter(sizeId =>
       variants.some(v => {
         const colorId = typeof v.attributes.color === "object" ? v.attributes.color._id : v.attributes.color;
-        const sizeId = typeof v.attributes.size === "object" ? v.attributes.size._id : v.attributes.size;
-        return colorId === selectedColor && sizeId === sizeId;
+        const variantSizeId = typeof v.attributes.size === "object" ? v.attributes.size._id : v.attributes.size;
+        return colorId === selectedColor && variantSizeId === sizeId;
       })
     );
     if (duplicates.length > 0) {
@@ -514,7 +535,9 @@ const UpdateProduct = () => {
       await createVariant(payloads);
       // Sau khi thêm biến thể, reload lại variants bằng getProductById
       const data = await getProductById(id, true);
-      setVariants(Array.isArray(data?.variants) ? data.variants : []);
+      if (data?.variants && Array.isArray(data.variants)) {
+        setVariants(data.variants);
+      }
       
       // Reset form
       setSelectedSizes([]);
@@ -527,6 +550,22 @@ const UpdateProduct = () => {
     } catch (error) {
       toast.error("Thêm biến thể thất bại!");
     }
+  };
+
+  // Hàm để chỉnh sửa biến thể
+  const handleEditVariant = (variant: ProductVariant) => {
+    setVariantForm({
+      _id: variant._id,
+      size: typeof variant.attributes.size === "object" ? variant.attributes.size._id : variant.attributes.size,
+      color: typeof variant.attributes.color === "object" ? variant.attributes.color._id : variant.attributes.color,
+      price: variant.price || 0,
+      stock_quantity: variant.stock_quantity || 0,
+      sku: variant.sku || "",
+      image_url: variant.image_url || ""
+    });
+    setVariantImageFile(null); // Reset file upload
+    setVariantImagePreview(""); // Reset preview
+    setShowVariantForm(true);
   };
 
   return (
@@ -659,7 +698,7 @@ const UpdateProduct = () => {
               {selectedColor && (
                 <div>
                   <label>Chọn size cho màu này:</label>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
+                  <div className="size-selection">
                     {sizes.map((s) => {
                       const isChecked = selectedSizes.includes(s._id);
                       const isDisabled = variants.some(v => {
@@ -668,43 +707,42 @@ const UpdateProduct = () => {
                         return colorId === selectedColor && sizeId === s._id;
                       });
                       return (
-                        <label key={s._id} style={{ opacity: isDisabled ? 0.5 : 1 }}>
+                        <label key={s._id} className={isDisabled ? 'disabled' : ''}>
                           <input
                             type="checkbox"
                             checked={isChecked}
                             disabled={isDisabled}
                             onChange={() => handleSizeToggle(s._id)}
                           />
-                          {s.name}
+                          <span>{s.name}</span>
                         </label>
                       );
                     })}
                   </div>
                   
                   {/* Section upload ảnh cho màu sắc */}
-                  <div style={{ marginBottom: 16, padding: 16, backgroundColor: '#f9f9f9', borderRadius: 8 }}>
-                    <h4 style={{ margin: '0 0 12px 0', color: '#333' }}>
+                  <div className="color-image-section">
+                    <h4>
                       Ảnh đại diện cho màu {colors.find(c => c._id === selectedColor)?.name}
                     </h4>
-                    <p style={{ margin: '0 0 12px 0', fontSize: '14px', color: '#666' }}>
+                    <p>
                       Ảnh này sẽ được sử dụng cho tất cả size của màu này (trừ khi size có ảnh riêng)
                     </p>
                     
-                    <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
-                      <div style={{ flex: 1 }}>
-                        <label style={{ display: 'block', marginBottom: 8, fontWeight: 'bold' }}>
+                    <div className="color-image-inputs">
+                      <div>
+                        <label>
                           Upload ảnh màu:
                         </label>
                         <input
                           type="file"
                           accept="image/*"
                           onChange={handleColorImageChange}
-                          style={{ width: '100%', padding: 8 }}
                         />
                       </div>
                       
-                      <div style={{ flex: 1 }}>
-                        <label style={{ display: 'block', marginBottom: 8, fontWeight: 'bold' }}>
+                      <div>
+                        <label>
                           Hoặc nhập link ảnh:
                         </label>
                         <input
@@ -712,12 +750,6 @@ const UpdateProduct = () => {
                           value={colorImageUrl}
                           onChange={handleColorImageUrlChange}
                           placeholder="Dán link ảnh màu sắc"
-                          style={{ 
-                            width: '100%', 
-                            padding: 8,
-                            border: '1px solid #ddd',
-                            borderRadius: 4
-                          }}
                           disabled={!!colorImageFile}
                         />
                       </div>
@@ -725,20 +757,13 @@ const UpdateProduct = () => {
                     
                     {/* Preview ảnh màu */}
                     {(colorImagePreview || colorImageUrl) && (
-                      <div style={{ marginTop: 12 }}>
-                        <label style={{ display: 'block', marginBottom: 8, fontWeight: 'bold' }}>
+                      <div className="color-image-preview">
+                        <label>
                           Preview ảnh màu:
                         </label>
                         <img 
                           src={colorImagePreview || colorImageUrl} 
                           alt="Color preview" 
-                          style={{ 
-                            width: 80, 
-                            height: 80, 
-                            objectFit: 'cover', 
-                            border: '2px solid #ddd',
-                            borderRadius: 8
-                          }}
                           onError={(e) => {
                             e.currentTarget.style.display = 'none';
                           }}
@@ -749,7 +774,7 @@ const UpdateProduct = () => {
                   
                   {/* Hiển thị số lượng biến thể đã chọn */}
                   {selectedSizes.length > 0 && (
-                    <div style={{ marginBottom: 16, color: '#666', fontSize: '14px' }}>
+                    <div className="selected-sizes-info">
                       Đã chọn {selectedSizes.length} size cho màu {colors.find(c => c._id === selectedColor)?.name}
                     </div>
                   )}
@@ -758,15 +783,15 @@ const UpdateProduct = () => {
                   {sizeDetails.length > 0 && (
                     <div style={{ marginTop: 16 }}>
                       <h4>Thông tin chi tiết cho từng size:</h4>
-                      <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: 8 }}>
+                      <table className="size-details-table">
                         <thead>
-                          <tr style={{ backgroundColor: '#f5f5f5' }}>
-                            <th style={{ padding: 8, border: '1px solid #ddd' }}>Size</th>
-                            <th style={{ padding: 8, border: '1px solid #ddd' }}>Giá</th>
-                            <th style={{ padding: 8, border: '1px solid #ddd' }}>Kho</th>
-                            <th style={{ padding: 8, border: '1px solid #ddd' }}>SKU</th>
-                            <th style={{ padding: 8, border: '1px solid #ddd' }}>Ảnh riêng (tùy chọn)</th>
-                            <th style={{ padding: 8, border: '1px solid #ddd' }}>Thao tác</th>
+                          <tr>
+                            <th>Size</th>
+                            <th>Giá</th>
+                            <th>Kho</th>
+                            <th>SKU</th>
+                            <th>Ảnh riêng (tùy chọn)</th>
+                            <th>Thao tác</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -774,80 +799,67 @@ const UpdateProduct = () => {
                             const sizeName = sizes.find(s => s._id === detail.size)?.name || detail.size;
                             return (
                               <tr key={detail.size}>
-                                <td style={{ padding: 8, border: '1px solid #ddd' }}>{sizeName}</td>
-                                <td style={{ padding: 8, border: '1px solid #ddd' }}>
+                                <td>{sizeName}</td>
+                                <td>
                                   <input
                                     type="number"
                                     value={detail.price}
                                     onChange={(e) => handleSizeDetailChange(detail.size, 'price', Number(e.target.value))}
                                     min={0}
-                                    style={{ 
-                                      width: '100%', 
-                                      padding: 4,
-                                      border: validationErrors[`${detail.size}-price`] ? '1px solid red' : '1px solid #ddd'
-                                    }}
+                                    className={validationErrors[`${detail.size}-price`] ? 'error' : ''}
                                   />
                                   {validationErrors[`${detail.size}-price`] && (
-                                    <div style={{ color: 'red', fontSize: '12px', marginTop: 2 }}>
+                                    <div className="error-message">
                                       {validationErrors[`${detail.size}-price`]}
                                     </div>
                                   )}
                                 </td>
-                                <td style={{ padding: 8, border: '1px solid #ddd' }}>
+                                <td>
                                   <input
                                     type="number"
                                     value={detail.stock_quantity}
                                     onChange={(e) => handleSizeDetailChange(detail.size, 'stock_quantity', Number(e.target.value))}
                                     min={0}
-                                    style={{ 
-                                      width: '100%', 
-                                      padding: 4,
-                                      border: validationErrors[`${detail.size}-stock_quantity`] ? '1px solid red' : '1px solid #ddd'
-                                    }}
+                                    className={validationErrors[`${detail.size}-stock_quantity`] ? 'error' : ''}
                                   />
                                   {validationErrors[`${detail.size}-stock_quantity`] && (
-                                    <div style={{ color: 'red', fontSize: '12px', marginTop: 2 }}>
+                                    <div className="error-message">
                                       {validationErrors[`${detail.size}-stock_quantity`]}
                                     </div>
                                   )}
                                 </td>
-                                <td style={{ padding: 8, border: '1px solid #ddd' }}>
+                                <td>
                                   <div style={{ display: 'flex', gap: 4 }}>
                                     <input
                                       type="text"
                                       value={detail.sku}
                                       onChange={(e) => handleSizeDetailChange(detail.size, 'sku', e.target.value)}
                                       placeholder="Nhập SKU"
-                                      style={{ 
-                                        flex: 1,
-                                        padding: 4,
-                                        border: validationErrors[`${detail.size}-sku`] ? '1px solid red' : '1px solid #ddd'
-                                      }}
+                                      className={validationErrors[`${detail.size}-sku`] ? 'error' : ''}
                                       required
                                     />
                                     <button
                                       type="button"
                                       onClick={() => handleSizeDetailChange(detail.size, 'sku', generateSKU(detail.size))}
-                                      style={{ padding: '4px 8px', fontSize: '12px' }}
+                                      className="auto-sku-btn"
                                       title="Tự động sinh SKU"
                                     >
                                       Auto
                                     </button>
                                   </div>
                                   {validationErrors[`${detail.size}-sku`] && (
-                                    <div style={{ color: 'red', fontSize: '12px', marginTop: 2 }}>
+                                    <div className="error-message">
                                       {validationErrors[`${detail.size}-sku`]}
                                     </div>
                                   )}
                                 </td>
-                                <td style={{ padding: 8, border: '1px solid #ddd' }}>
+                                <td>
                                   <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                                     <input
                                       type="text"
                                       value={detail.image_url}
                                       onChange={(e) => handleSizeDetailChange(detail.size, 'image_url', e.target.value)}
                                       placeholder="Link ảnh riêng (tùy chọn)"
-                                      style={{ width: '100%', padding: 4 }}
                                     />
                                     {detail.image_url && (
                                       <img 
@@ -866,18 +878,11 @@ const UpdateProduct = () => {
                                     )}
                                   </div>
                                 </td>
-                                <td style={{ padding: 8, border: '1px solid #ddd' }}>
+                                <td>
                                   <button
                                     type="button"
                                     onClick={() => handleRemoveSize(detail.size)}
-                                    style={{ 
-                                      padding: '4px 8px', 
-                                      backgroundColor: '#ff4444', 
-                                      color: 'white', 
-                                      border: 'none',
-                                      borderRadius: '4px',
-                                      cursor: 'pointer'
-                                    }}
+                                    className="remove-size-btn"
                                     title="Xóa size này"
                                   >
                                     Xóa
@@ -899,63 +904,152 @@ const UpdateProduct = () => {
           </div>
         )}
         <div className="variant-list-section">
-          <h4>Danh sách biến thể (theo nhóm màu):</h4>
+          <div className="variant-header">
+            <h4 className="variant-title">
+              <span className="variant-icon">🎨</span>
+              Danh sách biến thể sản phẩm
+            </h4>
+            <p className="variant-subtitle">
+              Quản lý các biến thể theo màu sắc và kích thước
+            </p>
+          </div>
+          
           {variants.length > 0 ? (
-            colors.map((color) => {
-              const colorVariants = variants.filter(v => {
-                const colorId = typeof v.attributes.color === "object" ? v.attributes.color._id : v.attributes.color;
-                return colorId === color._id;
-              });
-              if (colorVariants.length === 0) return null;
-              return (
-                <div key={color._id} style={{ marginBottom: 16 }}>
-                  <strong>{color.name}</strong>
-                  <table className="variant-table">
-                    <thead>
-                      <tr>
-                        <th>Size</th>
-                        <th>Giá</th>
-                        <th>Kho</th>
-                        <th>SKU</th>
-                        <th>Trạng thái</th>
-                        <th>Ảnh</th>
-                        <th></th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {colorVariants.map((v) => (
-                        <tr key={v._id}>
-                          <td>{getVariantSizeName(v)}</td>
-                          <td>{v.price?.toLocaleString() || "0"}</td>
-                          <td>{v.stock_quantity || "0"}</td>
-                          <td>{v.sku}</td>
-                          <td>
-                            <span className={`status-badge ${v.is_active ? 'active' : 'inactive'}`}>
-                              {v.is_active ? 'Active' : 'Inactive'}
-                            </span>
-                          </td>
-                          <td>
-                            {v.image_url ? (
-                              <img src={v.image_url} alt="variant" style={{ width: 40, height: 40, objectFit: "cover" }} />
+            <div className="variant-container">
+              {(() => {
+                console.log("Rendering variants, total count:", variants.length);
+                console.log("Available colors:", colors.length);
+                return null;
+              })()}
+              {colors.map((color) => {
+                const colorVariants = variants.filter(v => {
+                  const colorId = typeof v.attributes.color === "object" ? v.attributes.color._id : v.attributes.color;
+                  const result = colorId === color._id;
+                  console.log(`Checking variant ${v._id}: colorId=${colorId}, color._id=${color._id}, match=${result}`);
+                  return result;
+                });
+                
+                console.log(`Color ${color.name} has ${colorVariants.length} variants`);
+                
+                if (colorVariants.length === 0) return null;
+                
+                return (
+                  <div key={color._id} className="color-variant-group">
+                    <div className="color-header">
+                      <div className="color-info">
+                        <div 
+                          className="color-preview" 
+                          style={{ 
+                            backgroundColor: color.name.toLowerCase().includes('đỏ') ? '#ff4444' :
+                                           color.name.toLowerCase().includes('xanh') ? '#4444ff' :
+                                           color.name.toLowerCase().includes('vàng') ? '#ffaa00' :
+                                           color.name.toLowerCase().includes('đen') ? '#000000' :
+                                           color.name.toLowerCase().includes('trắng') ? '#ffffff' :
+                                           color.name.toLowerCase().includes('hồng') ? '#ff88cc' :
+                                           color.name.toLowerCase().includes('tím') ? '#8844ff' :
+                                           color.name.toLowerCase().includes('cam') ? '#ff6600' :
+                                           color.name.toLowerCase().includes('nâu') ? '#8b4513' :
+                                           color.name.toLowerCase().includes('xám') ? '#808080' : '#cccccc',
+                            border: color.name.toLowerCase().includes('trắng') ? '1px solid #ddd' : 'none'
+                          }}
+                        />
+                        <h5 className="color-name">{color.name}</h5>
+                        <span className="variant-count">{colorVariants.length} biến thể</span>
+                      </div>
+                    </div>
+                    
+                    <div className="variants-grid">
+                      {colorVariants.map((variant) => (
+                        <div key={variant._id} className="variant-card">
+                          <div className="variant-header">
+                            <div className="variant-size">
+                              <span className="size-badge">
+                                {getVariantSizeName(variant)}
+                              </span>
+                            </div>
+                            <div className="variant-status">
+                              <span className={`status-indicator ${variant.is_active ? 'active' : 'inactive'}`}>
+                                {variant.is_active ? '●' : '○'}
+                              </span>
+                              <span className={`status-text ${variant.is_active ? 'active' : 'inactive'}`}>
+                                {variant.is_active ? 'Hoạt động' : 'Không hoạt động'}
+                              </span>
+                            </div>
+                          </div>
+                          
+                          <div className="variant-image">
+                            {variant.image_url ? (
+                              <img 
+                                src={variant.image_url} 
+                                alt={`${color.name} - ${getVariantSizeName(variant)}`}
+                                className="variant-img"
+                              />
                             ) : (
-                              <span className="text-gray-400">No image</span>
+                              <div className="no-image">
+                                <span className="no-image-icon">📷</span>
+                                <span className="no-image-text">Không có ảnh</span>
+                              </div>
                             )}
-                          </td>
-                          <td>
-                            <button type="button" className="delete-image-btn" onClick={() => v._id && handleRemoveVariant(v._id)}>
-                              Xóa
+                          </div>
+                          
+                          <div className="variant-details">
+                            <div className="detail-row">
+                              <span className="detail-label">Giá:</span>
+                              <span className="detail-value price">
+                                {variant.price?.toLocaleString()}đ
+                              </span>
+                            </div>
+                            <div className="detail-row">
+                              <span className="detail-label">Kho:</span>
+                              <span className={`detail-value stock ${variant.stock_quantity > 10 ? 'high' : variant.stock_quantity > 0 ? 'medium' : 'low'}`}>
+                                {variant.stock_quantity}
+                              </span>
+                            </div>
+                            <div className="detail-row">
+                              <span className="detail-label">SKU:</span>
+                              <span className="detail-value sku">{variant.sku}</span>
+                            </div>
+                          </div>
+                          
+                          <div className="variant-actions">
+                            <button 
+                              type="button" 
+                              className="action-btn edit-btn"
+                              onClick={() => handleEditVariant(variant)}
+                              title="Chỉnh sửa biến thể"
+                            >
+                              ✏️
                             </button>
-                          </td>
-                        </tr>
+                            <button 
+                              type="button" 
+                              className="action-btn delete-btn"
+                              onClick={() => variant._id && handleRemoveVariant(variant._id)}
+                              title="Xóa biến thể"
+                            >
+                              🗑️
+                            </button>
+                          </div>
+                        </div>
                       ))}
-                    </tbody>
-                  </table>
-                </div>
-              );
-            })
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           ) : (
-            <div style={{ padding: 16, textAlign: "center", color: "#666" }}>
-              Chưa có biến thể nào
+            <div className="no-variants">
+              <div className="no-variants-icon">🎨</div>
+              <h5 className="no-variants-title">Chưa có biến thể nào</h5>
+              <p className="no-variants-description">
+                Sản phẩm này chưa có biến thể. Hãy thêm biến thể để tạo ra các phiên bản khác nhau của sản phẩm.
+              </p>
+              <button 
+                type="button" 
+                className="add-first-variant-btn"
+                onClick={() => setShowVariantForm(true)}
+              >
+                ➕ Thêm biến thể đầu tiên
+              </button>
             </div>
           )}
         </div>

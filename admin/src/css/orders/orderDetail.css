@@ -1,4 +1,5 @@
 /* Order Detail Page Styles */
+
 .order-detail-page {
   padding: 24px;
   background: #f8f9fa;
@@ -65,6 +66,17 @@
   grid-column: 1 / -1;
 }
 
+.info-row {
+  display: flex;
+  gap: 20px;
+  grid-column: 1 / -1;
+}
+
+.info-row .info-item {
+  flex: 1;
+  min-width: 0;
+}
+
 .info-item label {
   font-weight: 600;
   color: #495057;
@@ -76,19 +88,6 @@
 .info-item span {
   color: #212529;
   font-size: 1rem;
-}
-
-.order-code {
-  font-family: 'Courier New', monospace;
-  font-weight: 600;
-  color: #007bff;
-  font-size: 1.1rem;
-}
-
-.total-price {
-  font-weight: 600;
-  color: #28a745;
-  font-size: 1.2rem;
 }
 
 /* Status Badges */
@@ -188,6 +187,53 @@
 .shipping-default {
   background: #f8f9fa;
   color: #6c757d;
+}
+
+/* Shipping Method Styles */
+.shipping-method {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.shipping-speed {
+  font-size: 0.85rem;
+  color: #007bff;
+  font-weight: 500;
+  background: #e7f3ff;
+  padding: 2px 8px;
+  border-radius: 12px;
+  display: inline-block;
+  margin-top: 4px;
+}
+
+/* Voucher Styles */
+.voucher-display {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.voucher-title {
+  font-weight: 600;
+  color: #28a745;
+  background: #d1e7dd;
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  display: inline-block;
+  width: fit-content;
+}
+
+.voucher-discount {
+  font-size: 0.85rem;
+  color: #dc3545;
+  font-weight: 500;
+  background: #f8d7da;
+  padding: 4px 8px;
+  border-radius: 6px;
+  display: inline-block;
+  width: fit-content;
 }
 
 /* Order Details Section */

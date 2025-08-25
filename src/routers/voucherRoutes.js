@@ -5,7 +5,7 @@ const voucherController = require('../controllers/voucherController');
 // Tạo voucher (dùng chung hoặc cá nhân)
 router.post('/', voucherController.createVoucher);
 // Áp dụng voucher vào đơn hàng
-router.put('/apply-voucher/:voucherId/:userId', voucherController.applyVoucherToOrder);
+router.post('/apply-voucher/:voucherId', voucherController.applyVoucherToOrder);
 // Lấy tất cả voucher
 router.get('/', voucherController.getAllVouchers);
 // lấy voucher theo id

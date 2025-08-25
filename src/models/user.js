@@ -24,7 +24,7 @@ const userSchema = new mongoose.Schema(
     },
     role: {
       type: String,
-      enum: ["user", "staff", "admin", "customer"], 
+      enum: ["user", "staff", "admin"], 
       default: "user",
     },
     phone_number: {
@@ -94,6 +94,7 @@ const userSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+
     supabase_user_id: {
       type: String,
       default: null, 

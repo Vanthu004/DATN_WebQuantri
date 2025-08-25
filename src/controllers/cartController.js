@@ -4,6 +4,8 @@ const Order = require("../models/Order");
 const OrderDetail = require("../models/OrderDetail");
 const Product = require("../models/product");
 const ProductVariant = require("../models/productVariant");
+const ShippingMethod = require("../models/ShippingMethod");
+const PaymentMethod = require("../models/PaymentMethod");
 const mongoose = require("mongoose");
 
 function isValidObjectId(id) {
@@ -417,6 +419,22 @@ exports.createOrderFromCart = async (req, res) => {
     for (const detail of orderDetails) {
       detail.order_id = orderId;
       await OrderDetail.create([detail], { session });
+    }
+
+    // Kiểm tra nếu là thanh toán online thì cập nhật trạng thái thanh toán
+    const paymentMethodForOnline = await PaymentMethod.findById(paymentmethod_id);
+    if (paymentMethodForOnline && paymentMethodForOnline.code && ['ZALOPAY'].includes(paymentMethodForOnline.code.toUpperCase())) {
+      // Đây là thanh toán online, chỉ cập nhật trạng thái thanh toán
+      // KHÔNG thay đổi trạng thái đơn hàng (vẫn ở "Chờ xử lý")
+      await Order.findByIdAndUpdate(
+        orderId,
+        { 
+          payment_status: 'paid',
+          is_paid: true
+        },
+        { session }
+      );
+      console.log('Đã cập nhật trạng thái thanh toán cho đơn hàng online:', order_code);
     }
 
     // Cập nhật trạng thái cart thành converted
