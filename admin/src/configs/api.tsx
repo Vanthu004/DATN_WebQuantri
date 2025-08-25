@@ -8,9 +8,15 @@ const api = axios.create({
   },
 });
 
-// Add request interceptor for debugging
+// Add request interceptor for authentication
 api.interceptors.request.use(
   (config) => {
+    // Add token to request headers
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    
     console.log("API Request:", config.method?.toUpperCase(), config.url);
     return config;
   },
@@ -20,7 +26,7 @@ api.interceptors.request.use(
   }
 );
 
-// Add response interceptor for debugging
+// Add response interceptor for debugging and error handling
 api.interceptors.response.use(
   (response) => {
     console.log("API Response:", response.status, response.config.url);
@@ -32,6 +38,16 @@ api.interceptors.response.use(
       error.response?.status,
       error.response?.data
     );
+    
+    // Handle authentication errors
+    if (error.response?.status === 401) {
+      console.error("Authentication failed - token may be expired");
+      // Optionally redirect to login or refresh token
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      window.location.href = '/login';
+    }
+    
     return Promise.reject(error);
   }
 );

@@ -178,6 +178,13 @@ const Notify = () => {
         >
           📋 Xem tất cả đơn hàng
         </button>
+
+        <button 
+          onClick={() => navigate('/send-notification')}
+          className="bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700 transition-colors flex items-center"
+        >
+          📤 Gửi thông báo
+        </button>
       </div>
     </div>
   );
