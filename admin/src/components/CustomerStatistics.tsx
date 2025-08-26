@@ -40,45 +40,17 @@ export const CustomerStatistics: React.FC = () => {
       setTopCustomers(topCustomersData);
     } catch (error) {
       console.error("Lỗi khi lấy thống kê khách hàng:", error);
-      // Fallback data để demo
+      // Reset data khi có lỗi
       setStats({
-        totalCustomers: 1250,
-        customersWithOrders: 890,
-        newCustomersThisMonth: 45,
-        activeCustomers: 650,
-        totalRevenue: 125000000,
-        averageOrderValue: 450000,
-        customerRetentionRate: 78.5,
+        totalCustomers: 0,
+        customersWithOrders: 0,
+        newCustomersThisMonth: 0,
+        activeCustomers: 0,
+        totalRevenue: 0,
+        averageOrderValue: 0,
+        customerRetentionRate: 0,
       });
-      setTopCustomers([
-        {
-          _id: "1",
-          name: "Nguyễn Văn A",
-          email: "nguyenvana@email.com",
-          role: "customer",
-          createdAt: "2024-01-15",
-          orderCount: 15,
-          totalSpent: 2500000,
-        },
-        {
-          _id: "2",
-          name: "Trần Thị B",
-          email: "tranthib@email.com",
-          role: "customer",
-          createdAt: "2024-02-20",
-          orderCount: 12,
-          totalSpent: 1800000,
-        },
-        {
-          _id: "3",
-          name: "Lê Văn C",
-          email: "levanc@email.com",
-          role: "customer",
-          createdAt: "2024-03-10",
-          orderCount: 8,
-          totalSpent: 1200000,
-        },
-      ]);
+      setTopCustomers([]);
     } finally {
       setLoading(false);
     }
@@ -108,7 +80,9 @@ export const CustomerStatistics: React.FC = () => {
       {/* Time Range Selector */}
       <div className="bg-white rounded-lg shadow p-4">
         <div className="flex items-center space-x-4">
-          <label className="text-sm font-medium text-gray-700">Thời gian:</label>
+          <label className="text-sm font-medium text-gray-700">
+            Thời gian:
+          </label>
           <select
             value={timeRange}
             onChange={(e) => setTimeRange(e.target.value)}
@@ -128,7 +102,9 @@ export const CustomerStatistics: React.FC = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-blue-100 text-sm">Tổng khách hàng</p>
-              <p className="text-2xl font-bold">{stats.totalCustomers.toLocaleString()}</p>
+              <p className="text-2xl font-bold">
+                {stats.totalCustomers.toLocaleString()}
+              </p>
             </div>
             <span className="text-3xl">👥</span>
           </div>
@@ -138,7 +114,9 @@ export const CustomerStatistics: React.FC = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-green-100 text-sm">Khách có đơn hàng</p>
-              <p className="text-2xl font-bold">{stats.customersWithOrders.toLocaleString()}</p>
+              <p className="text-2xl font-bold">
+                {stats.customersWithOrders.toLocaleString()}
+              </p>
             </div>
             <span className="text-3xl">🛒</span>
           </div>
@@ -148,7 +126,9 @@ export const CustomerStatistics: React.FC = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-purple-100 text-sm">Khách mới tháng này</p>
-              <p className="text-2xl font-bold">{stats.newCustomersThisMonth.toLocaleString()}</p>
+              <p className="text-2xl font-bold">
+                {stats.newCustomersThisMonth.toLocaleString()}
+              </p>
             </div>
             <span className="text-3xl">🆕</span>
           </div>
@@ -158,7 +138,9 @@ export const CustomerStatistics: React.FC = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-orange-100 text-sm">Khách hàng tích cực</p>
-              <p className="text-2xl font-bold">{stats.activeCustomers.toLocaleString()}</p>
+              <p className="text-2xl font-bold">
+                {stats.activeCustomers.toLocaleString()}
+              </p>
             </div>
             <span className="text-3xl">⭐</span>
           </div>
@@ -175,11 +157,15 @@ export const CustomerStatistics: React.FC = () => {
           <div className="space-y-2">
             <div className="flex justify-between">
               <span className="text-gray-600">Tổng doanh thu:</span>
-              <span className="font-semibold">{formatCurrency(stats.totalRevenue)}</span>
+              <span className="font-semibold">
+                {formatCurrency(stats.totalRevenue)}
+              </span>
             </div>
             <div className="flex justify-between">
               <span className="text-gray-600">Giá trị đơn hàng TB:</span>
-              <span className="font-semibold">{formatCurrency(stats.averageOrderValue)}</span>
+              <span className="font-semibold">
+                {formatCurrency(stats.averageOrderValue)}
+              </span>
             </div>
           </div>
         </div>
@@ -206,7 +192,11 @@ export const CustomerStatistics: React.FC = () => {
           </h3>
           <div className="text-center">
             <div className="text-3xl font-bold text-green-600 mb-2">
-              {((stats.customersWithOrders / stats.totalCustomers) * 100).toFixed(1)}%
+              {(
+                (stats.customersWithOrders / stats.totalCustomers) *
+                100
+              ).toFixed(1)}
+              %
             </div>
             <p className="text-gray-600 text-sm">
               Khách hàng từ đăng ký thành mua hàng
@@ -259,7 +249,9 @@ export const CustomerStatistics: React.FC = () => {
                           {customer.name}
                         </div>
                         <div className="text-sm text-gray-500">
-                          {customer.role === "customer" ? "Khách hàng" : customer.role}
+                          {customer.role === "customer"
+                            ? "Khách hàng"
+                            : customer.role}
                         </div>
                       </div>
                     </div>
@@ -295,29 +287,38 @@ export const CustomerStatistics: React.FC = () => {
           <div>
             <h4 className="font-medium mb-2">📊 Tổng quan</h4>
             <p className="text-gray-600">
-              Hệ thống hiện có {stats.totalCustomers.toLocaleString()} khách hàng đăng ký, 
-              trong đó {stats.customersWithOrders.toLocaleString()} khách hàng đã có đơn hàng.
+              Hệ thống hiện có {stats.totalCustomers.toLocaleString()} khách
+              hàng đăng ký, trong đó{" "}
+              {stats.customersWithOrders.toLocaleString()} khách hàng đã có đơn
+              hàng.
             </p>
           </div>
           <div>
             <h4 className="font-medium mb-2">🆕 Khách hàng mới</h4>
             <p className="text-gray-600">
-              Tháng này có {stats.newCustomersThisMonth.toLocaleString()} khách hàng mới đăng ký, 
-              tỷ lệ tăng trưởng {((stats.newCustomersThisMonth / stats.totalCustomers) * 100).toFixed(1)}%.
+              Tháng này có {stats.newCustomersThisMonth.toLocaleString()} khách
+              hàng mới đăng ký, tỷ lệ tăng trưởng{" "}
+              {(
+                (stats.newCustomersThisMonth / stats.totalCustomers) *
+                100
+              ).toFixed(1)}
+              %.
             </p>
           </div>
           <div>
             <h4 className="font-medium mb-2">💰 Doanh thu</h4>
             <p className="text-gray-600">
-              Tổng doanh thu từ khách hàng: {formatCurrency(stats.totalRevenue)}, 
-              giá trị đơn hàng trung bình: {formatCurrency(stats.averageOrderValue)}.
+              Tổng doanh thu từ khách hàng: {formatCurrency(stats.totalRevenue)}
+              , giá trị đơn hàng trung bình:{" "}
+              {formatCurrency(stats.averageOrderValue)}.
             </p>
           </div>
           <div>
             <h4 className="font-medium mb-2">⭐ Chất lượng</h4>
             <p className="text-gray-600">
-              Tỷ lệ giữ chân khách hàng: {stats.customerRetentionRate}%, 
-              {stats.activeCustomers.toLocaleString()} khách hàng tích cực trong hệ thống.
+              Tỷ lệ giữ chân khách hàng: {stats.customerRetentionRate}%,
+              {stats.activeCustomers.toLocaleString()} khách hàng tích cực trong
+              hệ thống.
             </p>
           </div>
         </div>
@@ -326,4 +327,4 @@ export const CustomerStatistics: React.FC = () => {
   );
 };
 
-export default CustomerStatistics; 
+export default CustomerStatistics;

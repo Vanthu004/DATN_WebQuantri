@@ -1,17 +1,19 @@
 require("dotenv").config();
 
 // kiểm tra cấu hình
-console.log('MONGODB_URI:', process.env.MONGODB_URI);
-console.log('SUPABASE_URL:', process.env.SUPABASE_URL);
-console.log('SUPABASE_ANON_KEY:', process.env.SUPABASE_ANON_KEY);
-console.log('SUPABASE_SERVICE_ROLE_KEY:', process.env.SUPABASE_SERVICE_ROLE_KEY);
+console.log("MONGODB_URI:", process.env.MONGODB_URI);
+console.log("SUPABASE_URL:", process.env.SUPABASE_URL);
+console.log("SUPABASE_ANON_KEY:", process.env.SUPABASE_ANON_KEY);
+console.log(
+  "SUPABASE_SERVICE_ROLE_KEY:",
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
 
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
 const http = require("http");
 const { Server } = require("socket.io");
-
 
 // Khởi tạo app và server
 const app = express();
@@ -24,8 +26,6 @@ const io = new Server(server, {
   },
 });
 
-
-
 // Lưu io vào app để sử dụng trong controllers
 app.set("io", io);
 
@@ -33,17 +33,17 @@ app.set("io", io);
 const userRouter = require("./src/routers/userRouter");
 const productRouter = require("./src/routers/productRouter");
 const categoryRouter = require("./src/routers/categoryRouter");
-const orderApi = require("./src/routers/orderRoutes");
+const orderRouter = require("./src/routers/orderRoutes");
 const orderDetailRouter = require("./src/routers/orderDetailRouter");
 const orderStatusRouter = require("./src/routers/orderStatusHistoryRouter");
-const reviewRoutes = require("./src/routers/reviewRoutes");
-const paymentRoutes = require("./src/routers/paymentRoutes");
-const paymentRouter = require("./src/routers/paymentMethodRouter");
-const shippingRouter = require("./src/routers/shippingMethodRouter");
-const productVariantApi = require("./src/routers/productVariantApi");
-const cartApi = require("./src/routers/cartApi");
-const cartItemApi = require("./src/routers/cartItemApi");
-const statisticApi = require("./src/routers/statisticApi");
+const reviewRouter = require("./src/routers/reviewRoutes");
+const paymentRouter = require("./src/routers/paymentRoutes");
+const paymentMethodRouter = require("./src/routers/paymentMethodRouter");
+const shippingMethodRouter = require("./src/routers/shippingMethodRouter");
+const productVariantRouter = require("./src/routers/productVariantApi");
+const cartRouter = require("./src/routers/cartApi");
+const cartItemRouter = require("./src/routers/cartItemApi");
+const statisticRouter = require("./src/routers/statisticApi");
 const salesStatisticsRouter = require("./src/routers/salesStatisticsRouter");
 const favoriteRouter = require("./src/routers/favoriteProductRouter");
 const authController = require("./src/controllers/authController");
@@ -52,7 +52,7 @@ const categoryTypeRouter = require("./src/routers/categoryTypeRouter");
 const uploadRouter = require("./src/routers/uploadRouter");
 const voucherRouter = require("./src/routers/voucherRoutes");
 const notificationRouter = require("./src/routers/notificationRoutes");
-const refundRoutes = require("./src/routers/refundRequestRoutes");
+const refundRouter = require("./src/routers/refundRequestRoutes");
 const sizeRouter = require("./src/routers/sizeRouter");
 const colorRouter = require("./src/routers/colorRouter");
 const searchHistoryRouter = require("./src/routers/searchHistoryRouter");
@@ -61,9 +61,8 @@ const shiperRouter = require("./src/routers/shiperRouter");
 const adminShiperRouter = require("./src/routers/adminShiperRouter");
 
 const chatRoutes = require("./src/routers/chatRoutes.js");
-const chatSocketHandler = require('./src/sockets/chatSocket');
+const chatSocketHandler = require("./src/sockets/chatSocket");
 const { chatNamespace } = chatSocketHandler(io);
-
 
 // ====== Kiểm tra biến môi trường bắt buộc ======
 if (!process.env.JWT_SECRET) {
@@ -81,17 +80,17 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 app.use("/api/users", userRouter);
 app.use("/api/products", productRouter);
 app.use("/api/categories", categoryRouter);
-app.use("/api/orders", orderApi);
+app.use("/api/orders", orderRouter);
 app.use("/api/order-details", orderDetailRouter);
 app.use("/api/order-status-history", orderStatusRouter);
-app.use("/api/reviews", reviewRoutes);
-app.use("/api/payments", paymentRoutes);
-app.use("/api/payment-methods", paymentRouter);
-app.use("/api/shipping-methods", shippingRouter);
-app.use("/api/product-variants", productVariantApi);
-app.use("/api/cart", cartApi);
-app.use("/api/cart-items", cartItemApi);
-app.use("/api/statistics", statisticApi);
+app.use("/api/reviews", reviewRouter);
+app.use("/api/payments", paymentRouter);
+app.use("/api/payment-methods", paymentMethodRouter);
+app.use("/api/shipping-methods", shippingMethodRouter);
+app.use("/api/product-variants", productVariantRouter);
+app.use("/api/cart", cartRouter);
+app.use("/api/cart-items", cartItemRouter);
+app.use("/api/statistics", statisticRouter);
 app.use("/api/sales-statistics", salesStatisticsRouter);
 app.use("/api/favorites", favoriteRouter);
 app.use("/api/sizes", sizeRouter);
@@ -103,11 +102,11 @@ app.use("/api/vouchers", voucherRouter);
 app.use("/api/category-types", categoryTypeRouter);
 app.use("/api/notifications", notificationRouter);
 app.use("/api/addresses", addressRouter);
-app.use("/api/refund-requests", refundRoutes);
+app.use("/api/refund-requests", refundRouter);
 app.use("/api", uploadRouter);
 app.use("/api/search-history", searchHistoryRouter);
-app.use('/api/chat', chatRoutes);
-app.set('chatNamespace', chatNamespace);
+app.use("/api/chat", chatRoutes);
+app.set("chatNamespace", chatNamespace);
 // ====== Auth routes (forgot/reset password) ======
 app.post("/api/forgot-password", authController.forgotPassword);
 app.post("/api/reset-password", authController.resetPassword);
@@ -128,10 +127,10 @@ mongoose
   .connect(process.env.MONGODB_URI)
   .then(() => {
     console.log("✅ Đã kết nối MongoDB Atlas");
-    
+
     // Khởi động cron jobs cho thống kê doanh thu
     try {
-      const { startCronJobs } = require('./src/cron/salesStatisticsCron');
+      const { startCronJobs } = require("./src/cron/salesStatisticsCron");
       startCronJobs();
       console.log("✅ Đã khởi động cron jobs thống kê doanh thu");
     } catch (error) {

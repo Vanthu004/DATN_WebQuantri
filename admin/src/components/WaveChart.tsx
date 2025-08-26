@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -30,11 +30,15 @@ ChartJS.register(
   Filler
 );
 
-interface RevenueChartProps {
+interface WaveChartProps {
   className?: string;
+  title?: string;
 }
 
-export const RevenueChart: React.FC<RevenueChartProps> = ({ className }) => {
+export const WaveChart: React.FC<WaveChartProps> = ({
+  className = "",
+  title = "Biểu đồ doanh thu dạng sóng",
+}) => {
   const [data, setData] = useState<RevenueStatistics[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -88,6 +92,146 @@ export const RevenueChart: React.FC<RevenueChartProps> = ({ className }) => {
     setEndDate(newEndDate);
   };
 
+  const chartData = {
+    labels: data.map((item) => SalesStatisticsService.formatDate(item._id)),
+    datasets: [
+      {
+        label: "Doanh thu",
+        data: data.map((item) => item.revenue),
+        borderColor: "rgb(59, 130, 246)",
+        backgroundColor: "rgba(59, 130, 246, 0.1)",
+        borderWidth: 3,
+        fill: true,
+        tension: 0.4,
+        pointBackgroundColor: "rgb(59, 130, 246)",
+        pointBorderColor: "#fff",
+        pointBorderWidth: 2,
+        pointRadius: 4,
+        pointHoverRadius: 6,
+      },
+      {
+        label: "Số đơn hàng",
+        data: data.map((item) => item.order_count * 1000), // Scale để hiển thị cùng biểu đồ
+        borderColor: "rgb(147, 51, 234)",
+        backgroundColor: "rgba(147, 51, 234, 0.1)",
+        borderWidth: 3,
+        fill: true,
+        tension: 0.4,
+        pointBackgroundColor: "rgb(147, 51, 234)",
+        pointBorderColor: "#fff",
+        pointBorderWidth: 2,
+        pointRadius: 4,
+        pointHoverRadius: 6,
+        yAxisID: "y1",
+      },
+    ],
+  };
+
+  const chartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    interaction: {
+      mode: "index" as const,
+      intersect: false,
+    },
+    plugins: {
+      legend: {
+        position: "top" as const,
+        labels: {
+          usePointStyle: true,
+          padding: 20,
+          font: {
+            size: 12,
+            weight: 600,
+          },
+        },
+      },
+      title: {
+        display: false,
+      },
+      tooltip: {
+        backgroundColor: "rgba(0, 0, 0, 0.8)",
+        titleColor: "#fff",
+        bodyColor: "#fff",
+        borderColor: "rgba(255, 255, 255, 0.1)",
+        borderWidth: 1,
+        cornerRadius: 8,
+        displayColors: true,
+        callbacks: {
+          label: function (context: any) {
+            if (context.datasetIndex === 0) {
+              return `Doanh thu: ${SalesStatisticsService.formatCurrency(
+                context.parsed.y
+              )}`;
+            } else {
+              return `Số đơn hàng: ${context.parsed.y / 1000}`;
+            }
+          },
+        },
+      },
+    },
+    scales: {
+      x: {
+        display: true,
+        title: {
+          display: true,
+          text: "Thời gian",
+          font: {
+            size: 12,
+            weight: "bold" as const,
+          },
+        },
+        grid: {
+          display: true,
+          color: "rgba(0, 0, 0, 0.05)",
+        },
+      },
+      y: {
+        type: "linear" as const,
+        display: true,
+        position: "left" as const,
+        title: {
+          display: true,
+          text: "Doanh thu (VND)",
+          font: {
+            size: 12,
+            weight: "bold" as const,
+          },
+        },
+        grid: {
+          display: true,
+          color: "rgba(0, 0, 0, 0.05)",
+        },
+        ticks: {
+          callback: function (value: any) {
+            return SalesStatisticsService.formatCurrency(value);
+          },
+        },
+      },
+      y1: {
+        type: "linear" as const,
+        display: true,
+        position: "right" as const,
+        title: {
+          display: true,
+          text: "Số đơn hàng",
+          font: {
+            size: 12,
+            weight: "bold" as const,
+          },
+        },
+        grid: {
+          drawOnChartArea: false,
+        },
+        ticks: {
+          callback: function (value: any) {
+            return Math.round(value / 1000);
+          },
+        },
+      },
+    },
+  };
+
   const exportData = () => {
     const csvContent = [
       ["Ngày", "Doanh thu", "Số đơn hàng", "Số sản phẩm bán"],
@@ -107,7 +251,9 @@ export const RevenueChart: React.FC<RevenueChartProps> = ({ className }) => {
     link.setAttribute("href", url);
     link.setAttribute(
       "download",
-      `thong-ke-doanh-thu-${type}-${new Date().toISOString().split("T")[0]}.csv`
+      `thong-ke-doanh-thu-song-${type}-${
+        new Date().toISOString().split("T")[0]
+      }.csv`
     );
     link.style.visibility = "hidden";
     document.body.appendChild(link);
@@ -145,8 +291,6 @@ export const RevenueChart: React.FC<RevenueChartProps> = ({ className }) => {
     const recentData = data.slice(-7); // 7 điểm dữ liệu gần nhất
     const olderData = data.slice(-14, -7); // 7 điểm dữ liệu trước đó
 
-    if (olderData.length === 0) return { trend: "stable", percentage: 0 };
-
     const recentAvg =
       recentData.reduce((sum, item) => sum + item.revenue, 0) /
       recentData.length;
@@ -165,36 +309,41 @@ export const RevenueChart: React.FC<RevenueChartProps> = ({ className }) => {
   const trendData = calculateTrend();
 
   return (
-    <div className={`bg-white rounded-lg shadow ${className}`}>
+    <div className={`bg-white rounded-lg shadow-lg ${className}`}>
       <div className="p-6">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
-          <h3 className="text-lg font-semibold flex items-center">
-            <span className="mr-2">🌊</span>
-            Biểu đồ doanh thu dạng sóng
-          </h3>
+          <div>
+            <h3 className="text-xl font-bold text-gray-800 flex items-center">
+              <span className="mr-2">🌊</span>
+              {title}
+            </h3>
+            <p className="text-sm text-gray-500 mt-1">
+              Phân tích xu hướng doanh thu theo thời gian
+            </p>
+          </div>
           <div className="flex items-center space-x-2">
-            {/* <select
+            <select
               value={type}
               onChange={(e) =>
                 setType(
                   e.target.value as "daily" | "weekly" | "monthly" | "yearly"
                 )
               }
-              className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
             >
               <option value="daily">Theo ngày</option>
               <option value="weekly">Theo tuần</option>
               <option value="monthly">Theo tháng</option>
               <option value="yearly">Theo năm</option>
-            </select> */}
-            {/* <button
+            </select>
+            <button
               onClick={exportData}
               className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
               title="Xuất CSV"
             >
               📥
-            </button> */}
+            </button>
           </div>
         </div>
 
@@ -257,145 +406,7 @@ export const RevenueChart: React.FC<RevenueChartProps> = ({ className }) => {
         <div className="bg-gray-50 rounded-lg p-4">
           <div className="h-80">
             {data.length > 0 ? (
-              <Line
-                data={{
-                  labels: data.map((item) =>
-                    SalesStatisticsService.formatDate(item._id)
-                  ),
-                  datasets: [
-                    {
-                      label: "Doanh thu",
-                      data: data.map((item) => item.revenue),
-                      borderColor: "rgb(59, 130, 246)",
-                      backgroundColor: "rgba(59, 130, 246, 0.1)",
-                      borderWidth: 3,
-                      fill: true,
-                      tension: 0.4,
-                      pointBackgroundColor: "rgb(59, 130, 246)",
-                      pointBorderColor: "#fff",
-                      pointBorderWidth: 2,
-                      pointRadius: 4,
-                      pointHoverRadius: 6,
-                    },
-                    {
-                      label: "Số đơn hàng",
-                      data: data.map((item) => item.order_count * 1000), // Scale để hiển thị cùng biểu đồ
-                      borderColor: "rgb(147, 51, 234)",
-                      backgroundColor: "rgba(147, 51, 234, 0.1)",
-                      borderWidth: 3,
-                      fill: true,
-                      tension: 0.4,
-                      pointBackgroundColor: "rgb(147, 51, 234)",
-                      pointBorderColor: "#fff",
-                      pointBorderWidth: 2,
-                      pointRadius: 4,
-                      pointHoverRadius: 6,
-                      yAxisID: "y1",
-                    },
-                  ],
-                }}
-                options={{
-                  responsive: true,
-                  maintainAspectRatio: false,
-                  interaction: {
-                    mode: "index" as const,
-                    intersect: false,
-                  },
-                  plugins: {
-                    legend: {
-                      position: "top" as const,
-                      labels: {
-                        usePointStyle: true,
-                        padding: 20,
-                        font: {
-                          size: 12,
-                          weight: "bold",
-                        },
-                      },
-                    },
-                    tooltip: {
-                      backgroundColor: "rgba(0, 0, 0, 0.8)",
-                      titleColor: "#fff",
-                      bodyColor: "#fff",
-                      borderColor: "rgba(255, 255, 255, 0.1)",
-                      borderWidth: 1,
-                      cornerRadius: 8,
-                      displayColors: true,
-                      callbacks: {
-                        label: function (context: any) {
-                          if (context.datasetIndex === 0) {
-                            return `Doanh thu: ${SalesStatisticsService.formatCurrency(
-                              context.parsed.y
-                            )}`;
-                          } else {
-                            return `Số đơn hàng: ${context.parsed.y / 1000}`;
-                          }
-                        },
-                      },
-                    },
-                  },
-                  scales: {
-                    x: {
-                      display: true,
-                      title: {
-                        display: true,
-                        text: "Thời gian",
-                        font: {
-                          size: 12,
-                          weight: "bold",
-                        },
-                      },
-                      grid: {
-                        display: true,
-                        color: "rgba(0, 0, 0, 0.05)",
-                      },
-                    },
-                    y: {
-                      type: "linear" as const,
-                      display: true,
-                      position: "left" as const,
-                      title: {
-                        display: true,
-                        text: "Doanh thu (VND)",
-                        font: {
-                          size: 12,
-                          weight: "bold",
-                        },
-                      },
-                      grid: {
-                        display: true,
-                        color: "rgba(0, 0, 0, 0.05)",
-                      },
-                      ticks: {
-                        callback: function (value: any) {
-                          return SalesStatisticsService.formatCurrency(value);
-                        },
-                      },
-                    },
-                    y1: {
-                      type: "linear" as const,
-                      display: true,
-                      position: "right" as const,
-                      title: {
-                        display: true,
-                        text: "Số đơn hàng",
-                        font: {
-                          size: 12,
-                          weight: "bold",
-                        },
-                      },
-                      grid: {
-                        drawOnChartArea: false,
-                      },
-                      ticks: {
-                        callback: function (value: any) {
-                          return Math.round(value / 1000);
-                        },
-                      },
-                    },
-                  },
-                }}
-              />
+              <Line data={chartData} options={chartOptions} />
             ) : (
               <div className="flex items-center justify-center h-full">
                 <div className="text-center">
@@ -444,44 +455,9 @@ export const RevenueChart: React.FC<RevenueChartProps> = ({ className }) => {
             </div>
           </div>
         )}
-
-        {/* Data Table */}
-        {data.length > 0 && (
-          <div className="mt-6">
-            <h4 className="font-medium mb-3">Chi tiết dữ liệu</h4>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b">
-                    <th className="text-left py-2">Ngày</th>
-                    <th className="text-right py-2">Doanh thu</th>
-                    <th className="text-right py-2">Đơn hàng</th>
-                    <th className="text-right py-2">Sản phẩm</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {data.slice(-10).map((item, index) => (
-                    <tr key={index} className="border-b hover:bg-gray-50">
-                      <td className="py-2">
-                        {SalesStatisticsService.formatDate(item._id)}
-                      </td>
-                      <td className="text-right py-2 font-medium">
-                        {SalesStatisticsService.formatCurrency(item.revenue)}
-                      </td>
-                      <td className="text-right py-2">{item.order_count}</td>
-                      <td className="text-right py-2">
-                        {item.product_sold_count}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );
 };
 
-export default RevenueChart;
+export default WaveChart;

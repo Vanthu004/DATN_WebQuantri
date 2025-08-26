@@ -77,17 +77,19 @@ export const SalesDashboard: React.FC<SalesDashboardProps> = ({
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Thống kê doanh thu</h2>
+          <h2 className="text-2xl font-bold text-gray-900">
+            Thống kê doanh thu
+          </h2>
           <p className="text-gray-600">
             Dữ liệu thống kê {SalesStatisticsService.getPeriodLabel(period)}
           </p>
         </div>
         <div className="flex items-center space-x-4">
-          <PeriodSelector
+          {/* <PeriodSelector
             value={period}
             onChange={setPeriod}
             label=""
-          />
+          /> */}
           <button
             onClick={fetchDashboardData}
             className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
@@ -121,7 +123,9 @@ export const SalesDashboard: React.FC<SalesDashboardProps> = ({
         <SummaryCard
           title="Số đơn hàng"
           value={SalesStatisticsService.formatNumber(revenue.order_count)}
-          subtitle={`Trung bình ${SalesStatisticsService.formatCurrency(revenue.avg_order_value)}/đơn`}
+          subtitle={`Trung bình ${SalesStatisticsService.formatCurrency(
+            revenue.avg_order_value
+          )}/đơn`}
           icon="🛒"
           iconBgColor="bg-green-100"
           iconColor="text-green-600"

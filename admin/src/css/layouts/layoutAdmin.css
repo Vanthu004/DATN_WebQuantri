@@ -9,8 +9,9 @@
 .layout-body {
   display: flex;
   flex-grow: 1;
-  /* Prevent body from creating its own scrollbar */
-  overflow: hidden;
+  padding-top: 65px; /* Add padding to account for fixed header */
+  overflow-x: hidden;
+  scroll-behavior: smooth; /* Enable smooth scrolling */
 }
 
 /* Header */
@@ -22,6 +23,12 @@
   background-color: #ffffff;
   border-bottom: 1px solid #e2e8f0;
   flex-shrink: 0; /* Prevent header from shrinking */
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .logo-section {
@@ -67,6 +74,11 @@
   display: flex;
   flex-direction: column;
   flex-shrink: 0; /* Prevent sidebar from shrinking */
+  position: fixed; /* Fix the sidebar */
+  top: 65px; /* Adjust based on your header height */
+  bottom: 0;
+  overflow-y: auto; /* Enable scrolling for sidebar content */
+  z-index: 100; /* Ensure sidebar stays above other content */
 }
 
 .sidebar-account-section {
@@ -146,7 +158,7 @@
   justify-content: center;
   font-size: 13px;
   font-weight: 700;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.10);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
   z-index: 2;
   border: 2px solid #fff;
   pointer-events: none;
@@ -164,7 +176,7 @@
   z-index: 2;
   border: 1px solid #fff;
   pointer-events: none;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
   animation: pulse 2s infinite;
 }
 
@@ -187,7 +199,10 @@
 .main-content-wrapper {
   flex-grow: 1;
   padding: 32px;
-  overflow-y: auto; /* This is key: only main content scrolls */
+  overflow-y: auto;
+  margin-left: 256px; /* Same as sidebar width */
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
 }
 
 .main-content {
@@ -255,7 +270,7 @@
     align-items: flex-end;
     gap: 8px;
   }
-  
+
   .user-role {
     font-size: 11px;
     padding: 3px 6px;

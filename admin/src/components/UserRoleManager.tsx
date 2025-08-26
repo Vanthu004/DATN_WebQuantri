@@ -156,7 +156,7 @@ const UserRoleManager: React.FC<UserRoleManagerProps> = ({
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             disabled={isUpdating || currentUserRole !== "admin"}
           >
-            <option value="user">🛒 Người dùng (user)</option>
+            <option value="user">🛒  Khách hàng (user)</option>
             <option value="staff">👤 Nhân viên (staff)</option>
             <option value="admin">👑 Admin (admin)</option>
           </select>

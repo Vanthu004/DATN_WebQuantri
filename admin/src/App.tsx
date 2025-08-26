@@ -26,7 +26,7 @@ import AddVoucher from "./pages/vouchers/AddVoucher";
 import EditVoucher from "./pages/vouchers/UpdateVoucher";
 import Comments from "./pages/comments/Comments";
 import SalesStatisticsPage from "./pages/statistics/SalesStatisticsPage";
-import InventoryPage from "./pages/inventory/InventoryPage";
+
 {/* Chat Support Routes */}
 // Chat Support Pages
 import ChatDashboard from "./pages/chat/ChatDashboard";
@@ -60,7 +60,6 @@ function App() {
             <Route path="/" index element={<SalesStatisticsPage />} />
             <Route path="/notify" element={<Notify />} />
             <Route path="/statistics" element={<SalesStatisticsPage />} />
-            <Route path="/inventory" element={<InventoryPage />} />
             
             {/* Shipper Management Routes */}
             <Route path="/shippers" element={<ShipperManagementPage />} />

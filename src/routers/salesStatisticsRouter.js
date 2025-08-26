@@ -7,18 +7,38 @@ const authMiddleware = require("../middlewares/authMiddleware");
 router.get("/test", salesStatisticsController.testData);
 
 // Thống kê doanh thu theo thời gian
-router.get("/revenue", authMiddleware, salesStatisticsController.getRevenueStatistics);
+router.get(
+  "/revenue",
+  authMiddleware,
+  salesStatisticsController.getRevenueStatistics
+);
 
 // Thống kê sản phẩm bán chạy
-router.get("/top-products", authMiddleware, salesStatisticsController.getTopSellingProducts);
+router.get(
+  "/top-products",
+  authMiddleware,
+  salesStatisticsController.getTopSellingProducts
+);
 
 // Thống kê tổng quan dashboard
-router.get("/dashboard", authMiddleware, salesStatisticsController.getDashboardStatistics);
+router.get(
+  "/dashboard",
+  authMiddleware,
+  salesStatisticsController.getDashboardStatistics
+);
 
 // Lấy thống kê theo khoảng thời gian
-router.get("/date-range", authMiddleware, salesStatisticsController.getStatisticsByDateRange);
+router.get(
+  "/date-range",
+  authMiddleware,
+  salesStatisticsController.getStatisticsByDateRange
+);
 
 // Tạo thống kê theo ngày (cron job)
-router.post("/generate-daily", authMiddleware, salesStatisticsController.generateDailyStatistics);
+router.post(
+  "/generate-daily",
+  authMiddleware,
+  salesStatisticsController.generateDailyStatistics
+);
 
-module.exports = router; 
+module.exports = router;
