@@ -7,16 +7,23 @@ import {
   FaProductHunt,
   FaList,
   FaShoppingCart,
-  FaBook,
-  FaChartBar,
-  FaWarehouse,
-} from 'react-icons/fa';
-import { MdOutlineNotificationsActive } from 'react-icons/md';
-import { RiDiscountPercentFill } from 'react-icons/ri';
-import { BiSolidCommentDetail } from 'react-icons/bi';
-import { BsChatDots } from 'react-icons/bs';
-import '../../css/layouts/layoutAdmin.css';
-import '../../css/notify/orderToast.css';
+  FaBook, // Thêm biểu tượng cho Guides
+  FaChartBar, // Thêm biểu tượng cho Thống kê
+  FaTruck,
+  FaCloudMoonRain,
+  FaThemeco,
+} from "react-icons/fa";
+import { MdFormatSize, MdOutlineNotificationsActive } from "react-icons/md";
+import { RiDiscountPercentFill } from "react-icons/ri";
+import { BiCategory, BiSolidCommentDetail } from "react-icons/bi";
+import { BsChatDots } from "react-icons/bs"; // Icon cho Chat Support
+import { AiFillSetting } from "react-icons/ai";
+import "../../css/layouts/layoutAdmin.css";
+import "../../css/notify/orderToast.css";
+import logo from "../../assets/LogoSwear.png";
+import { useOrderNotify } from "../../contexts/OrderNotifyContext";
+import { useOrderNotification } from "../../hooks/useOrderNotification";
+import OrderToast from "../OrderToast";
 
 import logo from '../../assets/LogoSwear.png';
 import { useOrderNotify } from '../../contexts/OrderNotifyContext';
@@ -27,14 +34,23 @@ import { useAuth } from '../../contexts/AuthContext';
 const LayoutAdmin = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { newOrderCount, latestOrder, showToast, setShowToast } = useOrderNotify();
-  const { user, isLoading } = useAuth();
+  const { newOrderCount, latestOrder, showToast, setShowToast } =
+    useOrderNotify();
+  const [user, setUser] = useState<User | null>(null);
 
+  // Khởi tạo hook để kiểm tra đơn hàng mới
   useOrderNotification();
 
   useEffect(() => {
-    if (!isLoading && !user) {
-      navigate('/login', { replace: true });
+    // Get user role from token
+    const token = localStorage.getItem("token");
+    if (token) {
+      try {
+        const payload = JSON.parse(atob(token.split(".")[1]));
+        setUser({ role: payload.role || "user" });
+      } catch (error) {
+        console.error("Error parsing token:", error);
+      }
     }
   }, [user, isLoading, navigate]);
 
@@ -61,89 +77,117 @@ const LayoutAdmin = () => {
     {
       path: '/',
       icon: <FaChartBar />,
-      label: 'Thống kê',
-      roles: ['admin', 'staff'],
+      label: "Thống kê",
+      roles: ["admin", "staff"],
     },
     {
-      path: '/inventory',
-      icon: <FaWarehouse />,
-      label: 'Kho hàng',
-      roles: ['admin'],
+      path: "/shippers",
+      icon: <FaTruck />,
+      label: "Quản lý Shipper",
+      roles: ["admin", "staff"],
     },
     {
       path: '/notify',
       icon: <MdOutlineNotificationsActive />,
-      label: 'Thông báo',
-      roles: ['admin', 'staff'],
+      label: "Thông báo",
+      roles: ["admin", "staff"],
     },
     {
       path: '/users',
       icon: <FaUser />,
-      label: 'Người dùng',
-      roles: ['admin'],
+      label: "Người dùng",
+      roles: ["admin"],
+
     },
     {
       path: '/products',
       icon: <FaProductHunt />,
-      label: 'Sản phẩm',
-      roles: ['admin'],
+      label: "Sản phẩm",
+      roles: ["admin"],
     },
     {
-      path: '/categories',
-      icon: <FaList />,
-      label: 'Danh mục',
-      roles: ['admin'],
+      path: "/categories",
+      icon: <BiCategory />,
+      label: "Danh mục",
+      roles: ["admin"],
     },
     {
-      path: '/sizes',
-      icon: <FaList />,
-      label: 'Kích thước',
-      roles: ['admin'],
+      path: "/sizes",
+      icon: <MdFormatSize />,
+      label: "Kích thước",
+      roles: ["admin"],
     },
     {
-      path: '/colors',
-      icon: <FaList />,
-      label: 'Màu sắc',
-      roles: ['admin'],
+      path: "/colors",
+      icon: <FaThemeco />,
+      label: "Màu sắc",
+      roles: ["admin"],
     },
     {
       path: '/vouchers',
       icon: <RiDiscountPercentFill />,
-      label: 'Vouchers',
-      roles: ['admin'],
+      label: "Vouchers",
+      roles: ["admin"],
     },
     {
       path: '/orders',
       icon: <FaShoppingCart />,
-      label: 'Đơn hàng',
-      roles: ['admin', 'staff'],
+      label: "Đơn hàng",
+      roles: ["admin", "staff"],
     },
     {
-      path: '/comments',
-
+      path: "/comments",
       icon: <BiSolidCommentDetail />,
-      label: 'Bình luận - Đánh giá',
-      roles: ['admin', 'staff'],
+      label: "Bình luận - Đánh giá",
+      roles: ["admin", "staff"],
     },
     {
       path: '/chat',
       icon: <BsChatDots />,
-      label: 'Chat Support',
-      roles: ['admin', 'staff'],
+      label: "Chat Support",
+      roles: ["admin", "staff"],
     },
     {
-      path: '/guides',
+      path: "/setting",
+      icon: <AiFillSetting />,
+      label: "Cài đặt",
+      roles: ["admin", "staff"],
+    },
+    {
+      path: "/guides",
       icon: <FaBook />,
-      label: 'Hướng dẫn sử dụng',
-      roles: ['admin', 'staff'],
+      label: "Hướng dẫn sử dụng",
+      roles: ["admin", "staff"],
     },
   ];
 
-  const menuItems = user ? baseMenuItems.filter(item => item.roles.includes(user.role)) : [];
+  // Filter menu items based on user role
+  const menuItems = baseMenuItems.filter((item) => {
+    if (!user) return false;
+    return item.roles.includes(user.role);
+  });
 
-  if (isLoading) {
-    return <div>Loading...</div>;
-  }
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    navigate("/login");
+  };
+
+  const handleViewOrder = (orderId: string) => {
+    navigate(`/orders/${orderId}`);
+  };
+
+  const handleCloseToast = () => {
+    setShowToast(false);
+  };
+
+  // Check if chat menu item should have notification badge
+  const getChatPath = () => {
+    const chatPaths = ["/chat", "/chat/dashboard", "/chat/rooms"];
+    return (
+      chatPaths.includes(location.pathname) ||
+      location.pathname.startsWith("/chat/room/")
+    );
+  };
 
   return (
     <div className="layout-container">
@@ -161,9 +205,9 @@ const LayoutAdmin = () => {
           {user && (
             <div className="user-info">
               <span className="user-role">
-                {user.role === 'admin' && 'Quản trị viên'}
-                {user.role === 'staff' && 'Nhân viên hỗ trợ'}
-                {user.role === 'user' && 'Người dùng'}
+                {user.role === "admin" && "Quản trị viên"}
+                {user.role === "staff" && "Nhân viên hỗ trợ"}
+                {user.role === "user" && "Người dùng"}
               </span>
             </div>
           )}
@@ -177,25 +221,26 @@ const LayoutAdmin = () => {
       <div className="layout-body">
         {/* Sidebar */}
         <aside className="sidebar">
-          <div className="sidebar-account-section">
-            <span className="account-title">Tài khoản</span>
-          </div>
           <nav className="sidebar-menu">
             <ul>
               {menuItems.map((item) => (
                 <li key={item.path} className="menu-item">
                   <Link
-                    to={item.path === '/chat' ? '/chat/dashboard' : item.path}
+                    to={item.path === "/chat" ? "/chat/dashboard" : item.path}
                     className={
-                      (item.path === '/chat' ? getChatPath() : location.pathname === item.path)
-                        ? 'active'
-                        : ''
+                      (
+                        item.path === "/chat"
+                          ? getChatPath()
+                          : location.pathname === item.path
+                      )
+                        ? "active"
+                        : ""
                     }
                   >
                     {item.icon}
                     <span>{item.label}</span>
-                    {item.path === '/notify' && newOrderCount > 0 && (
-
+                    {/* Hiển thị chấm đỏ nếu là menu Thông báo và có đơn hàng mới */}
+                    {item.path === "/notify" && newOrderCount > 0 && (
                       <span className="menu-dot"></span>
                     )}
                     {item.path === '/chat' && false && (

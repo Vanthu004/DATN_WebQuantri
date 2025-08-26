@@ -1,4 +1,16 @@
 import React, { useState, useEffect } from "react";
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+  Filler,
+} from "chart.js";
+import { Line } from "react-chartjs-2";
 import SalesStatisticsService, {
   RevenueStatistics,
 } from "../services/salesStatistics";
@@ -6,6 +18,18 @@ import { DateRangePicker } from "./DateRangePicker";
 import { LoadingSkeleton } from "./common/LoadingSkeleton";
 import { ErrorBoundary } from "./common/ErrorBoundary";
 import { PeriodSelector } from "./common/PeriodSelector";
+
+// Đăng ký các components cần thiết cho Chart.js
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+  Filler
+);
 
 interface TrendsChartProps {
   className?: string;
@@ -177,8 +201,8 @@ export const TrendsChart: React.FC<TrendsChartProps> = ({ className }) => {
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-lg font-semibold flex items-center">
-            <span className="mr-2">📈</span>
-            Xu hướng tăng trưởng
+            <span className="mr-2">🌊</span>
+            Xu hướng tăng trưởng dạng sóng
           </h3>
           <PeriodSelector
             value={period}
@@ -199,51 +223,49 @@ export const TrendsChart: React.FC<TrendsChartProps> = ({ className }) => {
 
         {/* Growth Summary Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          <div className="bg-blue-50 p-4 rounded-lg">
+          <div className="bg-gradient-to-r from-blue-500 to-blue-600 p-4 rounded-lg text-white">
             <div className="flex items-center justify-between mb-2">
-              <p className="text-sm text-blue-600 font-medium">Doanh thu</p>
-              <span className={`text-lg ${getGrowthColor(revenueGrowth)}`}>
+              <p className="text-sm opacity-90">Doanh thu</p>
+              <span className="text-lg">
                 {getGrowthIcon(revenueGrowth)}
               </span>
             </div>
-            <p className="text-2xl font-bold text-blue-900">
+            <p className="text-2xl font-bold">
               {SalesStatisticsService.formatCurrency(currentTotalRevenue)}
             </p>
-            <p className={`text-sm ${getGrowthColor(revenueGrowth)}`}>
+            <p className="text-sm opacity-90">
               {revenueGrowth > 0 ? "+" : ""}
               {revenueGrowth.toFixed(1)}% so với kỳ trước
             </p>
           </div>
 
-          <div className="bg-green-50 p-4 rounded-lg">
+          <div className="bg-gradient-to-r from-green-500 to-green-600 p-4 rounded-lg text-white">
             <div className="flex items-center justify-between mb-2">
-              <p className="text-sm text-green-600 font-medium">Đơn hàng</p>
-              <span className={`text-lg ${getGrowthColor(ordersGrowth)}`}>
+              <p className="text-sm opacity-90">Đơn hàng</p>
+              <span className="text-lg">
                 {getGrowthIcon(ordersGrowth)}
               </span>
             </div>
-            <p className="text-2xl font-bold text-green-900">
+            <p className="text-2xl font-bold">
               {SalesStatisticsService.formatNumber(currentTotalOrders)}
             </p>
-            <p className={`text-sm ${getGrowthColor(ordersGrowth)}`}>
+            <p className="text-sm opacity-90">
               {ordersGrowth > 0 ? "+" : ""}
               {ordersGrowth.toFixed(1)}% so với kỳ trước
             </p>
           </div>
 
-          <div className="bg-purple-50 p-4 rounded-lg">
+          <div className="bg-gradient-to-r from-purple-500 to-purple-600 p-4 rounded-lg text-white">
             <div className="flex items-center justify-between mb-2">
-              <p className="text-sm text-purple-600 font-medium">
-                Sản phẩm bán
-              </p>
-              <span className={`text-lg ${getGrowthColor(productsGrowth)}`}>
+              <p className="text-sm opacity-90">Sản phẩm bán</p>
+              <span className="text-lg">
                 {getGrowthIcon(productsGrowth)}
               </span>
             </div>
-            <p className="text-2xl font-bold text-purple-900">
+            <p className="text-2xl font-bold">
               {SalesStatisticsService.formatNumber(currentTotalProducts)}
             </p>
-            <p className={`text-sm ${getGrowthColor(productsGrowth)}`}>
+            <p className="text-sm opacity-90">
               {productsGrowth > 0 ? "+" : ""}
               {productsGrowth.toFixed(1)}% so với kỳ trước
             </p>
@@ -301,38 +323,120 @@ export const TrendsChart: React.FC<TrendsChartProps> = ({ className }) => {
           </div>
         </div>
 
-        {/* Daily Trend Chart */}
+        {/* Trends Wave Chart */}
         {currentData.length > 0 && (
-          <div className="bg-gray-50 rounded-lg p-6">
-            <h4 className="font-medium mb-4">Xu hướng hàng ngày</h4>
-            <div className="flex items-end justify-between h-32 space-x-1">
-              {currentData.slice(-7).map((item, index) => {
-                const maxRevenue = Math.max(
-                  ...currentData.map((d) => d.revenue)
-                );
-                const height =
-                  maxRevenue > 0 ? (item.revenue / maxRevenue) * 100 : 0;
-
-                return (
-                  <div
-                    key={index}
-                    className="flex flex-col items-center flex-1"
-                  >
-                    <div
-                      className="bg-blue-500 rounded-t w-full transition-all duration-300 hover:bg-blue-600"
-                      style={{ height: `${height}%` }}
-                      title={`${SalesStatisticsService.formatDate(
-                        item._id
-                      )}: ${SalesStatisticsService.formatCurrency(
-                        item.revenue
-                      )}`}
-                    />
-                    <p className="text-xs text-gray-500 mt-1">
-                      {SalesStatisticsService.formatDate(item._id)}
-                    </p>
-                  </div>
-                );
-              })}
+          <div className="bg-gray-50 rounded-lg p-4">
+            <h4 className="font-medium mb-4">Xu hướng tăng trưởng theo thời gian</h4>
+            <div className="h-80">
+              <Line 
+                data={{
+                  labels: currentData.map((item) => SalesStatisticsService.formatDate(item._id)),
+                  datasets: [
+                    {
+                      label: "Kỳ hiện tại",
+                      data: currentData.map((item) => item.revenue),
+                      borderColor: "rgb(59, 130, 246)",
+                      backgroundColor: "rgba(59, 130, 246, 0.1)",
+                      borderWidth: 3,
+                      fill: true,
+                      tension: 0.4,
+                      pointBackgroundColor: "rgb(59, 130, 246)",
+                      pointBorderColor: "#fff",
+                      pointBorderWidth: 2,
+                      pointRadius: 4,
+                      pointHoverRadius: 6,
+                    },
+                    {
+                      label: "Kỳ trước",
+                      data: previousData.map((item) => item.revenue),
+                      borderColor: "rgb(147, 51, 234)",
+                      backgroundColor: "rgba(147, 51, 234, 0.1)",
+                      borderWidth: 3,
+                      fill: true,
+                      tension: 0.4,
+                      pointBackgroundColor: "rgb(147, 51, 234)",
+                      pointBorderColor: "#fff",
+                      pointBorderWidth: 2,
+                      pointRadius: 4,
+                      pointHoverRadius: 6,
+                    },
+                  ],
+                }}
+                options={{
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  interaction: {
+                    mode: "index" as const,
+                    intersect: false,
+                  },
+                  plugins: {
+                    legend: {
+                      position: "top" as const,
+                      labels: {
+                        usePointStyle: true,
+                        padding: 20,
+                        font: {
+                          size: 12,
+                          weight: "bold",
+                        },
+                      },
+                    },
+                    tooltip: {
+                      backgroundColor: "rgba(0, 0, 0, 0.8)",
+                      titleColor: "#fff",
+                      bodyColor: "#fff",
+                      borderColor: "rgba(255, 255, 255, 0.1)",
+                      borderWidth: 1,
+                      cornerRadius: 8,
+                      displayColors: true,
+                      callbacks: {
+                        label: function (context: any) {
+                          return `${context.dataset.label}: ${SalesStatisticsService.formatCurrency(context.parsed.y)}`;
+                        },
+                      },
+                    },
+                  },
+                  scales: {
+                    x: {
+                      display: true,
+                      title: {
+                        display: true,
+                        text: "Thời gian",
+                        font: {
+                          size: 12,
+                          weight: "bold",
+                        },
+                      },
+                      grid: {
+                        display: true,
+                        color: "rgba(0, 0, 0, 0.05)",
+                      },
+                    },
+                    y: {
+                      type: "linear" as const,
+                      display: true,
+                      position: "left" as const,
+                      title: {
+                        display: true,
+                        text: "Doanh thu (VND)",
+                        font: {
+                          size: 12,
+                          weight: "bold",
+                        },
+                      },
+                      grid: {
+                        display: true,
+                        color: "rgba(0, 0, 0, 0.05)",
+                      },
+                      ticks: {
+                        callback: function (value: any) {
+                          return SalesStatisticsService.formatCurrency(value);
+                        },
+                      },
+                    },
+                  },
+                }}
+              />
             </div>
           </div>
         )}
@@ -341,22 +445,24 @@ export const TrendsChart: React.FC<TrendsChartProps> = ({ className }) => {
         <div className="mt-6">
           <h4 className="font-medium mb-3">Phân tích tăng trưởng</h4>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="border rounded-lg p-4">
+            <div className={`rounded-lg p-4 text-white ${
+              revenueGrowth > 0 
+                ? "bg-gradient-to-r from-emerald-500 to-emerald-600"
+                : revenueGrowth < 0
+                ? "bg-gradient-to-r from-red-500 to-red-600"
+                : "bg-gradient-to-r from-gray-500 to-gray-600"
+            }`}>
               <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium">Doanh thu</span>
-                <span className={`text-lg ${getGrowthColor(revenueGrowth)}`}>
+                <span className="text-sm opacity-90">Doanh thu</span>
+                <span className="text-lg">
                   {getGrowthIcon(revenueGrowth)}
                 </span>
               </div>
-              <p
-                className={`text-2xl font-bold ${getGrowthColor(
-                  revenueGrowth
-                )}`}
-              >
+              <p className="text-2xl font-bold">
                 {revenueGrowth > 0 ? "+" : ""}
                 {revenueGrowth.toFixed(1)}%
               </p>
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-xs opacity-90 mt-1">
                 {revenueGrowth > 0
                   ? "Tăng trưởng tốt"
                   : revenueGrowth < 0
@@ -365,20 +471,24 @@ export const TrendsChart: React.FC<TrendsChartProps> = ({ className }) => {
               </p>
             </div>
 
-            <div className="border rounded-lg p-4">
+            <div className={`rounded-lg p-4 text-white ${
+              ordersGrowth > 0 
+                ? "bg-gradient-to-r from-emerald-500 to-emerald-600"
+                : ordersGrowth < 0
+                ? "bg-gradient-to-r from-red-500 to-red-600"
+                : "bg-gradient-to-r from-gray-500 to-gray-600"
+            }`}>
               <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium">Đơn hàng</span>
-                <span className={`text-lg ${getGrowthColor(ordersGrowth)}`}>
+                <span className="text-sm opacity-90">Đơn hàng</span>
+                <span className="text-lg">
                   {getGrowthIcon(ordersGrowth)}
                 </span>
               </div>
-              <p
-                className={`text-2xl font-bold ${getGrowthColor(ordersGrowth)}`}
-              >
+              <p className="text-2xl font-bold">
                 {ordersGrowth > 0 ? "+" : ""}
                 {ordersGrowth.toFixed(1)}%
               </p>
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-xs opacity-90 mt-1">
                 {ordersGrowth > 0
                   ? "Khách hàng tăng"
                   : ordersGrowth < 0
@@ -387,22 +497,24 @@ export const TrendsChart: React.FC<TrendsChartProps> = ({ className }) => {
               </p>
             </div>
 
-            <div className="border rounded-lg p-4">
+            <div className={`rounded-lg p-4 text-white ${
+              productsGrowth > 0 
+                ? "bg-gradient-to-r from-emerald-500 to-emerald-600"
+                : productsGrowth < 0
+                ? "bg-gradient-to-r from-red-500 to-red-600"
+                : "bg-gradient-to-r from-gray-500 to-gray-600"
+            }`}>
               <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium">Sản phẩm</span>
-                <span className={`text-lg ${getGrowthColor(productsGrowth)}`}>
+                <span className="text-sm opacity-90">Sản phẩm</span>
+                <span className="text-lg">
                   {getGrowthIcon(productsGrowth)}
                 </span>
               </div>
-              <p
-                className={`text-2xl font-bold ${getGrowthColor(
-                  productsGrowth
-                )}`}
-              >
+              <p className="text-2xl font-bold">
                 {productsGrowth > 0 ? "+" : ""}
                 {productsGrowth.toFixed(1)}%
               </p>
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-xs opacity-90 mt-1">
                 {productsGrowth > 0
                   ? "Bán chạy"
                   : productsGrowth < 0
