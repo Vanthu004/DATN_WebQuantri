@@ -9,7 +9,6 @@ import {
   FaShoppingCart,
   FaBook,
   FaChartBar,
-  FaWarehouse,
 } from 'react-icons/fa';
 import { MdOutlineNotificationsActive } from 'react-icons/md';
 import { RiDiscountPercentFill } from 'react-icons/ri';
