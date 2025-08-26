@@ -1,7 +1,7 @@
-// admin/src/components/layouts/LayoutAdmin.tsx (Updated)
 
-import { Link, Outlet, useNavigate, useLocation } from "react-router-dom";
-import { useEffect, useState } from "react";
+// admin/src/components/layouts/LayoutAdmin.tsx
+import { Link, Outlet, useNavigate, useLocation } from 'react-router-dom';
+import { useEffect } from 'react';
 import {
   FaUser,
   FaProductHunt,
@@ -25,9 +25,11 @@ import { useOrderNotify } from "../../contexts/OrderNotifyContext";
 import { useOrderNotification } from "../../hooks/useOrderNotification";
 import OrderToast from "../OrderToast";
 
-interface User {
-  role: string;
-}
+import logo from '../../assets/LogoSwear.png';
+import { useOrderNotify } from '../../contexts/OrderNotifyContext';
+import { useOrderNotification } from '../../hooks/useOrderNotification';
+import OrderToast from '../OrderToast';
+import { useAuth } from '../../contexts/AuthContext';
 
 const LayoutAdmin = () => {
   const navigate = useNavigate();
@@ -50,12 +52,30 @@ const LayoutAdmin = () => {
         console.error("Error parsing token:", error);
       }
     }
-  }, []);
+  }, [user, isLoading, navigate]);
 
-  // Base menu items for all users
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    navigate('/login', { replace: true });
+  };
+
+  const handleViewOrder = (orderId: string) => {
+    navigate(`/orders/${orderId}`);
+  };
+
+  const handleCloseToast = () => {
+    setShowToast(false);
+  };
+
+  // Check if chat menu item should have notification badge
+  const getChatPath = () => {
+    const chatPaths = ['/chat', '/chat/dashboard', '/chat/rooms'];
+    return chatPaths.includes(location.pathname) || location.pathname.startsWith('/chat/room/');
+  };
+
   const baseMenuItems = [
     {
-      path: "/",
+      path: '/',
       icon: <FaChartBar />,
       label: "Thống kê",
       roles: ["admin", "staff"],
@@ -67,19 +87,20 @@ const LayoutAdmin = () => {
       roles: ["admin", "staff"],
     },
     {
-      path: "/notify",
+      path: '/notify',
       icon: <MdOutlineNotificationsActive />,
       label: "Thông báo",
       roles: ["admin", "staff"],
     },
     {
-      path: "/users",
+      path: '/users',
       icon: <FaUser />,
       label: "Người dùng",
       roles: ["admin"],
+
     },
     {
-      path: "/products",
+      path: '/products',
       icon: <FaProductHunt />,
       label: "Sản phẩm",
       roles: ["admin"],
@@ -103,13 +124,13 @@ const LayoutAdmin = () => {
       roles: ["admin"],
     },
     {
-      path: "/vouchers",
+      path: '/vouchers',
       icon: <RiDiscountPercentFill />,
       label: "Vouchers",
       roles: ["admin"],
     },
     {
-      path: "/orders",
+      path: '/orders',
       icon: <FaShoppingCart />,
       label: "Đơn hàng",
       roles: ["admin", "staff"],
@@ -121,7 +142,7 @@ const LayoutAdmin = () => {
       roles: ["admin", "staff"],
     },
     {
-      path: "/chat",
+      path: '/chat',
       icon: <BsChatDots />,
       label: "Chat Support",
       roles: ["admin", "staff"],
@@ -170,15 +191,12 @@ const LayoutAdmin = () => {
 
   return (
     <div className="layout-container">
-      {/* Order Toast Notification */}
       <OrderToast
         order={latestOrder}
         isVisible={showToast}
         onClose={handleCloseToast}
         onViewOrder={handleViewOrder}
       />
-
-      {/* Header */}
       <header className="layout-header">
         <Link to="/" className="logo-section">
           <img src={logo} alt="SwearLogo" />
@@ -198,6 +216,7 @@ const LayoutAdmin = () => {
           </button>
         </div>
       </header>
+
 
       <div className="layout-body">
         {/* Sidebar */}
@@ -224,8 +243,7 @@ const LayoutAdmin = () => {
                     {item.path === "/notify" && newOrderCount > 0 && (
                       <span className="menu-dot"></span>
                     )}
-                    {/* TODO: Add chat notification badge if needed */}
-                    {item.path === "/chat" && false && (
+                    {item.path === '/chat' && false && (
                       <span className="menu-dot chat-dot"></span>
                     )}
                   </Link>
@@ -234,8 +252,6 @@ const LayoutAdmin = () => {
             </ul>
           </nav>
         </aside>
-
-        {/* Main Content */}
         <main className="main-content-wrapper">
           <div className="main-content">
             <Outlet />

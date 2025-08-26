@@ -42,7 +42,7 @@ const ChatDashboard: React.FC = () => {
         if (user.role === 'admin') {
           roomsData = await chatApi.getAllChatRooms({
             status: 'open',
-            assigned: 'false',
+            assigned: false,
             limit: 10,
           });
         } else {
@@ -171,7 +171,7 @@ const ChatDashboard: React.FC = () => {
         </div>
 
         <div className="rooms-list">
-          {recentRooms?.chatRooms.length === 0 ? (
+          {recentRooms?.chatRooms?.length === 0 ? (
             <div className="empty-state">
               <p>
                 {user?.role === 'admin' 
@@ -180,18 +180,18 @@ const ChatDashboard: React.FC = () => {
               </p>
             </div>
           ) : (
-            recentRooms?.chatRooms.map((room) => (
+            recentRooms?.chatRooms?.map((room) => (
               <Link
                 key={room._id}
                 to={`/chat/room/${room.roomId}`}
                 className="room-card"
               >
                 <div className="room-avatar">
-                  {room.userId.avatar_url ? (
-                    <img src={room.userId.avatar_url} alt={room.userId.name} />
+                  {room?.userId?.avatar_url ? (
+                    <img src={room.userId.avatar_url} alt={room.userId.name || 'User'} />
                   ) : (
                     <div className="avatar-placeholder">
-                      {room.userId.name.charAt(0).toUpperCase()}
+                      {room?.userId?.name?.charAt(0)?.toUpperCase() || 'U'}
                     </div>
                   )}
                 </div>
@@ -205,7 +205,8 @@ const ChatDashboard: React.FC = () => {
                   </div>
                   
                   <div className="room-meta">
-                    <span className="customer-name">{room.userId.name}</span>
+                    <span className="customer-name">{room?.userId?.name || 'Unknown User'}</span>
+
                     <div className="room-badges">
                       <span 
                         className="status-badge"
@@ -246,17 +247,18 @@ const ChatDashboard: React.FC = () => {
             {statistics.staff.map((staff) => (
               <div key={staff.id} className="staff-card">
                 <div className="staff-avatar">
-                  {staff.avatar_url ? (
-                    <img src={staff.avatar_url} alt={staff.name} />
+
+                  {staff?.avatar_url ? (
+                    <img src={staff.avatar_url} alt={staff.name || 'Staff'} />
                   ) : (
                     <div className="avatar-placeholder">
-                      {staff.name.charAt(0).toUpperCase()}
+                      {staff?.name?.charAt(0)?.toUpperCase() || 'S'}
                     </div>
                   )}
                 </div>
                 
                 <div className="staff-info">
-                  <h3>{staff.name}</h3>
+                  <h3>{staff.name || 'Unknown Staff'}</h3>
                   <div className="staff-stats">
                     <span>{staff.roomCount} phòng</span>
                     <span>•</span>

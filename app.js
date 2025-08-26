@@ -14,6 +14,7 @@ const mongoose = require("mongoose");
 const cors = require("cors");
 const http = require("http");
 const { Server } = require("socket.io");
+const admin = require('firebase-admin');
 
 // Khởi tạo app và server
 const app = express();
@@ -25,10 +26,8 @@ const io = new Server(server, {
     methods: ["GET", "POST"],
   },
 });
-
 // Lưu io vào app để sử dụng trong controllers
 app.set("io", io);
-
 // ====== Import Routers & Controllers ======
 const userRouter = require("./src/routers/userRouter");
 const productRouter = require("./src/routers/productRouter");
@@ -59,17 +58,15 @@ const searchHistoryRouter = require("./src/routers/searchHistoryRouter");
 
 const shiperRouter = require("./src/routers/shiperRouter");
 const adminShiperRouter = require("./src/routers/adminShiperRouter");
-
 const chatRoutes = require("./src/routers/chatRoutes.js");
 const chatSocketHandler = require("./src/sockets/chatSocket");
 const { chatNamespace } = chatSocketHandler(io);
-
+const notificationRouter = require('./src/routers/notificationRoutes');
 // ====== Kiểm tra biến môi trường bắt buộc ======
 if (!process.env.JWT_SECRET) {
   console.error("❌ Lỗi: JWT_SECRET không được định nghĩa trong file .env");
   process.exit(1);
 }
-
 // ====== Middleware chung ======
 app.use(cors());
 app.use(express.json());
@@ -99,14 +96,16 @@ app.use("/api/shipers", shiperRouter);
 app.use("/api/admin/shipers", adminShiperRouter);
 app.use("/api/vouchers", voucherRouter);
 // app.use("/api/uploads", uploadRouter);
+
 app.use("/api/category-types", categoryTypeRouter);
 app.use("/api/notifications", notificationRouter);
 app.use("/api/addresses", addressRouter);
 app.use("/api/refund-requests", refundRouter);
 app.use("/api", uploadRouter);
 app.use("/api/search-history", searchHistoryRouter);
-app.use("/api/chat", chatRoutes);
-app.set("chatNamespace", chatNamespace);
+app.use('/api/chat', chatRoutes);
+app.set('chatNamespace', chatNamespace);
+app.use('/api/notifications', notificationRouter);
 // ====== Auth routes (forgot/reset password) ======
 app.post("/api/forgot-password", authController.forgotPassword);
 app.post("/api/reset-password", authController.resetPassword);
@@ -138,13 +137,18 @@ mongoose
     }
   })
   .catch((err) => console.error("❌ Lỗi kết nối MongoDB:", err));
-
 // ====== Middleware xử lý lỗi ======
 app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).json({ message: "Lỗi server", error: err.message });
 });
 
+// Khởi tạo Firebase Admin SDK
+const serviceAccount = require(process.env.FIREBASE_SERVICE_ACCOUNT_PATH);
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount),
+  projectId: process.env.FIREBASE_PROJECT_ID,
+});
 // ====== Khởi động SERVER ======
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {

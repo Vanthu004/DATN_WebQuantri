@@ -1,5 +1,4 @@
 // admin/src/interfaces/chat.ts
-
 export interface ChatRoom {
   _id: string;
   roomId: string;

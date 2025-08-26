@@ -174,7 +174,7 @@ if (filterUsage === "available") {
           >
             <option value="all">Tất cả</option>
             <option value="available">Còn lượt dùng</option>
-            <option value="used_up">Tổng</option>
+            <option value="used_up">Hết lượt dùng</option>
           </select>
         </div>
 

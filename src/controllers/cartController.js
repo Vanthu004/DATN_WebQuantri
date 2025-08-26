@@ -297,9 +297,9 @@ exports.createOrderFromCart = async (req, res) => {
   session.startTransaction();
   
   try {
-    const { shippingmethod_id, paymentmethod_id, shipping_address, note } = req.body;
+    const { shippingmethod_id, paymentmethod_id, shipping_address, note,voucher_ids } = req.body;
     const cartId = req.params.id;
-
+    console.log("🚀 req.body:", req.body);
     if (!cartId || !isValidObjectId(cartId)) {
       return res.status(400).json({
         success: false,
@@ -410,7 +410,8 @@ exports.createOrderFromCart = async (req, res) => {
       paymentmethod_id,
       shipping_address,
       order_code,
-      note
+      note,
+      voucher_ids: voucher_ids || []
     }], { session });
 
     const orderId = order[0]._id;

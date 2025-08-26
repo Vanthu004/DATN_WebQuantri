@@ -21,6 +21,7 @@ import OrderDetail from "./pages/orders/OrderDetail";
 import ManageCategoryType from "./pages/categoryTypes/ManageCategoryType";
 import ProductsByCategoryType from "./pages/products/ProductsByCategoryType";
 import Notify from "./pages/notify/Notify";
+import SendNotification from "./pages/notify/SendNotification";
 import Vouchers from "./pages/vouchers/Vouchers";
 import AddVoucher from "./pages/vouchers/AddVoucher";
 import EditVoucher from "./pages/vouchers/UpdateVoucher";
@@ -48,7 +49,6 @@ import UpdateColor from "./pages/colors/UpdateColor";
 import Guides from "./pages/guides/Guides"; // Import trang mới
 import { OrderNotifyProvider } from "./contexts/OrderNotifyContext";
 
-
 function App() {
   return (
     <OrderNotifyProvider>
@@ -59,6 +59,7 @@ function App() {
           <Route element={<LayoutAdmin />}>
             <Route path="/" index element={<SalesStatisticsPage />} />
             <Route path="/notify" element={<Notify />} />
+            <Route path="/send-notification" element={<SendNotification />} />
             <Route path="/statistics" element={<SalesStatisticsPage />} />
             
             {/* Shipper Management Routes */}

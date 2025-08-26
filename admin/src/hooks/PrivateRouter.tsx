@@ -1,6 +1,5 @@
-// admin/src/hooks/PrivateRouter.tsx
-import React from "react";
-import { Navigate, Outlet } from "react-router-dom";
+import { Navigate, Outlet } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 
 const ALLOWED_ROLES = ["admin", "user"] as const;
 
@@ -28,11 +27,13 @@ const getRoleFromStorageOrToken = (): string | undefined => {
 };
 
 const PrivateRouter = () => {
-  const token = localStorage.getItem("token");
-  const role = getRoleFromStorageOrToken();
-  const isAllowed = Boolean(token) && !!role && ALLOWED_ROLES.includes(role as any);
+  const { user, isLoading } = useAuth();
 
-  return isAllowed ? <Outlet /> : <Navigate to="/login" replace />;
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
+
+  return user ? <Outlet /> : <Navigate to="/login" replace />;
 };
 
 export default PrivateRouter;

@@ -182,7 +182,8 @@ exports.createUser = async (req, res) => {
     const token = jwt.sign(
       { userId: user._id, role: user.role },
       process.env.JWT_SECRET,
-      { expiresIn: process.env.JWT_EXPIRES_IN || "15d" }
+      { expiresIn: process.env.JWT_EXPIRES_IN || "30d" }
+
     );
 
     const populated = await User.findById(user._id)
@@ -257,7 +258,7 @@ exports.getSupabaseToken = async (req, res) => {
     const refreshToken = jwt.sign(
       { sub: user.supabase_user_id, type: 'refresh' },
       process.env.SUPABASE_JWT_SECRET,
-      { algorithm: 'HS256', expiresIn: '7d' }
+      { algorithm: 'HS256', expiresIn: '30d' }
     );
 
     res.status(200).json({
@@ -684,7 +685,8 @@ exports.login = async (req, res) => {
     const token = jwt.sign(
       { userId: user._id.toString(), role: user.role },
       process.env.JWT_SECRET,
-      { expiresIn: process.env.JWT_EXPIRES_IN || "1d" }
+      { expiresIn: process.env.JWT_EXPIRES_IN || "30d" }
+
     );
 
     res.status(200).json({

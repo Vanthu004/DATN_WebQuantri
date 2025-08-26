@@ -57,6 +57,16 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: "", 
     },
+
+    expo_push_token: {
+      type: String,
+      default: "",
+    },
+    push_token_type: {
+      type: String,
+      enum: ["fcm", "expo"],
+      default: "fcm",
+    },
     ban: {
       isBanned: {
         type: Boolean,
