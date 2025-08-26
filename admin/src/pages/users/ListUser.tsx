@@ -6,8 +6,6 @@ import "../../css/users/listUser.css";
 import api from "../../configs/api";
 import { blockUser } from "../../services/user";
 
-
-
 const ListUser = () => {
   const navigate = useNavigate();
   const [users, setUsers] = useState<User[]>([]);

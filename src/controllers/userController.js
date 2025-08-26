@@ -284,12 +284,18 @@ exports.getSupabaseToken = async (req, res) => {
     res.status(500).json({ message: 'Lỗi server', error: error.message });
   }
 };
-// Lấy tất cả users
+// Lấy tất cả users 
 exports.getAllUsers = async (req, res) => {
   try {
-    const users = await User.find({ 'ban.isBanned': false })
+    let users = await User.find({})
       .select("-password")
       .populate("avatar");
+
+    // Cập nhật trạng thái ban tự động cho tất cả users (nếu hết hạn)
+    users = await Promise.all(users.map(async (user) => {
+      return await checkAndUpdateBanStatus(user);
+    }));
+
     res.status(200).json(users);
   } catch (error) {
     console.error(`Get all users error: ${error.message}`);
@@ -951,12 +957,15 @@ exports.getTopCustomers = async (req, res) => {
     });
   }
 };
-// Lấy tất cả người dùng có role = "user"
 exports.getAllUsersByRole = async (req, res) => {
   try {
-    const users = await User.find({ role: "user", "ban.isBanned": false })
+    let users = await User.find({ role: "user" })
       .select("-password")
       .populate("avatar");
+
+    users = await Promise.all(users.map(async (user) => {
+      return await checkAndUpdateBanStatus(user);
+    }));
 
     res.status(200).json(users);
   } catch (error) {
