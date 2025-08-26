@@ -46,8 +46,9 @@ const Login = () => {
   return (
     <div className="login-container">
       <form className="login-form" onSubmit={handleSubmit}>
-        <h2>Đăng nhập</h2>
+        <h2 className="text-2xl font-bold text-center text-gray-800 mb-6">Đăng nhập</h2>
         {error && <div className="login-error">{error}</div>}
+        
         <input
           type="email"
           name="email"

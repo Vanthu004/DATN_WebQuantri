@@ -6,8 +6,6 @@ import "../../css/users/listUser.css";
 import api from "../../configs/api";
 import { blockUser } from "../../services/user";
 
-
-
 const ListUser = () => {
   const navigate = useNavigate();
   const [users, setUsers] = useState<User[]>([]);
@@ -22,9 +20,10 @@ const ListUser = () => {
     try {
       const token = localStorage.getItem("token");
       if (!token) throw new Error("Không tìm thấy token đăng nhập");
-      const res = await api.get("/users", {
+      const res = await api.get("/users?_=" + new Date().getTime(), {
         headers: { Authorization: `Bearer ${token}` },
       });
+      console.log("API response:", res.data); // Debug
       setUsers(res.data as User[]);
     } catch (err) {
       if (err instanceof Error) {
@@ -118,7 +117,7 @@ const ListUser = () => {
       </div>
       
       {/* Thống kê nhanh */}
-      <div className="user-stats">
+     <div className="user-stats">
         <div className="stat-item">
           <span className="stat-number">{users.length}</span>
           <span className="stat-label">Tổng người dùng</span>
@@ -130,6 +129,10 @@ const ListUser = () => {
         <div className="stat-item">
           <span className="stat-number">{users.filter(u => u.role === 'user').length}</span>
           <span className="stat-label">Khách hàng</span>
+        </div>
+        <div className="stat-item">
+          <span className="stat-number">{users.filter(u => u.role === 'staff').length}</span>
+          <span className="stat-label">Nhân viên</span>
         </div>
         <div className="stat-item">
           <span className="stat-number">{users.filter(u => u.ban?.isBanned).length}</span>
