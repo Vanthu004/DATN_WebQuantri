@@ -3,6 +3,7 @@ import { Login as LoginService } from "../../services/auth";
 import "../../css/auth/login.css";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
+import { useAuth } from "../../contexts/AuthContext"; // Thêm import useAuth
 
 const Login = () => {
   const [form, setForm] = useState({
@@ -11,6 +12,7 @@ const Login = () => {
   });
   const [error, setError] = useState("");
   const navigate = useNavigate();
+  const { login } = useAuth(); // Thêm: Lấy hàm login từ context
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -23,16 +25,14 @@ const Login = () => {
       const res = (await LoginService(form)) as { token?: string; user?: any };
       if (res && res.token) {
         const role = res.user?.role as string | undefined;
-        if (!role || !["admin", "user"].includes(role)) {
+        if (!role || !["admin", "staff"].includes(role)) {
           setError("Tài khoản của bạn không có quyền truy cập trang quản trị");
           toast.error("Không có quyền truy cập admin");
           return;
         }
 
-        localStorage.setItem("token", res.token);
-        if (res.user) {
-          localStorage.setItem("user", JSON.stringify(res.user));
-        }
+        // Gọi login từ context để update state và lưu storage
+        login(res.token, res.user);
         toast.success("Đăng nhập thành công");
         navigate("/");
       } else {
@@ -46,8 +46,9 @@ const Login = () => {
   return (
     <div className="login-container">
       <form className="login-form" onSubmit={handleSubmit}>
-        <h2>Đăng nhập</h2>
+        <h2 className="text-2xl font-bold text-center text-gray-800 mb-6">Đăng nhập</h2>
         {error && <div className="login-error">{error}</div>}
+        
         <input
           type="email"
           name="email"

@@ -243,7 +243,7 @@ const ListProduct = () => {
                       >
                         Sửa
                       </button>
-                      {" | "}
+                      <div style={{ marginBottom: 12 }}></div>
                       {!product.is_deleted ? (
 
                         <button

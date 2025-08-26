@@ -23,7 +23,14 @@ const validateRequest = (req, res, next) => {
 router.post('/rooms', [
   authMiddleware,
   body('subject').notEmpty().trim().withMessage('Chủ đề chat không được để trống'),
-  body('category').optional().isIn(['product_inquiry', 'order_support', 'complaint', 'general']),
+  body('category').optional().isIn([
+    'product_inquiry',
+    'order_support',
+    'complaint',
+    'general',
+    'technical_support',
+    'account_support'
+  ]),
   validateRequest
 ], chatController.createChatRoom);
 
@@ -49,7 +56,14 @@ router.get('/rooms/assigned', [
 router.get('/rooms/all', [
   authMiddleware,
   query('status').optional().isIn(['open', 'assigned', 'resolved', 'closed']),
-  query('category').optional().isIn(['product_inquiry', 'order_support', 'complaint', 'general']),
+  query('category').optional().isIn([
+    'product_inquiry',
+    'order_support',
+    'complaint',
+    'general',
+    'technical_support',
+    'account_support'
+  ]),
   query('priority').optional().isIn(['low', 'medium', 'high']),
   query('assigned').optional().isBoolean(),
   query('page').optional().isInt({ min: 1 }),

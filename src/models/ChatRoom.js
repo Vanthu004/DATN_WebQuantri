@@ -25,7 +25,12 @@ const chatRoomSchema = new mongoose.Schema({
   },
   category: {
     type: String,
-    enum: ['product_inquiry', 'order_support', 'complaint', 'general'],
+    enum: ['product_inquiry',
+    'order_support',
+    'complaint',
+    'general',
+    'technical_support',
+    'account_support'],
     default: 'general'
   },
   status: {

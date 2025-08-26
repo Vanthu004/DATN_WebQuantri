@@ -61,7 +61,6 @@ const adminShiperRouter = require("./src/routers/adminShiperRouter");
 const chatRoutes = require("./src/routers/chatRoutes.js");
 const chatSocketHandler = require("./src/sockets/chatSocket");
 const { chatNamespace } = chatSocketHandler(io);
-const notificationRouter = require('./src/routers/notificationRoutes');
 // ====== Kiểm tra biến môi trường bắt buộc ======
 if (!process.env.JWT_SECRET) {
   console.error("❌ Lỗi: JWT_SECRET không được định nghĩa trong file .env");
@@ -96,7 +95,6 @@ app.use("/api/shipers", shiperRouter);
 app.use("/api/admin/shipers", adminShiperRouter);
 app.use("/api/vouchers", voucherRouter);
 // app.use("/api/uploads", uploadRouter);
-
 app.use("/api/category-types", categoryTypeRouter);
 app.use("/api/notifications", notificationRouter);
 app.use("/api/addresses", addressRouter);
