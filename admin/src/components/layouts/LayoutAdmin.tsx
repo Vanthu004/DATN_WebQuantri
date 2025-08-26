@@ -17,6 +17,7 @@ import { BiSolidCommentDetail } from 'react-icons/bi';
 import { BsChatDots } from 'react-icons/bs';
 import '../../css/layouts/layoutAdmin.css';
 import '../../css/notify/orderToast.css';
+
 import logo from '../../assets/LogoSwear.png';
 import { useOrderNotify } from '../../contexts/OrderNotifyContext';
 import { useOrderNotification } from '../../hooks/useOrderNotification';
@@ -62,12 +63,6 @@ const LayoutAdmin = () => {
       icon: <FaChartBar />,
       label: 'Thống kê',
       roles: ['admin', 'staff'],
-    },
-    {
-      path: '/inventory',
-      icon: <FaWarehouse />,
-      label: 'Kho hàng',
-      roles: ['admin'],
     },
     {
       path: '/notify',
@@ -193,6 +188,7 @@ const LayoutAdmin = () => {
                     {item.icon}
                     <span>{item.label}</span>
                     {item.path === '/notify' && newOrderCount > 0 && (
+
                       <span className="menu-dot"></span>
                     )}
                     {item.path === '/chat' && false && (

@@ -50,7 +50,6 @@ const ListUser = () => {
       const token = localStorage.getItem("token") || "";
       if (!token) throw new Error("Không tìm thấy token đăng nhập");
 
-      
       const banData = {
         isBanned: true,
         bannedUntil: banDuration ? new Date(banDuration).toISOString() : null,
@@ -107,15 +106,15 @@ const ListUser = () => {
       <div className="user-list-header">
         <h2 className="user-list-title">Danh sách người dùng</h2>
         <div className="user-list-actions">
-          <button 
+          <button
             className="user-action-btn manage-roles"
-            onClick={() => navigate('/users/manage')}
+            onClick={() => navigate("/users/manage")}
           >
             👑 Quản lý quyền
           </button>
         </div>
       </div>
-      
+
       {/* Thống kê nhanh */}
      <div className="user-stats">
         <div className="stat-item">
@@ -123,11 +122,15 @@ const ListUser = () => {
           <span className="stat-label">Tổng người dùng</span>
         </div>
         <div className="stat-item">
-          <span className="stat-number">{users.filter(u => u.role === 'admin').length}</span>
+          <span className="stat-number">
+            {users.filter((u) => u.role === "admin").length}
+          </span>
           <span className="stat-label">Admin</span>
         </div>
         <div className="stat-item">
-          <span className="stat-number">{users.filter(u => u.role === 'user').length}</span>
+          <span className="stat-number">
+            {users.filter((u) => u.role === "user").length}
+          </span>
           <span className="stat-label">Khách hàng</span>
         </div>
         <div className="stat-item">
@@ -139,7 +142,7 @@ const ListUser = () => {
           <span className="stat-label">Bị khóa</span>
         </div>
       </div>
-      
+
       <div className="user-list-table-wrap">
         <table className="user-list-table">
           <thead>
