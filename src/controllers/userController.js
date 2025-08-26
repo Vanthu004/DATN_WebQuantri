@@ -284,7 +284,8 @@ exports.getSupabaseToken = async (req, res) => {
     res.status(500).json({ message: 'Lỗi server', error: error.message });
   }
 };
-// Lấy tất cả users (bao gồm bị ban)
+
+// Lấy tất cả users 
 exports.getAllUsers = async (req, res) => {
   try {
     let users = await User.find({})
@@ -692,6 +693,7 @@ exports.login = async (req, res) => {
       { userId: user._id.toString(), role: user.role },
       process.env.JWT_SECRET,
       { expiresIn: process.env.JWT_EXPIRES_IN || "30d" }
+
     );
 
     res.status(200).json({
@@ -956,7 +958,6 @@ exports.getTopCustomers = async (req, res) => {
     });
   }
 };
-// Lấy tất cả người dùng có role = "user"
 exports.getAllUsersByRole = async (req, res) => {
   try {
     let users = await User.find({ role: "user" })

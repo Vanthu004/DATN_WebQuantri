@@ -1,4 +1,3 @@
-// admin/src/configs/api.tsx
 import axios from 'axios';
 import { toast } from 'react-toastify';
 import { logoutGlobal } from '../contexts/AuthContext';

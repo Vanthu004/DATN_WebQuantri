@@ -1,3 +1,4 @@
+
 // admin/src/components/layouts/LayoutAdmin.tsx
 import { Link, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useEffect } from 'react';
@@ -14,7 +15,6 @@ import { MdOutlineNotificationsActive } from 'react-icons/md';
 import { RiDiscountPercentFill } from 'react-icons/ri';
 import { BiSolidCommentDetail } from 'react-icons/bi';
 import { BsChatDots } from 'react-icons/bs';
-import { AiFillSetting } from 'react-icons/ai';
 import '../../css/layouts/layoutAdmin.css';
 import '../../css/notify/orderToast.css';
 import logo from '../../assets/LogoSwear.png';
@@ -50,6 +50,7 @@ const LayoutAdmin = () => {
     setShowToast(false);
   };
 
+  // Check if chat menu item should have notification badge
   const getChatPath = () => {
     const chatPaths = ['/chat', '/chat/dashboard', '/chat/rooms'];
     return chatPaths.includes(location.pathname) || location.pathname.startsWith('/chat/room/');
@@ -129,12 +130,6 @@ const LayoutAdmin = () => {
       roles: ['admin', 'staff'],
     },
     {
-      path: '/setting',
-      icon: <AiFillSetting />,
-      label: 'Cài đặt',
-      roles: ['admin', 'staff'],
-    },
-    {
       path: '/guides',
       icon: <FaBook />,
       label: 'Hướng dẫn sử dụng',
@@ -175,7 +170,10 @@ const LayoutAdmin = () => {
           </button>
         </div>
       </header>
+
+
       <div className="layout-body">
+        {/* Sidebar */}
         <aside className="sidebar">
           <div className="sidebar-account-section">
             <span className="account-title">Tài khoản</span>
