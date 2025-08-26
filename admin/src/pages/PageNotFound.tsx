@@ -10,12 +10,13 @@ const PageNotFound = () => {
         Không tìm thấy trang bạn yêu cầu. Vui lòng kiểm tra lại đường dẫn hoặc
         quay lại trang chính.
       </p>
-      <button
-        onClick={() => navigate("/")}
-        className="px-6 py-2 bg-[#0b08ab] text-white rounded-md hover:bg-[#0906a0] transition-colors"
-      >
-        Quay trở lại trang chủ
-      </button>
+      <button 
+  onClick={() => navigate("/")}
+  className="px-6 py-2 bg-[#007bff] text-white rounded-md transition-colors hover:bg-[#0056b3]"
+>
+  Quay trở lại trang chủ
+</button>
+
     </div>
   );
 };

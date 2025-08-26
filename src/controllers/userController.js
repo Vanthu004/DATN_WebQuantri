@@ -284,6 +284,7 @@ exports.getSupabaseToken = async (req, res) => {
     res.status(500).json({ message: 'Lỗi server', error: error.message });
   }
 };
+
 // Lấy tất cả users 
 exports.getAllUsers = async (req, res) => {
   try {
@@ -973,4 +974,3 @@ exports.getAllUsersByRole = async (req, res) => {
     res.status(500).json({ message: "Lỗi server", error: error.message });
   }
 };
-
