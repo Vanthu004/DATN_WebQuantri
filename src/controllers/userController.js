@@ -285,7 +285,7 @@ exports.getSupabaseToken = async (req, res) => {
   }
 };
 
-// Lấy tất cả users 
+// Lấy tất cả users (bao gồm bị ban)
 exports.getAllUsers = async (req, res) => {
   try {
     let users = await User.find({})

@@ -9,14 +9,15 @@ import {
   FaShoppingCart,
   FaBook,
   FaChartBar,
-  FaWarehouse,
+  FaThemeco,
 } from 'react-icons/fa';
-import { MdOutlineNotificationsActive } from 'react-icons/md';
+import { MdFormatSize, MdOutlineNotificationsActive } from 'react-icons/md';
 import { RiDiscountPercentFill } from 'react-icons/ri';
-import { BiSolidCommentDetail } from 'react-icons/bi';
+import { BiCategory, BiSolidCommentDetail } from 'react-icons/bi';
 import { BsChatDots } from 'react-icons/bs';
 import '../../css/layouts/layoutAdmin.css';
 import '../../css/notify/orderToast.css';
+
 import logo from '../../assets/LogoSwear.png';
 import { useOrderNotify } from '../../contexts/OrderNotifyContext';
 import { useOrderNotification } from '../../hooks/useOrderNotification';
@@ -64,12 +65,6 @@ const LayoutAdmin = () => {
       roles: ['admin', 'staff'],
     },
     {
-      path: '/inventory',
-      icon: <FaWarehouse />,
-      label: 'Kho hàng',
-      roles: ['admin'],
-    },
-    {
       path: '/notify',
       icon: <MdOutlineNotificationsActive />,
       label: 'Thông báo',
@@ -89,19 +84,19 @@ const LayoutAdmin = () => {
     },
     {
       path: '/categories',
-      icon: <FaList />,
+      icon: <BiCategory />,
       label: 'Danh mục',
       roles: ['admin'],
     },
     {
       path: '/sizes',
-      icon: <FaList />,
+      icon: <MdFormatSize />,
       label: 'Kích thước',
       roles: ['admin'],
     },
     {
       path: '/colors',
-      icon: <FaList />,
+      icon: <FaThemeco />,
       label: 'Màu sắc',
       roles: ['admin'],
     },
@@ -193,6 +188,7 @@ const LayoutAdmin = () => {
                     {item.icon}
                     <span>{item.label}</span>
                     {item.path === '/notify' && newOrderCount > 0 && (
+
                       <span className="menu-dot"></span>
                     )}
                     {item.path === '/chat' && false && (
