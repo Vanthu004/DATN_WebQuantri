@@ -3,7 +3,7 @@ import axios from "axios";
 
 interface Reply {
   _id: string;
-  user_id?: { _id: string; name: string };
+  user_id?: { _id: string; name: string; avata_url?: string };
   comment: string;
   create_date: string;
 }
@@ -60,12 +60,10 @@ const Comments: React.FC = () => {
   const handleReplySubmit = async (parentId: string) => {
     if (!replyContent.trim()) return alert("Vui lòng nhập nội dung trả lời");
 
-      console.log("Bắt đầu gửi reply...");
-
     try {
       const payload = {
         comment: replyContent,
-        user_id: "6887346a1e06c46166009644", // ✅ ID admin của bạn
+        user_id: "68a9cf21bc2c283176467229", // ✅ ID admin mới
       };
 
       const res = await axios.post(
@@ -147,8 +145,31 @@ const Comments: React.FC = () => {
                     {r.replies?.length ? (
                       <ul style={{ marginTop: 5 }}>
                         {r.replies.map((rep) => (
-                          <li key={rep._id}>
-                            <b>{rep.user_id?.name || "Ẩn danh"}:</b> {rep.comment}
+                          <li
+                            key={rep._id}
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "8px",
+                              marginTop: "4px",
+                            }}
+                          >
+                            <img
+                              src={
+                                rep.user_id?.avata_url ||
+                                "https://cdn-icons-png.flaticon.com/512/149/149071.png"
+                              }
+                              alt="avatar"
+                              style={{
+                                width: 30,
+                                height: 30,
+                                borderRadius: "50%",
+                              }}
+                            />
+                            <span>
+                              <b>{rep.user_id?.name || "Ẩn danh"}:</b>{" "}
+                              {rep.comment}
+                            </span>
                           </li>
                         ))}
                       </ul>
