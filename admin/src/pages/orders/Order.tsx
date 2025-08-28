@@ -34,7 +34,7 @@ const shippingStatusOptions = [
 const validTransitions: Record<string, string[]> = {
   "Chờ xử lý": ["Đã xác nhận", "Đã hủy"],
   "Đã xác nhận": ["Đang vận chuyển", "Đã hủy"],
-  "Đang vận chuyển": ["Đã giao hàng", "Đã hủy"],
+  "Đang vận chuyển": ["Đã hủy"], // Không cho phép admin chuyển sang "Đã giao hàng"
   "Đã giao hàng": ["Hoàn thành", "Đã hủy"],
   "Hoàn thành": [],
   "Đã hủy": [],
@@ -216,6 +216,15 @@ const OrderPage = () => {
         <h2>Danh sách đơn hàng</h2>
         <div className="order-stats">
           <span>Tổng cộng: {totalOrders} đơn hàng</span>
+        </div>
+      </div>
+      
+      {/* Thông báo về quy tắc cập nhật trạng thái */}
+      <div className="order-notice">
+        <div className="notice-content">
+          <strong>📋 Lưu ý:</strong> 
+          Đơn hàng có trạng thái "Đang vận chuyển" sẽ được tự động chuyển sang "Đã giao hàng" sau 24 giờ 
+          hoặc khi khách hàng xác nhận đã nhận hàng qua ứng dụng. Admin không thể thay đổi trạng thái này.
         </div>
       </div>
 

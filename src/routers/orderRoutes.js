@@ -34,4 +34,18 @@ router.post("/update-payment-status", orderCtrl.updatePaymentStatusForOnlinePaym
 // API cập nhật trạng thái thanh toán cho đơn hàng COD
 router.put("/:order_id/update-cod-payment", orderCtrl.updatePaymentStatusForCOD);
 
+// API để người dùng xác nhận đã nhận hàng
+router.put("/:order_id/confirm-received", orderCtrl.confirmOrderReceived);
+
+// Test endpoint để debug
+router.get("/test-confirm/:order_id", (req, res) => {
+  res.json({
+    success: true,
+    msg: "Test endpoint working",
+    order_id: req.params.order_id,
+    method: req.method,
+    url: req.url
+  });
+});
+
 module.exports = router;

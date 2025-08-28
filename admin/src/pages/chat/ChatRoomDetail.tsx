@@ -263,14 +263,14 @@ const ChatRoomDetail: React.FC = () => {
                 </select>
               </div>
 
-              {user?.role === 'admin' && (
+              {/* {user?.role === 'admin' && (
                 <button 
                   onClick={() => setShowAssignModal(true)}
                   className="btn btn-outline"
                 >
                   Gán Nhân viên
                 </button>
-              )}
+              )} */}
             </div>
           </div>
 

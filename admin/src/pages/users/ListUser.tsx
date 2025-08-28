@@ -23,7 +23,7 @@ const ListUser = () => {
       const res = await api.get("/users?_=" + new Date().getTime(), {
         headers: { Authorization: `Bearer ${token}` },
       });
-      console.log("API response:", res.data); // Debug
+      // console.log("API response:", res.data); // Debug
       setUsers(res.data as User[]);
     } catch (err) {
       if (err instanceof Error) {
@@ -107,12 +107,12 @@ const ListUser = () => {
       <div className="user-list-header">
         <h2 className="user-list-title">Danh sách người dùng</h2>
         <div className="user-list-actions">
-          <button 
+          {/* <button 
             className="user-action-btn manage-roles"
             onClick={() => navigate('/users/manage')}
           >
             👑 Quản lý quyền
-          </button>
+          </button> */}
         </div>
       </div>
       
@@ -130,10 +130,10 @@ const ListUser = () => {
           <span className="stat-number">{users.filter(u => u.role === 'user').length}</span>
           <span className="stat-label">Khách hàng</span>
         </div>
-        <div className="stat-item">
+        {/* <div className="stat-item">
           <span className="stat-number">{users.filter(u => u.role === 'staff').length}</span>
           <span className="stat-label">Nhân viên</span>
-        </div>
+        </div> */}
         <div className="stat-item">
           <span className="stat-number">{users.filter(u => u.ban?.isBanned).length}</span>
           <span className="stat-label">Bị khóa</span>

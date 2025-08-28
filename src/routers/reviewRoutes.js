@@ -7,9 +7,6 @@ const reviewController = require("../controllers/reviewController");
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
-// ============================
-// Review chính
-// ============================
 
 // Tạo review mới (hỗ trợ nhiều ảnh: field "images" và tương thích "image")
 router.post("/", upload.fields([{ name: "images", maxCount: 10 }, { name: "image", maxCount: 1 }]), reviewController.createReview);
@@ -23,6 +20,9 @@ router.get("/product/:id", reviewController.getReviewsByProductId);
 // Lấy review theo user_id
 router.get("/user/:user_id", reviewController.getReviewsByUserId);
 
+// Lấy review theo order_id
+router.get("/order/:orderCode", reviewController.getReviewsByOrderId);
+
 // Lấy review theo id
 router.get("/:id", reviewController.getReviewById);
 
@@ -31,10 +31,6 @@ router.put("/:id", reviewController.updateReview);
 
 // Xóa review
 router.delete("/:id", reviewController.deleteReview);
-
-// ============================
-// Reply cho review
-// ============================
 
 // Thêm reply cho review (đổi thành /reply cho đồng nhất với FE)
 router.post("/:id/reply", reviewController.addReply);

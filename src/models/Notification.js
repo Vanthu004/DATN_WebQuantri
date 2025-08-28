@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 
 const notificationSchema = new mongoose.Schema({
-  notication_id: {
+  notification_id: {
     type: String,
     unique: true,
     default: () => 'NOTI-' + Math.random().toString(36).substring(2, 10).toUpperCase()

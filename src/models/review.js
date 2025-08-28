@@ -11,8 +11,10 @@ const replySchema = new Schema({
 const reviewSchema = new Schema({
   user_id: { type: Schema.Types.ObjectId, ref: "User", required: true },
   product_id: { type: Schema.Types.ObjectId, ref: "Product", required: true },
+  product_variant_id: { type: Schema.Types.ObjectId, ref: "ProductVariant" }, // ✅ Thêm field này
+  order_id: { type: String, required: true }, // ✅ Bắt buộc phải có order_id
   rating: { type: Number, required: true, min: 1, max: 5 },
-  comment: { type: String },
+  comment: { type: String, required: true },
   image_urls: [{ type: String }],
   create_date: { type: Date, default: Date.now },
   replies: [replySchema] // ✅ thêm mảng replies

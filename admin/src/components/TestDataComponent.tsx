@@ -30,7 +30,7 @@ export const TestDataComponent: React.FC = () => {
       setError(null);
       
       const response = await api.get<ApiResponse<TestData>>("/sales-statistics/test");
-      console.log("Test API response:", response.data);
+      // console.log("Test API response:", response.data);
       
       if (response.data.success) {
         setData(response.data.data);

@@ -28,6 +28,25 @@
   font-size: 0.9rem;
 }
 
+/* Order Notice Styles */
+.order-notice {
+  margin-bottom: 20px;
+}
+
+.notice-content {
+  padding: 15px 20px;
+  background: #e3f2fd;
+  border: 1px solid #2196f3;
+  border-radius: 8px;
+  color: #1565c0;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.notice-content strong {
+  color: #0d47a1;
+}
+
 /* Filter Section */
 .filter-section {
   display: flex;

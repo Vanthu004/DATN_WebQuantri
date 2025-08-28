@@ -36,22 +36,28 @@ async function uploadToS3(file) {
   }
 }
 
-// ✅ Tạo review mới
+// ✅ Tạo review mới - Mỗi order là một lần mua hàng riêng biệt
 exports.createReview = async (req, res) => {
   try {
-    const { user_id, product_id, rating, comment } = req.body;
+    const { user_id, product_id, product_variant_id, order_id, rating, comment, upload_ids } = req.body;
 
     if (!ObjectId.isValid(user_id) || !ObjectId.isValid(product_id)) {
       return res.status(400).json({ message: "user_id hoặc product_id không hợp lệ" });
     }
 
-    const existing = await Review.findOne({
-      user_id: new ObjectId(user_id),
-      product_id: new ObjectId(product_id),
+    // ✅ Bắt buộc phải có order_id
+    if (!order_id) {
+      return res.status(400).json({ message: "order_id là bắt buộc" });
+    }
+
+    // ✅ Kiểm tra xem order này đã được đánh giá chưa (thay vì kiểm tra user + product)
+    const existingReview = await Review.findOne({
+      order_id: order_id,
+      product_id: new ObjectId(product_id)
     });
 
-    if (existing) {
-      return res.status(400).json({ message: "Bạn đã đánh giá sản phẩm này rồi." });
+    if (existingReview) {
+      return res.status(400).json({ message: "Đơn hàng này đã được đánh giá rồi." });
     }
 
     // Validate rating range (1-5)
@@ -60,21 +66,17 @@ exports.createReview = async (req, res) => {
       return res.status(400).json({ message: "rating phải từ 1 đến 5" });
     }
 
-    // Xử lý upload ảnh giống như sản phẩm - sử dụng AWS S3
+    // Xử lý upload ảnh
     const imageUrls = [];
-    if (req.body.image_urls && Array.isArray(req.body.image_urls)) {
-      // Nếu đã có URLs từ S3 upload
-      imageUrls.push(...req.body.image_urls);
+    if (upload_ids && Array.isArray(upload_ids)) {
+      // ✅ Nếu có upload_ids từ frontend
+      imageUrls.push(...upload_ids);
     } else if (req.files && req.files.images && Array.isArray(req.files.images)) {
       // Upload nhiều ảnh lên S3
       for (const file of req.files.images) {
         const uploadedUrl = await uploadToS3(file);
         imageUrls.push(uploadedUrl);
       }
-    } else if (req.files && req.files.image && Array.isArray(req.files.image) && req.files.image.length > 0) {
-      // Upload một ảnh lên S3
-      const uploadedUrl = await uploadToS3(req.files.image[0]);
-      imageUrls.push(uploadedUrl);
     } else if (req.file) {
       // Upload một ảnh lên S3
       const uploadedUrl = await uploadToS3(req.file);
@@ -84,6 +86,8 @@ exports.createReview = async (req, res) => {
     const review = new Review({
       user_id: new ObjectId(user_id),
       product_id: new ObjectId(product_id),
+      product_variant_id: product_variant_id ? new ObjectId(product_variant_id) : null, // ✅ Thêm field này
+      order_id: order_id, // ✅ Sử dụng order_id từ request
       rating: numericRating,
       comment,
       image_urls: imageUrls,
@@ -93,9 +97,10 @@ exports.createReview = async (req, res) => {
     const savedReview = await review.save();
 
     const populatedReview = await Review.findById(savedReview._id)
-      .populate({ path: "user_id", select: "name avata_url role" })
+      .populate({ path: "user_id", select: "name avatar_url role" })
       .populate({ path: "product_id", select: "name image_url" })
-      .populate({ path: "replies.user_id", select: "name avata_url role" });
+      .populate({ path: "product_variant_id", select: "size color" }) // ✅ Populate variant
+      .populate({ path: "replies.user_id", select: "name avatar_url role" });
 
     res.status(201).json(populatedReview);
   } catch (error) {
@@ -118,9 +123,10 @@ exports.getReviews = async (req, res) => {
 
     const reviews = await Review.find(filter)
       .sort({ create_date: -1 })
-      .populate({ path: "user_id", select: "name avata_url role" })
+      .populate({ path: "user_id", select: "name avatar_url role" })
       .populate({ path: "product_id", select: "name image_url" })
-      .populate({ path: "replies.user_id", select: "name avata_url role" });
+      .populate({ path: "product_variant_id", select: "size color" })
+      .populate({ path: "replies.user_id", select: "name avatar_url role" });
 
     res.status(200).json(reviews);
   } catch (error) {
@@ -139,9 +145,10 @@ exports.getReviewById = async (req, res) => {
     }
 
     const review = await Review.findById(id)
-      .populate({ path: "user_id", select: "name avata_url role" })
+      .populate({ path: "user_id", select: "name avatar_url role" })
       .populate({ path: "product_id", select: "name image_url" })
-      .populate({ path: "replies.user_id", select: "name avata_url role" });
+      .populate({ path: "product_variant_id", select: "size color" })
+      .populate({ path: "replies.user_id", select: "name avatar_url role" });
 
     if (!review) {
       return res.status(404).json({ message: "Review không tồn tại" });
@@ -164,9 +171,10 @@ exports.getReviewsByUserId = async (req, res) => {
 
     const reviews = await Review.find({ user_id: new ObjectId(user_id) })
       .sort({ create_date: -1 })
-      .populate({ path: "user_id", select: "name avata_url role" })
+      .populate({ path: "user_id", select: "name avatar_url role" })
       .populate({ path: "product_id", select: "name image_url" })
-      .populate({ path: "replies.user_id", select: "name avata_url role" });
+      .populate({ path: "product_variant_id", select: "size color" })
+      .populate({ path: "replies.user_id", select: "name avatar_url role" });
 
     res.status(200).json(reviews);
   } catch (error) {
@@ -186,9 +194,10 @@ exports.getReviewsByProductId = async (req, res) => {
 
     const reviews = await Review.find({ product_id: new ObjectId(id) })
       .sort({ create_date: -1 })
-      .populate({ path: "user_id", select: "name avata_url role" })
+      .populate({ path: "user_id", select: "name avatar_url role" })
       .populate({ path: "product_id", select: "name image_url" })
-      .populate({ path: "replies.user_id", select: "name avata_url role" });
+      .populate({ path: "product_variant_id", select: "size color" })
+      .populate({ path: "replies.user_id", select: "name avatar_url role" });
 
     res.status(200).json(reviews);
   } catch (error) {
@@ -197,30 +206,68 @@ exports.getReviewsByProductId = async (req, res) => {
   }
 };
 
-// ✅ Cập nhật review
+// ✅ Lấy tất cả review theo order_id
+exports.getReviewsByOrderId = async (req, res) => {
+  try {
+    const { orderCode } = req.params;
+
+    if (!orderCode) {
+      return res.status(400).json({ message: "orderCode không được để trống" });
+    }
+
+    const reviews = await Review.find({ order_id: orderCode })
+      .sort({ create_date: -1 })
+      .populate({ path: "user_id", select: "name avatar_url role" })
+      .populate({ path: "product_id", select: "name image_url" })
+      .populate({ path: "product_variant_id", select: "size color" }) // ✅ Thêm populate variant
+      .populate({ path: "replies.user_id", select: "name avatar_url role" });
+
+    res.status(200).json(reviews);
+  } catch (error) {
+    console.error("Lỗi khi lấy review theo order_id:", error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// ✅ Cập nhật review - Cho phép cập nhật rating, comment và ảnh
 exports.updateReview = async (req, res) => {
   try {
     const { id } = req.params;
-    const { rating, comment } = req.body;
+    const { rating, comment, upload_ids } = req.body;
 
     if (!ObjectId.isValid(id)) {
       return res.status(400).json({ message: "ID không hợp lệ" });
     }
 
-    const updated = await Review.findByIdAndUpdate(
-      id,
-      { rating, comment, create_date: new Date() },
-      { new: true, runValidators: true }
-    );
-
-    if (!updated) {
+    // ✅ Kiểm tra review có tồn tại không
+    const existingReview = await Review.findById(id);
+    if (!existingReview) {
       return res.status(404).json({ message: "Review không tồn tại" });
     }
 
+    // ✅ Cập nhật các field
+    const updateData = {
+      rating: Number(rating),
+      comment,
+      create_date: new Date()
+    };
+
+    // ✅ Cập nhật ảnh nếu có
+    if (upload_ids && Array.isArray(upload_ids)) {
+      updateData.image_urls = upload_ids;
+    }
+
+    const updated = await Review.findByIdAndUpdate(
+      id,
+      updateData,
+      { new: true, runValidators: true }
+    );
+
     const populatedReview = await Review.findById(updated._id)
-      .populate({ path: "user_id", select: "name avata_url role" })
+      .populate({ path: "user_id", select: "name avatar_url role" })
       .populate({ path: "product_id", select: "name image_url" })
-      .populate({ path: "replies.user_id", select: "name avata_url role" });
+      .populate({ path: "product_variant_id", select: "size color" })
+      .populate({ path: "replies.user_id", select: "name avatar_url role" });
 
     res.status(200).json(populatedReview);
   } catch (error) {
@@ -259,17 +306,16 @@ exports.addReply = async (req, res) => {
       return res.status(400).json({ message: "ID review không hợp lệ" });
     }
 
-    // 🔹 Nếu không gửi user_id thì dùng admin
-    if (!user_id) {
-      const adminUser = await User.findOne({ role: "admin" });
-      if (!adminUser) {
-        return res.status(404).json({ message: "Không tìm thấy admin" });
-      }
-      user_id = adminUser._id;
+    // 🔹 Xác định người trả lời: ưu tiên user_id hợp lệ, fallback admin
+    let replyUser = null;
+    if (user_id && mongoose.Types.ObjectId.isValid(user_id)) {
+      replyUser = await User.findById(user_id);
     }
-
-    if (!mongoose.Types.ObjectId.isValid(user_id)) {
-      return res.status(400).json({ message: "user_id không hợp lệ" });
+    if (!replyUser) {
+      replyUser = await User.findOne({ role: "admin" });
+    }
+    if (!replyUser) {
+      return res.status(404).json({ message: "Không tìm thấy người dùng để gán cho phản hồi" });
     }
 
     const review = await Review.findById(id);
@@ -278,7 +324,7 @@ exports.addReply = async (req, res) => {
     }
 
     review.replies.push({
-      user_id: new mongoose.Types.ObjectId(user_id),
+      user_id: new mongoose.Types.ObjectId(replyUser._id),
       comment,
       create_date: new Date()
     });
@@ -286,9 +332,10 @@ exports.addReply = async (req, res) => {
     await review.save();
 
     const populatedReview = await Review.findById(id)
-      .populate({ path: "user_id", select: "name avata_url role" })
+      .populate({ path: "user_id", select: "name avatar_url role" })
       .populate({ path: "product_id", select: "name image_url" })
-      .populate({ path: "replies.user_id", select: "name avata_url role" });
+      .populate({ path: "product_variant_id", select: "size color" })
+      .populate({ path: "replies.user_id", select: "name avatar_url role" });
 
     res.status(200).json(populatedReview);
   } catch (error) {

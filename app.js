@@ -86,7 +86,6 @@ app.use("/api/admin/shipers", adminShiperRouter);
 app.use("/api/vouchers", voucherRouter);
 // app.use("/api/uploads", uploadRouter);
 app.use("/api/category-types", categoryTypeRouter);
-app.use("/api/notifications", notificationRouter);
 app.use("/api/addresses", addressRouter);
 app.use("/api/refund-requests", refundRoutes);
 app.use("/api", uploadRouter);
@@ -122,6 +121,15 @@ mongoose
       console.log("✅ Đã khởi động cron jobs thống kê doanh thu");
     } catch (error) {
       console.error("❌ Lỗi khởi động cron jobs:", error);
+    }
+
+    // Khởi động cron jobs cho tự động cập nhật trạng thái đơn hàng
+    try {
+      const { startOrderAutoDeliveryCronJobs } = require('./src/cron/orderAutoDeliveryCron');
+      startOrderAutoDeliveryCronJobs();
+      console.log("✅ Đã khởi động cron jobs tự động cập nhật trạng thái đơn hàng");
+    } catch (error) {
+      console.error("❌ Lỗi khởi động cron jobs tự động cập nhật đơn hàng:", error);
     }
   })
   .catch((err) => console.error("❌ Lỗi kết nối MongoDB:", err));

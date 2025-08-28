@@ -334,7 +334,7 @@ function isValidStatusTransition(current, next) {
   const transitions = {
     "Chờ xử lý": ["Đã xác nhận", "Đã hủy"],
     "Đã xác nhận": ["Đang vận chuyển", "Đã hủy"],
-    "Đang vận chuyển": ["Đã giao hàng", "Đã hủy"],
+    "Đang vận chuyển": ["Đã hủy"], // Không cho phép admin chuyển sang "Đã giao hàng"
     "Đã giao hàng": ["Hoàn thành", "Đã hủy"],
     "Hoàn thành": [],
     "Đã hủy": [],
@@ -824,5 +824,102 @@ exports.cancelOrder = async (req, res) => {
     res.json({ message: "Đã hủy đơn hàng thành công", order });
   } catch (error) {
     res.status(500).json({ message: "Lỗi server", error: error.message });
+  }
+};
+
+// API để người dùng xác nhận đã nhận hàng
+exports.confirmOrderReceived = async (req, res) => {
+  try {
+    const { order_id } = req.params;
+    const { user_id } = req.body; // user_id để xác thực người dùng
+    
+    console.log('🔍 Confirm order received - order_id:', order_id);
+    console.log('🔍 Confirm order received - user_id:', user_id);
+    console.log('🔍 Confirm order received - body:', req.body);
+    console.log('🔍 Confirm order received - params:', req.params);
+    console.log('🔍 Confirm order received - method:', req.method);
+    console.log('🔍 Confirm order received - url:', req.url);
+    
+    if (!order_id || !user_id) {
+      return res.status(400).json({
+        success: false,
+        msg: "Thiếu thông tin bắt buộc: order_id hoặc user_id",
+        received: { order_id, user_id, body: req.body, params: req.params }
+      });
+    }
+
+    const order = await Order.findById(order_id)
+      .populate("paymentmethod_id", "name code");
+
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        msg: "Không tìm thấy đơn hàng",
+        order_id: order_id
+      });
+    }
+
+    console.log('🔍 Order found - current status:', order.status);
+    console.log('🔍 Order found - user_id:', order.user_id);
+    console.log('🔍 Order found - payment method:', order.paymentmethod_id);
+
+    // Kiểm tra xem đơn hàng có thuộc về user này không
+    if (order.user_id.toString() !== user_id) {
+      return res.status(403).json({
+        success: false,
+        msg: "Bạn không có quyền xác nhận đơn hàng này",
+        order_user_id: order.user_id.toString(),
+        request_user_id: user_id
+      });
+    }
+
+    // Kiểm tra xem đơn hàng có đang ở trạng thái "Đang vận chuyển" không
+    if (order.status !== "Đang vận chuyển") {
+      return res.status(400).json({
+        success: false,
+        msg: `Chỉ có thể xác nhận đã nhận hàng khi đơn hàng đang vận chuyển. Trạng thái hiện tại: ${order.status}`,
+        current_status: order.status,
+        required_status: "Đang vận chuyển"
+      });
+    }
+
+    // Cập nhật trạng thái đơn hàng thành "Đã giao hàng"
+    const updateData = {
+      status: "Đã giao hàng",
+      delivered_at: new Date(),
+      shipping_status: "delivered"
+    };
+
+    // Nếu là COD, tự động cập nhật payment_status
+    if (order.paymentmethod_id && typeof order.paymentmethod_id === 'object' && 
+        order.paymentmethod_id.code?.toUpperCase() === 'COD') {
+      updateData.payment_status = "paid";
+      updateData.is_paid = true;
+    }
+
+    console.log('🔍 Updating order with data:', updateData);
+
+    const updatedOrder = await Order.findByIdAndUpdate(
+      order_id,
+      updateData,
+      { new: true }
+    ).populate("user_id", "name email phone_number")
+     .populate("shippingmethod_id", "name")
+     .populate("paymentmethod_id", "name code");
+
+    console.log('✅ Order updated successfully:', updatedOrder._id);
+
+    res.json({
+      success: true,
+      msg: "Xác nhận đã nhận hàng thành công",
+      data: updatedOrder
+    });
+  } catch (error) {
+    console.error("❌ Lỗi xác nhận đã nhận hàng:", error);
+    res.status(500).json({
+      success: false,
+      error: "Lỗi server khi xác nhận đã nhận hàng",
+      details: error.message
+    });
   }
 };
