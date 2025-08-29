@@ -14,7 +14,13 @@ const paymentMethodSchema = new mongoose.Schema({
     type: String,
     enum: ["active", "inactive"],
     default: "active"
+  },
+  code: {
+    type: String,
+    required: true,
+    trim: true,
+    unique: true
   }
 }, { timestamps: true });
 
-module.exports = mongoose.model("PaymentMethod", paymentMethodSchema);
+module.exports = mongoose.model("PaymentMethod", paymentMethodSchema); 

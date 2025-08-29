@@ -1,16 +1,33 @@
 .user-list-container {
   max-width: 900px;
+  max-height: 160rem;
   margin: 40px auto;
   background: #fff;
   border-radius: 10px;
   box-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.07);
   padding: 32px 24px;
 }
+
+.user-list-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
 .user-list-title {
-  text-align: center;
   font-size: 2rem;
   font-weight: bold;
-  margin-bottom: 24px;
+  margin: 0;
+  color: #1f2937;
+}
+
+.user-list-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 .user-list-table-wrap {
   overflow-x: auto;
@@ -74,9 +91,212 @@
 .user-action-btn.unblock:hover {
   background: #6ee7b7;
 }
+
+.user-action-btn.manage-roles {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.user-action-btn.manage-roles:hover {
+  background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.user-action-btn.manage-roles:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .user-list-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  
+  .user-list-title {
+    font-size: 1.5rem;
+  }
+  
+  .user-list-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+  
+  .user-action-btn.manage-roles {
+    width: 100%;
+    text-align: center;
+  }
+}
+
+/* User Stats */
+.user-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+  padding: 20px;
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 16px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  transition: transform 0.2s ease;
+}
+
+.stat-item:hover {
+  transform: translateY(-2px);
+}
+
+.stat-number {
+  font-size: 2rem;
+  font-weight: bold;
+  color: #1f2937;
+  margin-bottom: 4px;
+}
+
+.stat-label {
+  font-size: 0.875rem;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+@media (max-width: 768px) {
+  .user-stats {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    padding: 16px;
+  }
+  
+  .stat-item {
+    padding: 12px;
+  }
+  
+  .stat-number {
+    font-size: 1.5rem;
+  }
+  
+  .stat-label {
+    font-size: 0.75rem;
+  }
+}
 .user-list-loading {
   text-align: center;
   color: #2563eb;
   font-weight: 500;
   margin-top: 16px;
+}
+.user-list-container {
+  padding: 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.user-list-title {
+  font-size: 1.8rem;
+  font-weight: bold;
+  color: #1f2937;
+  margin-bottom: 16px;
+}
+
+.user-list-table-wrap {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  overflow-x: auto;
+}
+
+.user-list-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.user-list-table th,
+.user-list-table td {
+  padding: 12px;
+  text-align: left;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.user-list-table th {
+  background: #f3f4f6;
+  font-weight: 600;
+  color: #374151;
+}
+
+.user-row:hover {
+  background: #f9fafb;
+}
+
+.user-badge {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.875rem;
+}
+
+.user-badge.active {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.user-badge.blocked {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.user-action-btn {
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.user-action-btn.block {
+  background: #ef4444;
+  color: #fff;
+}
+
+.user-action-btn.block:hover {
+  background: #dc2626;
+}
+
+.user-action-btn.unblock {
+  background: #10b981;
+  color: #fff;
+}
+
+.user-action-btn.unblock:hover {
+  background: #059669;
+}
+
+.user-action-btn:disabled {
+  background: #d1d5db;
+  cursor: not-allowed;
+}
+
+.user-list-loading {
+  text-align: center;
+  padding: 16px;
+  color: #6b7280;
 }

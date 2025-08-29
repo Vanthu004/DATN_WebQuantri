@@ -1,0 +1,536 @@
+/* Order Detail Page Styles */
+
+.order-detail-page {
+  padding: 24px;
+  background: #f8f9fa;
+  min-height: 100vh;
+}
+
+.order-detail-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+  background: #fff;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.btn-back {
+  padding: 8px 16px;
+  background: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 0.9rem;
+  color: #495057;
+}
+
+.btn-back:hover {
+  background: #e9ecef;
+  border-color: #adb5bd;
+}
+
+.order-detail-header h2 {
+  margin: 0;
+  color: #2d3a4b;
+  font-size: 1.75rem;
+  font-weight: 600;
+}
+
+/* Order Info Section */
+.order-info-section {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  margin-bottom: 24px;
+  overflow: hidden;
+}
+
+.order-info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
+  padding: 24px;
+}
+
+.info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.info-item.full-width {
+  grid-column: 1 / -1;
+}
+
+.info-row {
+  display: flex;
+  gap: 20px;
+  grid-column: 1 / -1;
+}
+
+.info-row .info-item {
+  flex: 1;
+  min-width: 0;
+}
+
+.info-item label {
+  font-weight: 600;
+  color: #495057;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.info-item span {
+  color: #212529;
+  font-size: 1rem;
+}
+
+/* Status Badges */
+.status-badge {
+  display: inline-block;
+  padding: 6px 12px;
+  border-radius: 16px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  text-align: center;
+  min-width: 100px;
+}
+
+/* Order Status Colors */
+.status-pending {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.status-confirmed {
+  background: #d1ecf1;
+  color: #0c5460;
+}
+
+.status-shipping {
+  background: #d4edda;
+  color: #155724;
+}
+
+.status-delivered {
+  background: #cce5ff;
+  color: #004085;
+}
+
+.status-completed {
+  background: #d1e7dd;
+  color: #0f5132;
+}
+
+.status-cancelled {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+.status-default {
+  background: #f8f9fa;
+  color: #6c757d;
+}
+
+/* Payment Status Colors */
+.payment-pending {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.payment-paid {
+  background: #d1e7dd;
+  color: #0f5132;
+}
+
+.payment-failed {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+.payment-refunded {
+  background: #e2e3e5;
+  color: #383d41;
+}
+
+.payment-default {
+  background: #f8f9fa;
+  color: #6c757d;
+}
+
+/* Shipping Status Colors */
+.shipping-pending {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.shipping-shipped {
+  background: #d4edda;
+  color: #155724;
+}
+
+.shipping-delivered {
+  background: #cce5ff;
+  color: #004085;
+}
+
+.shipping-returned {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+.shipping-default {
+  background: #f8f9fa;
+  color: #6c757d;
+}
+
+/* Shipping Method Styles */
+.shipping-method {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.shipping-speed {
+  font-size: 0.85rem;
+  color: #007bff;
+  font-weight: 500;
+  background: #e7f3ff;
+  padding: 2px 8px;
+  border-radius: 12px;
+  display: inline-block;
+  margin-top: 4px;
+}
+
+/* Voucher Styles */
+.voucher-display {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.voucher-title {
+  font-weight: 600;
+  color: #28a745;
+  background: #d1e7dd;
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  display: inline-block;
+  width: fit-content;
+}
+
+.voucher-discount {
+  font-size: 0.85rem;
+  color: #dc3545;
+  font-weight: 500;
+  background: #f8d7da;
+  padding: 4px 8px;
+  border-radius: 6px;
+  display: inline-block;
+  width: fit-content;
+}
+
+/* Order Details Section */
+.order-details-section {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+}
+
+.order-details-section h3 {
+  margin: 0;
+  padding: 20px 24px;
+  background: #f8f9fa;
+  color: #2d3a4b;
+  font-size: 1.25rem;
+  font-weight: 600;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.no-items {
+  padding: 40px;
+  text-align: center;
+  color: #6c757d;
+}
+
+.no-items p {
+  margin: 0;
+  font-size: 1rem;
+  font-style: italic;
+}
+
+/* Order Items */
+.order-items {
+  padding: 0;
+}
+
+.order-item {
+  display: grid;
+  grid-template-columns: 80px 1fr auto auto auto auto;
+  gap: 16px;
+  align-items: center;
+  padding: 20px 24px;
+  border-bottom: 1px solid #f1f3f4;
+  transition: background-color 0.2s;
+}
+
+.order-item:hover {
+  background: #f8f9fa;
+}
+
+.order-item:last-child {
+  border-bottom: none;
+}
+
+/* Item Image */
+.item-image {
+  width: 80px;
+  height: 80px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #f8f9fa;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.item-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Item Info */
+.item-info {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.item-name {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #2d3a4b;
+  line-height: 1.4;
+}
+
+.item-variant {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+}
+
+.variant-label {
+  color: #6c757d;
+  font-weight: 500;
+}
+
+.variant-value {
+  color: #007bff;
+  font-weight: 500;
+  background: #e7f3ff;
+  padding: 2px 8px;
+  border-radius: 12px;
+}
+
+.item-sku {
+  font-size: 0.8rem;
+  color: #6c757d;
+  font-family: 'Courier New', monospace;
+}
+
+/* Item Price, Quantity, Total */
+.item-price,
+.item-quantity,
+.item-total {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  text-align: center;
+  min-width: 100px;
+}
+
+.price-label,
+.quantity-label,
+.total-label {
+  font-size: 0.8rem;
+  color: #6c757d;
+  font-weight: 500;
+}
+
+.price-value {
+  font-size: 0.95rem;
+  color: #495057;
+  font-weight: 500;
+}
+
+.quantity-value {
+  font-size: 1rem;
+  color: #2d3a4b;
+  font-weight: 600;
+}
+
+.total-value {
+  font-size: 1rem;
+  color: #28a745;
+  font-weight: 600;
+}
+
+/* Item Actions */
+.item-actions {
+  display: flex;
+  justify-content: center;
+}
+
+.btn-delete {
+  padding: 6px 12px;
+  background: #dc3545;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: background-color 0.2s;
+}
+
+.btn-delete:hover:not(:disabled) {
+  background: #c82333;
+}
+
+.btn-delete:disabled {
+  background: #6c757d;
+  cursor: not-allowed;
+}
+
+/* Loading and Error States */
+.loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 200px;
+  color: #6c757d;
+  font-size: 1.1rem;
+}
+
+.error-message {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 200px;
+  color: #dc3545;
+  font-size: 1.1rem;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .order-item {
+    grid-template-columns: 60px 1fr auto auto;
+    gap: 12px;
+  }
+  
+  .item-image {
+    width: 60px;
+    height: 60px;
+  }
+  
+  .item-price,
+  .item-quantity {
+    min-width: 80px;
+  }
+  
+  .item-total {
+    grid-column: 3 / 5;
+    grid-row: 2;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    min-width: auto;
+  }
+  
+  .item-actions {
+    grid-column: 4;
+    grid-row: 1;
+  }
+}
+
+@media (max-width: 768px) {
+  .order-detail-page {
+    padding: 16px;
+  }
+  
+  .order-detail-header {
+    flex-direction: column;
+    gap: 12px;
+    text-align: center;
+  }
+  
+  .order-info-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+    padding: 16px;
+  }
+  
+  .order-item {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    padding: 16px;
+  }
+  
+  .item-image {
+    justify-self: center;
+  }
+  
+  .item-price,
+  .item-quantity,
+  .item-total {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    text-align: left;
+    min-width: auto;
+  }
+  
+  .item-actions {
+    justify-self: center;
+  }
+  
+  .order-details-section h3 {
+    padding: 16px;
+    font-size: 1.1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .order-info-grid {
+    padding: 12px;
+  }
+  
+  .order-item {
+    padding: 12px;
+  }
+  
+  .item-image {
+    width: 50px;
+    height: 50px;
+  }
+  
+  .item-name {
+    font-size: 0.9rem;
+  }
+  
+  .variant-value {
+    font-size: 0.8rem;
+  }
+}

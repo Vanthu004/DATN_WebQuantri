@@ -1,3 +1,4 @@
+//DATN_WebQuantri/admin/src/interfaces/user.ts
 import Upload from "./upload";
 
 export default interface User {
@@ -5,13 +6,22 @@ export default interface User {
   email: string;
   password?: string;
   name: string;
-  role: "admin" | "customer" | "user";
+  role: "admin" | "staff" | "user";
   phone_number?: string;
-  avatar?: Upload | string;
+  avatar?: Upload | string | null;
   avata_url?: string;
   address?: string;
   token_device?: string;
-  is_blocked: boolean;
+  gender?: string;
+  email_verified?: boolean;
+  email_verification_otp?: string | null;
+  email_verification_expires?: string | null;
+  ban: {
+    isBanned: boolean;
+    bannedUntil?: string | null;
+    reason?: string;
+  };
   createdAt: string;
   updatedAt: string;
+  __v?: number;
 }

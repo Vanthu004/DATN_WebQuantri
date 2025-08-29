@@ -1,48 +1,390 @@
-table {
+/* Order Page Styles */
+.order-page {
+  padding: 24px;
+  background: #f8f9fa;
+  min-height: 100vh;
+}
+
+.order-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  background: #fff;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.order-header h2 {
+  margin: 0;
+  color: #2d3a4b;
+  font-size: 1.75rem;
+  font-weight: 600;
+}
+
+.order-stats {
+  color: #6c757d;
+  font-size: 0.9rem;
+}
+
+/* Order Notice Styles */
+.order-notice {
+  margin-bottom: 20px;
+}
+
+.notice-content {
+  padding: 15px 20px;
+  background: #e3f2fd;
+  border: 1px solid #2196f3;
+  border-radius: 8px;
+  color: #1565c0;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.notice-content strong {
+  color: #0d47a1;
+}
+
+/* Filter Section */
+.filter-section {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 24px;
+  background: #fff;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  flex-wrap: wrap;
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 200px;
+}
+
+.filter-group label {
+  font-weight: 500;
+  color: #495057;
+  font-size: 0.9rem;
+}
+
+.filter-group select {
+  padding: 8px 12px;
+  border: 1px solid #dee2e6;
+  border-radius: 6px;
+  background: #fff;
+  font-size: 0.9rem;
+  transition: border-color 0.2s;
+}
+
+.filter-group select:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.1);
+}
+
+/* Table Container */
+.table-container {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+}
+
+.order-table {
   width: 100%;
   border-collapse: collapse;
-  margin-top: 20px;
-  background: #fff;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  font-size: 0.9rem;
 }
 
-thead {
-  background: #f5f5f5;
+.order-table thead {
+  background: #f8f9fa;
 }
 
-th,
-td {
-  padding: 12px 16px;
+.order-table th {
+  padding: 16px 12px;
   text-align: left;
-  border-bottom: 1px solid #eee;
-}
-
-th {
   font-weight: 600;
-  color: #333;
+  color: #495057;
+  border-bottom: 2px solid #dee2e6;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
-tr:hover {
-  background: #f0f8ff;
+.order-table td {
+  padding: 16px 12px;
+  border-bottom: 1px solid #f1f3f4;
+  vertical-align: middle;
 }
 
-select {
-  padding: 4px 8px;
+.order-table tbody tr:hover {
+  background: #f8f9fa;
+  transition: background-color 0.2s;
+}
+
+/* Table Cell Styles */
+.order-code {
+  font-weight: 600;
+  color: #007bff;
+  font-family: 'Courier New', monospace;
+}
+
+.customer-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.customer-phone {
+  font-size: 0.8rem;
+  color: #6c757d;
+}
+
+.status-select {
+  padding: 6px 10px;
+  border: 1px solid #dee2e6;
   border-radius: 4px;
-  border: 1px solid #ccc;
-  background: #fafafa;
+  background: #fff;
+  font-size: 0.85rem;
+  min-width: 140px;
 }
 
-h2 {
-  margin-top: 24px;
-  color: #2d3a4b;
-  font-size: 1.5rem;
-}
-
-td:last-child {
-  text-align: center;
+.status-select:focus {
+  outline: none;
+  border-color: #007bff;
 }
 
 .option-disabled {
   opacity: 0.5;
+  color: #6c757d;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-align: center;
+  min-width: 80px;
+}
+
+/* Status Badge Colors */
+.status-pending {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.status-confirmed {
+  background: #d1ecf1;
+  color: #0c5460;
+}
+
+.status-shipping {
+  background: #d4edda;
+  color: #155724;
+}
+
+.status-delivered {
+  background: #cce5ff;
+  color: #004085;
+}
+
+.status-completed {
+  background: #d1e7dd;
+  color: #0f5132;
+}
+
+.status-cancelled {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+/* Payment Status Badge Colors */
+.payment-pending {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.payment-paid {
+  background: #d1e7dd;
+  color: #0f5132;
+}
+
+.payment-failed {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+.payment-refunded {
+  background: #e2e3e5;
+  color: #383d41;
+}
+
+.payment-default {
+  background: #f8f9fa;
+  color: #6c757d;
+}
+
+.total-price {
+  font-weight: 600;
+  color: #28a745;
+  font-size: 0.95rem;
+}
+
+.item-count {
+  text-align: center;
+  font-weight: 500;
+}
+
+.variant-indicator {
+  color: #007bff;
+  font-weight: bold;
+  margin-left: 4px;
+}
+
+.created-date {
+  color: #6c757d;
+  font-size: 0.85rem;
+}
+
+.actions {
+  text-align: center;
+}
+
+.btn-view {
+  padding: 6px 12px;
+  background: #007bff;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: background-color 0.2s;
+}
+
+.btn-view:hover {
+  background: #0056b3;
+}
+
+/* No Data */
+.no-data {
+  text-align: center;
+  padding: 40px;
+  color: #6c757d;
+  font-style: italic;
+}
+
+/* Loading */
+.loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 200px;
+  color: #6c757d;
+  font-size: 1.1rem;
+}
+
+/* Pagination */
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+  margin-top: 24px;
+  padding: 20px;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.pagination-btn {
+  padding: 8px 16px;
+  background: #fff;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.pagination-btn:hover:not(:disabled) {
+  background: #f8f9fa;
+  border-color: #adb5bd;
+}
+
+.pagination-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pagination-info {
+  color: #6c757d;
+  font-size: 0.9rem;
+}
+
+/* Nút cập nhật trạng thái thanh toán COD */
+.btn-update-cod-payment {
+  margin-top: 8px;
+  padding: 4px 8px;
+  background: #28a745;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.75rem;
+  transition: background-color 0.2s;
+  width: 100%;
+}
+
+.btn-update-cod-payment:hover {
+  background: #1e7e34;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .order-page {
+    padding: 16px;
+  }
+  
+  .order-header {
+    flex-direction: column;
+    gap: 12px;
+    text-align: center;
+  }
+  
+  .filter-section {
+    flex-direction: column;
+  }
+  
+  .filter-group {
+    min-width: auto;
+  }
+  
+  .table-container {
+    overflow-x: auto;
+  }
+  
+  .order-table {
+    min-width: 800px;
+  }
+  
+  .order-table th,
+  .order-table td {
+    padding: 12px 8px;
+    font-size: 0.8rem;
+  }
+  
+  .status-select {
+    min-width: 120px;
+  }
+  
+  .pagination {
+    flex-direction: column;
+    gap: 12px;
+  }
 }

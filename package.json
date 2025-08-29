@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "jest"
   },
   "keywords": [],
   "author": "",
@@ -12,17 +12,39 @@
   "type": "commonjs",
   "dependencies": {
     "@aws-sdk/client-s3": "^3.835.0",
-    "axios": "^1.10.0",
+    "@supabase/supabase-js": "^2.55.0",
+    "admin": "^1.4.1",
+    "axios": "^1.11.0",
     "bcrypt": "^6.0.0",
     "bcryptjs": "^3.0.2",
+    "cloudinary": "^2.7.0",
     "cors": "^2.8.5",
+    "crypto-js": "^4.2.0",
     "dotenv": "^16.5.0",
+    "expo-linear-gradient": "^14.1.5",
     "express": "^4.21.2",
+    "express-validator": "^7.2.1",
+    "expo-server-sdk": "^3.15.0",
+    "firebase": "^12.1.0",
+    "firebase-admin": "^12.7.0",
     "jsonwebtoken": "^9.0.2",
+    "moment": "^2.30.1",
     "mongodb": "^6.17.0",
     "mongoose": "^8.15.2",
-    "multer": "^2.0.1",
+    "multer": "^2.0.2",
+    "node-cron": "^4.2.1",
     "nodemailer": "^7.0.3",
-    "nodemon": "^3.1.10"
+    "nodemon": "^3.1.10",
+    "qs": "^6.14.0",
+    "react-native-svg": "^15.12.1",
+    "socket.io": "^4.8.1",
+    "streamifier": "^0.1.1",
+    "uuid": "^11.1.0"
+  },
+  "devDependencies": {
+    "jest": "^30.0.5",
+    "mocha": "^11.7.1",
+    "supertest": "^7.1.4",
+    "vite": "^6.3.5"
   }
 }

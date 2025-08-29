@@ -104,6 +104,10 @@
   gap: 4px;
 }
 
+.menu-item {
+  position: relative;
+}
+
 .menu-item a {
   display: flex;
   align-items: center;
@@ -128,6 +132,57 @@
   font-weight: 600;
 }
 
+.menu-badge {
+  position: absolute;
+  top: 8px;
+  right: 18px;
+  background: #ff3b30;
+  color: #fff;
+  border-radius: 50%;
+  min-width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.10);
+  z-index: 2;
+  border: 2px solid #fff;
+  pointer-events: none;
+  transition: background 0.2s;
+}
+
+.menu-dot {
+  position: absolute;
+  top: 12px;
+  right: 20px;
+  background: #ff3b30;
+  border-radius: 50%;
+  width: 8px;
+  height: 8px;
+  z-index: 2;
+  border: 1px solid #fff;
+  pointer-events: none;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
 /* Main Content */
 .main-content-wrapper {
   flex-grow: 1;
@@ -142,4 +197,67 @@
   border: 1px solid #e2e8f0;
   padding: 32px;
   min-height: 100%;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.user-role {
+  font-size: 12px;
+  color: #666;
+  background: #f0f0f0;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-weight: 500;
+}
+
+/* Chat notification dot */
+.menu-dot.chat-dot {
+  background-color: #4caf50; /* Different color for chat notifications */
+}
+
+/* Sidebar menu improvements */
+.sidebar-menu a {
+  position: relative;
+}
+
+.sidebar-menu a.active {
+  background-color: rgba(33, 150, 243, 0.1);
+  color: #2196f3;
+  border-right: 3px solid #2196f3;
+}
+
+.sidebar-menu a:hover {
+  background-color: rgba(33, 150, 243, 0.05);
+}
+
+/* Menu item icon alignment */
+.sidebar-menu a span:first-child {
+  min-width: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Responsive improvements */
+@media (max-width: 768px) {
+  .header-actions {
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 8px;
+  }
+  
+  .user-role {
+    font-size: 11px;
+    padding: 3px 6px;
+  }
 }

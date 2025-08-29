@@ -17,4 +17,15 @@ router.put("/payments/:payment_id", paymentController.updatePayment);
 // Xóa payment
 router.delete("/payments/:payment_id", paymentController.deletePayment);
 
+router.post('/zalopay/payment', paymentController.createZaloPayOrder);
+router.post('/zalopay/check-status-order', paymentController.checkZaloPayOrderStatus);
+router.post('/zalopay/check-status', paymentController.checkZaloPayOrderStatus); // Thêm route này để tương thích với FE
+router.post('/zalopay/callback', paymentController.zaloPayCallback);
+
+// Tính toán voucher discount cho thanh toán online
+router.post('/calculate-voucher', paymentController.calculateVoucherForPayment);
+
+// Xử lý thanh toán online thành công
+router.post('/online-payment-success', paymentController.handleOnlinePaymentSuccess);
+
 module.exports = router;
