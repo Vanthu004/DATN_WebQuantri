@@ -176,7 +176,7 @@ const ListProduct = () => {
               <th className="px-4 py-2 border-b">Image</th>
               <th className="px-4 py-2 border-b">Variants</th>
               <th className="px-4 py-2 border-b">Sold</th>
-              <th className="px-4 py-2 border-b">Views</th>
+              {/* <th className="px-4 py-2 border-b">Views</th> */}
               <th className="px-4 py-2 border-b">Đã xóa?</th>
               <th className="px-4 py-2 border-b">Created At</th>
               <th className="px-4 py-2 border-b">Updated At</th>
@@ -225,7 +225,7 @@ const ListProduct = () => {
                       )}
                     </td>
                     <td className="px-4 py-2 border-b">{product.sold_quantity || "0"}</td>
-                    <td className="px-4 py-2 border-b">{product.views || "0"}</td>
+                    {/* <td className="px-4 py-2 border-b">{product.views || "0"}</td> */}
                     <td className="px-4 py-2 border-b">
                       {product.is_deleted ? (
                         <span className="deleted-badge">Đã xóa</span>
@@ -243,7 +243,7 @@ const ListProduct = () => {
                       >
                         Sửa
                       </button>
-                      {" | "}
+                      <div style={{ marginBottom: 12 }}></div>
                       {!product.is_deleted ? (
 
                         <button
@@ -294,7 +294,7 @@ const ListProduct = () => {
                                 <td>{v.size_name || (typeof v.attributes.size === "object" && v.attributes.size !== null && "name" in v.attributes.size ? v.attributes.size.name : v.attributes.size)}</td>
                                 <td>{v.color_name || (typeof v.attributes.color === "object" && v.attributes.color !== null && "name" in v.attributes.color ? v.attributes.color.name : v.attributes.color)}</td>
                                 <td>{v.price?.toLocaleString() || "0"}</td>
-                                <td>{v.stock_quantity || "0"}</td>
+                                {/* <td>{v.stock_quantity || "0"}</td> */}
                                 <td>{v.sku}</td>
                                 <td>
                                   <span className={`status-badge ${v.is_active ? 'active' : 'inactive'}`}>

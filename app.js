@@ -99,12 +99,13 @@ app.use("/api/colors", colorRouter);
 app.use("/api/shipers", shiperRouter);
 app.use("/api/admin/shipers", adminShiperRouter);
 app.use("/api/vouchers", voucherRouter);
-app.use("/api/uploads", uploadRouter);
+
+// app.use("/api/uploads", uploadRouter);
 app.use("/api/category-types", categoryTypeRouter);
 app.use("/api/notifications", notificationRouter);
 app.use("/api/addresses", addressRouter);
 app.use("/api/refund-requests", refundRoutes);
-//app.use("/api", uploadRouter);
+app.use("/api", uploadRouter);
 app.use("/api/search-history", searchHistoryRouter);
 app.use('/api/chat', chatRoutes);
 app.set('chatNamespace', chatNamespace);
@@ -148,8 +149,8 @@ app.use((err, req, res, next) => {
 
 // ====== Khởi động SERVER ======
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
-  console.log(`🚀 Server đang chạy tại http://localhost:${PORT}`);
+server.listen(PORT, "0.0.0.0", () => {
+  console.log(`🚀 Server đang chạy tại http://0.0.0.0:${PORT}`);
 });
 
 module.exports = app;

@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { chatApi, ChatRoomsResponse } from '../../services/chatApi';
@@ -224,7 +223,6 @@ const ChatRoomsList: React.FC = () => {
                 <div className="room-header">
                   <div className="customer-info">
                     <div className="customer-avatar">
-
                       {room.userId && room.userId.avatar_url ? (
                         <img
                           src={room.userId.avatar_url}

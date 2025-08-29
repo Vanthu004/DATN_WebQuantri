@@ -25,7 +25,7 @@
 }
 
 .user-list-container {
-  max-height: 16rem;
+  max-height: 160rem;
   overflow-y: auto;
   border: 1px solid #e5e7eb;
   border-radius: 0.5rem;
